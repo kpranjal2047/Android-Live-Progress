@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Live Progress</string>
+    <string name="notification_listener_label">Live Progress Notification Mirror</string>
+    <string name="notification_assistant_label">Live Progress Notification Assistant</string>
+    <string name="accessibility_service_label">Live Progress QS Detector</string>
+    <string name="accessibility_service_description">Detects whether quick settings is expanded so mirrored live progress notifications can be hidden while the shade is open.</string>
+    <string name="mirror_channel_name">Mirrored live progress</string>
+    <string name="mirror_channel_description">Live progress notifications mirrored from other apps.</string>
+    <string name="media_channel_name">Media live updates</string>
+    <string name="media_channel_description">Live media notifications mirrored from active playback.</string>
+    <string name="setup_notifications_title">Enable notifications</string>
+    <string name="setup_notifications_reason">Live Progress needs notification access to post mirrored live updates and test notifications.</string>
+    <string name="setup_notifications_action">Enable notifications</string>
+    <string name="setup_promoted_title">Enable live notification access</string>
+    <string name="setup_promoted_reason">Android promoted notification access is required for status bar and AOD live updates.</string>
+    <string name="setup_promoted_action">Open live notification settings</string>
+    <string name="setup_listener_title">Enable notification listener</string>
+    <string name="setup_listener_reason">Live Progress needs notification listener access to read eligible progress and media notifications.</string>
+    <string name="setup_listener_action">Open notification listener settings</string>
+    <string name="setup_accessibility_title">Enable Quick Settings detection</string>
+    <string name="setup_accessibility_reason">Enable this only if you want Live Progress to hide mirrored notifications when Quick Settings is expanded. Skip turns that setting off.</string>
+    <string name="setup_accessibility_action">Open accessibility settings</string>
+    <string name="setup_shizuku_title">Grant Shizuku permission</string>
+    <string name="setup_shizuku_reason">Grant this only if you want Live Progress to hide original progress notifications on the lock screen. Skip turns that setting off.</string>
+    <string name="setup_shizuku_action">Grant Shizuku permission</string>
+    <string name="setup_skip_action">Skip</string>
+    <string name="post_live_test_notification">Post live notification test</string>
+    <string name="cancel_live_test_notification">Cancel live notification test</string>
+    <string name="live_test_notification_title">Live notification test</string>
+    <string name="live_test_notification_text">Promoted ongoing request at 42%</string>
+</resources>

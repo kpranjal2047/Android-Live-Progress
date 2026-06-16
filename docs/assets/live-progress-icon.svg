@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 48 48" role="img" aria-label="Live Progress icon">
+  <circle cx="24" cy="24" r="22" fill="#EAF7F0"/>
+  <circle cx="24" cy="24" r="20" fill="#0B6E4F"/>
+  <circle cx="24" cy="24" r="14" fill="#EAF7F0"/>
+  <path d="M24 8a16 16 0 0 1 16 16h-6a10 10 0 0 0-10-10z" fill="#2FA66A"/>
+  <rect x="14" y="22" width="20" height="4" rx="2" fill="#FFFFFF"/>
+</svg>
