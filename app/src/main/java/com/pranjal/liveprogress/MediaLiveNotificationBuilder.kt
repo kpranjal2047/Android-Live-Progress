@@ -16,16 +16,12 @@ object MediaLiveNotificationBuilder {
     const val CHANNEL_ID = "media_live_updates_default"
     const val LOW_PRIORITY_CHANNEL_ID = "media_live_updates_low"
     const val NOTIFICATION_ID = 2001
-    private const val LEGACY_LOW_IMPORTANCE_CHANNEL_ID = "media_live_updates"
     private val albumArtCacheLock = Any()
     private var cachedAlbumArtUri: Uri? = null
     private var cachedAlbumArtBitmap: Bitmap? = null
 
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(LEGACY_LOW_IMPORTANCE_CHANNEL_ID) != null) {
-            manager.deleteNotificationChannel(LEGACY_LOW_IMPORTANCE_CHANNEL_ID)
-        }
         ensureChannel(
             manager = manager,
             id = CHANNEL_ID,
@@ -132,17 +128,37 @@ object MediaLiveNotificationBuilder {
         builder.setLargeIcon(largeIcon(context, state))
         builder.setProgress(progress.max, progress.progress, progress.indeterminate)
         builder
-            .addAction(mediaAction(context, android.R.drawable.ic_media_previous, "Previous", MediaControlReceiver.ACTION_PREVIOUS, 1))
+            .addAction(
+                mediaAction(
+                    context,
+                    android.R.drawable.ic_media_previous,
+                    context.getString(R.string.media_action_previous),
+                    MediaControlReceiver.ACTION_PREVIOUS,
+                    1
+                )
+            )
             .addAction(
                 mediaAction(
                     context,
                     if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                    if (state.isPlaying) "Pause" else "Play",
+                    if (state.isPlaying) {
+                        context.getString(R.string.media_action_pause)
+                    } else {
+                        context.getString(R.string.media_action_play)
+                    },
                     MediaControlReceiver.ACTION_PLAY_PAUSE,
                     2
                 )
             )
-            .addAction(mediaAction(context, android.R.drawable.ic_media_next, "Next", MediaControlReceiver.ACTION_NEXT, 3))
+            .addAction(
+                mediaAction(
+                    context,
+                    android.R.drawable.ic_media_next,
+                    context.getString(R.string.media_action_next),
+                    MediaControlReceiver.ACTION_NEXT,
+                    3
+                )
+            )
 
         return PromotedOngoingCompat.request(builder).build()
     }
@@ -160,6 +176,7 @@ object MediaLiveNotificationBuilder {
     ) {
         val existing = manager.getNotificationChannel(id)
         if (existing != null) {
+            existing.setName(name)
             existing.description = description
             existing.setSound(null, null)
             existing.enableVibration(false)

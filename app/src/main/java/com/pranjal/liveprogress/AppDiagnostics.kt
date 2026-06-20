@@ -28,14 +28,24 @@ object AppDiagnostics {
     fun snapshot(context: Context): List<Pair<String, String>> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return listOf(
-            "Listener" to prefs.getString("listener", "No listener events yet").orEmpty(),
-            "Mirror" to prefs.getString("mirror", "No mirrored notification yet").orEmpty(),
-            "Media" to prefs.getString("media", "No media events yet").orEmpty(),
-            "Visibility" to prefs.getString("visibility", "No visibility changes yet").orEmpty(),
-            "Suppression" to prefs.getString("suppression", "Not attempted").orEmpty(),
-            "Battery" to BatteryDiagnostics.summary(),
-            "Background" to prefs.getString("background", "Not initialized").orEmpty(),
-            "Privileged access" to prefs.getString("privileged_setup", "Not attempted").orEmpty()
+            context.getString(R.string.diagnostic_category_listener) to
+                prefs.getString("listener", context.getString(R.string.diagnostic_default_listener)).orEmpty(),
+            context.getString(R.string.diagnostic_category_mirror) to
+                prefs.getString("mirror", context.getString(R.string.diagnostic_default_mirror)).orEmpty(),
+            context.getString(R.string.diagnostic_category_media) to
+                prefs.getString("media", context.getString(R.string.diagnostic_default_media)).orEmpty(),
+            context.getString(R.string.diagnostic_category_visibility) to
+                prefs.getString("visibility", context.getString(R.string.diagnostic_default_visibility)).orEmpty(),
+            context.getString(R.string.diagnostic_category_suppression) to
+                prefs.getString("suppression", context.getString(R.string.diagnostic_default_suppression)).orEmpty(),
+            context.getString(R.string.diagnostic_category_battery) to BatteryDiagnostics.summary(context),
+            context.getString(R.string.diagnostic_category_background) to
+                prefs.getString("background", context.getString(R.string.diagnostic_default_background)).orEmpty(),
+            context.getString(R.string.diagnostic_category_privileged_access) to
+                prefs.getString(
+                    "privileged_setup",
+                    context.getString(R.string.diagnostic_default_privileged_access)
+                ).orEmpty()
         )
     }
 }

@@ -50,7 +50,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppDiagnostics.clear(this)
-        BackgroundRuntime.initialize(this, "Main activity started")
+        BackgroundRuntime.initialize(this, getString(R.string.diagnostic_main_activity_started))
         renderCurrentScreen()
     }
 
@@ -174,14 +174,14 @@ class MainActivity : Activity() {
 
     private fun skipAccessibilitySetup() {
         VisibilityPreferences(this).hideMirrorsWhenQuickSettingsExpanded = false
-        AppDiagnostics.note(this, "visibility", "Skipped accessibility setup; QS mirror hiding disabled")
+        AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_skipped_accessibility_setup))
         VisibilityPreferenceEvents.notifyChanged()
         renderCurrentScreen()
     }
 
     private fun skipShizukuSetup() {
         ProgressPreferences(this).suppressOriginalNotification = false
-        AppDiagnostics.note(this, "privileged_setup", "Skipped Shizuku permission setup")
+        AppDiagnostics.note(this, "privileged_setup", getString(R.string.diagnostic_skipped_shizuku_setup))
         ProgressPreferenceEvents.notifyChanged()
         renderCurrentScreen()
     }
@@ -207,7 +207,7 @@ class MainActivity : Activity() {
         root.addView(button(getString(R.string.cancel_live_test_notification)) {
             getSystemService(NotificationManager::class.java)
                 .cancel(TEST_LIVE_NOTIFICATION_ID)
-            AppDiagnostics.note(this, "mirror", "Canceled live notification test.")
+            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_canceled_live_test))
             refreshStatus()
         })
         settingsContainer = LinearLayout(this).apply {
@@ -279,13 +279,22 @@ class MainActivity : Activity() {
             shizukuGranted = privileged.shizukuGranted
         )
         settingsContainer.removeAllViews()
-        settingsContainer.addView(sectionTitle("General"))
+        settingsContainer.addView(sectionTitle(getString(R.string.section_general)))
+        settingsContainer.addView(dropdown(
+            label = getString(R.string.setting_language),
+            values = AppLanguage.entries,
+            selected = AppLanguage.selected(this),
+            display = { it.displayName(this) }
+        ) { language ->
+            AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_language_setting_changed))
+            AppLanguage.apply(this, language)
+        })
         settingsContainer.addView(settingToggle(
-            label = "Hide mirrored notifications when Quick Settings is expanded",
+            label = getString(R.string.setting_hide_mirrors_qs),
             checked = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded
         ) {
             visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded = it
-            AppDiagnostics.note(this, "visibility", "QS mirror hiding setting changed")
+            AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_qs_setting_changed))
             VisibilityPreferenceEvents.notifyChanged()
             if (it && !isAccessibilityEnabled()) {
                 renderCurrentScreen()
@@ -294,37 +303,37 @@ class MainActivity : Activity() {
             }
         })
 
-        settingsContainer.addView(sectionTitle("Progress live updates"))
-        settingsContainer.addView(settingToggle("Enable progress live updates", progressPreferences.enabled) {
+        settingsContainer.addView(sectionTitle(getString(R.string.section_progress_live_updates)))
+        settingsContainer.addView(settingToggle(getString(R.string.setting_enable_progress_live_updates), progressPreferences.enabled) {
             progressPreferences.enabled = it
-            AppDiagnostics.note(this, "mirror", "Progress live updates setting changed")
+            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_enabled_changed))
             progressChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = "Show progress mirror on AOD",
+            label = getString(R.string.setting_show_progress_aod),
             checked = progressPreferences.showOnAod,
             enabled = progressPreferences.enabled
         ) {
             progressPreferences.showOnAod = it
-            AppDiagnostics.note(this, "mirror", "Progress AOD setting changed")
+            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_aod_changed))
             progressChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = "Show progress mirror on lock screen",
+            label = getString(R.string.setting_show_progress_lock_screen),
             checked = progressPreferences.showOnLockScreen,
             enabled = progressPreferences.enabled
         ) {
             progressPreferences.showOnLockScreen = it
-            AppDiagnostics.note(this, "mirror", "Progress lock screen setting changed")
+            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_lock_changed))
             progressChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = "Hide original notification on lock screen",
+            label = getString(R.string.setting_hide_original_lock_screen),
             checked = progressSuppressionToggle.checked,
             enabled = progressSuppressionToggle.enabled
         ) {
             progressPreferences.suppressOriginalNotification = it
-            AppDiagnostics.note(this, "mirror", "Progress original suppression setting changed")
+            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_suppression_changed))
             ProgressPreferenceEvents.notifyChanged()
             if (it && privileged.shizukuAvailable && !privileged.shizukuGranted) {
                 renderCurrentScreen()
@@ -333,13 +342,13 @@ class MainActivity : Activity() {
             }
         })
 
-        settingsContainer.addView(sectionTitle("Media live updates"))
-        settingsContainer.addView(settingToggle("Enable media live updates", mediaPreferences.enabled) {
+        settingsContainer.addView(sectionTitle(getString(R.string.section_media_live_updates)))
+        settingsContainer.addView(settingToggle(getString(R.string.setting_enable_media_live_updates), mediaPreferences.enabled) {
             mediaPreferences.enabled = it
             mediaChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = "Show media mirror on AOD",
+            label = getString(R.string.setting_show_media_aod),
             checked = mediaPreferences.showOnAod,
             enabled = mediaPreferences.enabled
         ) {
@@ -347,7 +356,7 @@ class MainActivity : Activity() {
             mediaChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = "Show media mirror on lock screen",
+            label = getString(R.string.setting_show_media_lock_screen),
             checked = mediaPreferences.showOnLockScreen,
             enabled = mediaPreferences.enabled
         ) {
@@ -355,18 +364,18 @@ class MainActivity : Activity() {
             mediaChanged()
         })
         settingsContainer.addView(dropdown(
-            label = "Status bar text",
+            label = getString(R.string.setting_status_bar_text),
             values = MediaPillMode.entries,
             selected = mediaPreferences.pillMode,
             enabled = mediaPreferences.enabled,
-            display = { it.label }
+            display = { mediaPillModeLabel(it) }
         ) {
             mediaPreferences.pillMode = it
             mediaChanged()
         })
         val titlePillSelected = mediaPreferences.pillMode == MediaPillMode.TITLE
         settingsContainer.addView(settingToggle(
-            label = "Scroll title in status bar",
+            label = getString(R.string.setting_scroll_title_status_bar),
             checked = mediaPreferences.scrollTitle && titlePillSelected,
             enabled = mediaPreferences.enabled && titlePillSelected
         ) {
@@ -454,7 +463,7 @@ class MainActivity : Activity() {
     }
 
     private fun mediaChanged() {
-        AppDiagnostics.note(this, "media", "Media settings changed")
+        AppDiagnostics.note(this, "media", getString(R.string.diagnostic_media_settings_changed))
         MediaPreferenceEvents.notifyChanged()
         refreshStatus()
     }
@@ -464,19 +473,20 @@ class MainActivity : Activity() {
         refreshStatus()
     }
 
-    private val MediaPillMode.label: String
-        get() = when (this) {
-            MediaPillMode.TITLE -> "Title"
-            MediaPillMode.ELAPSED -> "Elapsed"
-            MediaPillMode.REMAINING -> "Remaining"
+    private fun mediaPillModeLabel(mode: MediaPillMode): String {
+        return when (mode) {
+            MediaPillMode.TITLE -> getString(R.string.media_pill_title)
+            MediaPillMode.ELAPSED -> getString(R.string.media_pill_elapsed)
+            MediaPillMode.REMAINING -> getString(R.string.media_pill_remaining)
         }
+    }
 
     private fun postLiveTestNotification() {
         if (!hasPostPermission()) {
             AppDiagnostics.note(
                 this,
                 "mirror",
-                "Notification posting permission is required before posting a live test."
+                getString(R.string.diagnostic_notification_permission_required)
             )
             renderCurrentScreen()
             return
@@ -511,7 +521,7 @@ class MainActivity : Activity() {
         AppDiagnostics.note(
             this,
             "mirror",
-            "Posted live notification test. ${promotedStatus(manager, notification)}"
+            getString(R.string.diagnostic_post_live_test_result, promotedStatus(manager, notification))
         )
         refreshStatus()
     }
@@ -522,13 +532,13 @@ class MainActivity : Activity() {
     ): String {
         return when {
             !manager.canPostPromotedNotifications() ->
-                "Promoted notification access is disabled."
+                getString(R.string.diagnostic_promoted_disabled)
 
             !notification.hasPromotableCharacteristics() ->
-                "Android says the test notification is not promotable."
+                getString(R.string.diagnostic_test_not_promotable)
 
             else ->
-                "Android says the test notification is promotable."
+                getString(R.string.diagnostic_test_promotable)
         }
     }
 
@@ -539,7 +549,7 @@ class MainActivity : Activity() {
                 AppDiagnostics.note(
                     this,
                     "privileged_setup",
-                    "Opened promoted notification settings."
+                    getString(R.string.diagnostic_opened_promoted_settings)
                 )
                 return
             } catch (_: ActivityNotFoundException) {
@@ -550,15 +560,9 @@ class MainActivity : Activity() {
         AppDiagnostics.note(
             this,
             "privileged_setup",
-            "Promoted notification settings activity is unavailable on this build; opened app notification settings."
+            getString(R.string.diagnostic_promoted_settings_unavailable)
         )
         startActivity(appNotificationSettingsIntent())
-    }
-
-    private fun canResolvePromotedSettings(): Boolean {
-        return promotedSettingsIntents().any {
-            it.resolveActivity(packageManager) != null
-        }
     }
 
     private fun promotedSettingsIntents(): List<Intent> {
@@ -608,31 +612,11 @@ class MainActivity : Activity() {
             PackageManager.PERMISSION_GRANTED
     }
 
-    private fun hasDeclaredPermission(permission: String): Boolean {
-        val info = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
-        return info.requestedPermissions?.contains(permission) == true
-    }
-
     private fun isNotificationListenerEnabled(): Boolean {
         val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
             ?: return false
         val component = ComponentName(this, NotificationMirrorService::class.java).flattenToString()
         return enabled.split(':').any { it.equals(component, ignoreCase = true) }
-    }
-
-    private fun isNotificationAssistantEnabled(): Boolean {
-        val component = ComponentName(this, NotificationAssistantBridgeService::class.java)
-        val manager = getSystemService(NotificationManager::class.java)
-        val reflectedGrant = runCatching {
-            NotificationManager::class.java
-                .getMethod("isNotificationAssistantAccessGranted", ComponentName::class.java)
-                .invoke(manager, component) as Boolean
-        }.getOrNull()
-        if (reflectedGrant != null) return reflectedGrant
-
-        val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_assistant")
-            ?: return false
-        return enabled.equals(component.flattenToString(), ignoreCase = true)
     }
 
     private fun isAccessibilityEnabled(): Boolean {

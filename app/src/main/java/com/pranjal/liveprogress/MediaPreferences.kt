@@ -24,11 +24,7 @@ class MediaPreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_SHOW_ON_AOD, value).apply()
 
     var showOnLockScreen: Boolean
-        get() = if (prefs.contains(KEY_SHOW_ON_LOCK_SCREEN)) {
-            prefs.getBoolean(KEY_SHOW_ON_LOCK_SCREEN, false)
-        } else {
-            prefs.enumValue(KEY_LOCK_SCREEN_MODE, LockScreenMirrorMode.ORIGINAL) == LockScreenMirrorMode.MIRROR
-        }
+        get() = prefs.getBoolean(KEY_SHOW_ON_LOCK_SCREEN, false)
         set(value) = prefs.edit().putBoolean(KEY_SHOW_ON_LOCK_SCREEN, value).apply()
 
     var pillMode: MediaPillMode
@@ -48,7 +44,6 @@ class MediaPreferences(context: Context) {
         private const val KEY_ENABLED = "enabled"
         private const val KEY_SCROLL_TITLE = "scroll_title"
         private const val KEY_SHOW_ON_AOD = "show_on_aod"
-        private const val KEY_LOCK_SCREEN_MODE = "lock_screen_mode"
         private const val KEY_SHOW_ON_LOCK_SCREEN = "show_on_lock_screen"
         private const val KEY_PILL_MODE = "pill_mode"
     }
