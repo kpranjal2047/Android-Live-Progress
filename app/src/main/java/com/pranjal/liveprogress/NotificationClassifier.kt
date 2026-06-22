@@ -2,6 +2,7 @@ package com.pranjal.liveprogress
 
 import android.app.Notification
 import android.content.Context
+import android.os.Bundle
 import android.service.notification.StatusBarNotification
 import kotlin.math.absoluteValue
 
@@ -19,18 +20,17 @@ object NotificationClassifier {
         val notification = sbn.notification ?: return null
         val extras = notification.extras ?: return null
         if (notification.isAlreadyLiveProgress()) return null
-        if (notification.isMediaLike()) return null
+        val isAppProgressNotification =
+            AppProgressNotificationSupport.isSupportedPackage(sbn.packageName)
+        if (!isAppProgressNotification && notification.isMediaLike()) return null
 
-        val indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false)
-        val max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0)
-        val progress = extras.getInt(Notification.EXTRA_PROGRESS, 0)
-        if (!indeterminate && max <= 0) return null
-
-        val progressInfo = ProgressInfo(
-            progress = progress.coerceAtLeast(0),
-            max = max.coerceAtLeast(0),
-            indeterminate = indeterminate
-        )
+        val progressInfo = standardProgressInfo(extras)
+            ?: AppProgressNotificationSupport.fallbackProgressInfo(
+                packageName = sbn.packageName,
+                textFields = extras.progressTextFields(),
+                ongoing = notification.isOngoingStatus()
+            )
+            ?: return null
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)
             ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG)
@@ -64,6 +64,40 @@ object NotificationClassifier {
             actions = actions,
             progress = progressInfo
         )
+    }
+
+    private fun standardProgressInfo(extras: Bundle): ProgressInfo? {
+        val indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false)
+        val max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0)
+        val progress = extras.getInt(Notification.EXTRA_PROGRESS, 0)
+        if (!indeterminate && max <= 0) return null
+        return ProgressInfo(
+            progress = progress.coerceAtLeast(0),
+            max = max.coerceAtLeast(0),
+            indeterminate = indeterminate
+        )
+    }
+
+    private fun Bundle.progressTextFields(): List<String> {
+        val fields = mutableListOf<String>()
+        listOf(
+            Notification.EXTRA_TITLE,
+            Notification.EXTRA_TITLE_BIG,
+            Notification.EXTRA_TEXT,
+            Notification.EXTRA_BIG_TEXT,
+            Notification.EXTRA_SUB_TEXT,
+            Notification.EXTRA_SUMMARY_TEXT
+        ).forEach { key ->
+            getCharSequence(key)?.toString()?.takeIf { it.isNotBlank() }?.let(fields::add)
+        }
+        getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+            ?.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }
+            ?.let(fields::addAll)
+        return fields
+    }
+
+    private fun Notification.isOngoingStatus(): Boolean {
+        return flags and (Notification.FLAG_ONGOING_EVENT or Notification.FLAG_NO_CLEAR) != 0
     }
 
     private fun Notification.isAlreadyLiveProgress(): Boolean {

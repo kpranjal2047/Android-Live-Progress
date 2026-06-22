@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.net.Uri
 
@@ -117,7 +116,7 @@ object MediaLiveNotificationBuilder {
             .setLocalOnly(true)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setColor(Color.rgb(11, 110, 79))
+            .setColor(SystemColorPalette.primary(context))
             .setStyle(style)
             .apply {
                 if (shortCriticalText != null) {

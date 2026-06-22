@@ -12,6 +12,7 @@ data class MediaNotificationSource(
 
 object MediaNotificationSourceFactory {
     fun from(context: Context, sbn: StatusBarNotification): MediaNotificationSource? {
+        if (AppProgressNotificationSupport.isSupportedPackage(sbn.packageName)) return null
         val notification = sbn.notification ?: return null
         if (!notification.isMediaLike()) return null
         val label = AppLabelResolver.label(context, sbn.packageName, notification)

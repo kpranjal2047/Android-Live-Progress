@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.graphics.Color
 
 object MirrorNotificationBuilder {
     const val CHANNEL_ID = "mirrored_live_progress"
@@ -54,7 +53,7 @@ object MirrorNotificationBuilder {
         val color = if (candidate.color != Notification.COLOR_DEFAULT) {
             candidate.color
         } else {
-            Color.rgb(11, 110, 79)
+            SystemColorPalette.primary(context)
         }
 
         val builder = Notification.Builder(context, channelId(priorityMode))

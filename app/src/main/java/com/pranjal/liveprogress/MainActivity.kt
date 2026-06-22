@@ -7,21 +7,30 @@ import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.text.TextUtils
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsets
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.CheckBox
+import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.ScrollView
-import android.widget.Spinner
 import android.widget.TextView
+import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
     private companion object {
@@ -33,11 +42,34 @@ class MainActivity : Activity() {
             "android.settings.MANAGE_APP_PROMOTED_NOTIFICATIONS"
         const val POST_PROMOTED_NOTIFICATIONS_PERMISSION =
             "android.permission.POST_PROMOTED_NOTIFICATIONS"
-        const val CONTENT_PADDING = 32
+        const val CONTENT_PADDING_DP = 20
     }
 
     private lateinit var diagnosticsView: TextView
     private lateinit var settingsContainer: LinearLayout
+
+    private enum class ButtonStyle {
+        Filled,
+        Tonal
+    }
+
+    private data class UiPalette(
+        val background: Int,
+        val surface: Int,
+        val surfaceContainer: Int,
+        val surfaceContainerHigh: Int,
+        val primary: Int,
+        val primaryPressed: Int,
+        val onPrimary: Int,
+        val secondaryContainer: Int,
+        val onSecondaryContainer: Int,
+        val outline: Int,
+        val textPrimary: Int,
+        val textSecondary: Int,
+        val textDisabled: Int,
+        val disabledContainer: Int,
+        val ripple: Int
+    )
 
     private data class SetupRequirement(
         val titleRes: Int,
@@ -136,34 +168,53 @@ class MainActivity : Activity() {
     }
 
     private fun buildSetupContent(requirement: SetupRequirement): View {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            applySystemBarPadding(this)
-        }
+        val colors = palette()
+        val root = contentRoot()
         val appTitle = TextView(this).apply {
             text = getString(R.string.app_name)
-            textSize = 24f
+            textSize = 34f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
         }
         val setupTitle = TextView(this).apply {
             text = getString(requirement.titleRes)
-            textSize = 20f
-            setPadding(0, 32, 0, 12)
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
         }
         val reason = TextView(this).apply {
             text = getString(requirement.reasonRes)
             textSize = 15f
-            setPadding(0, 0, 0, 24)
+            setTextColor(colors.textSecondary)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            setPadding(0, 12.dp(), 0, 24.dp())
         }
 
-        root.addView(appTitle)
-        root.addView(setupTitle)
-        root.addView(reason)
-        root.addView(button(getString(requirement.actionRes), requirement.action))
-        requirement.skipAction?.let { skipAction ->
-            root.addView(button(getString(R.string.setup_skip_action), skipAction))
+        val setupCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(22.dp(), 22.dp(), 22.dp(), 22.dp())
+            background = rounded(colors.surfaceContainer, 30.dp())
+            addView(setupTitle)
+            addView(reason)
+            addView(button(getString(requirement.actionRes), requirement.action))
+            requirement.skipAction?.let { skipAction ->
+                addView(
+                    button(
+                        label = getString(R.string.setup_skip_action),
+                        style = ButtonStyle.Tonal,
+                        action = skipAction
+                    ),
+                    blockParams(top = 10.dp())
+                )
+            }
         }
 
-        return ScrollView(this).apply { addView(root) }
+        root.addView(appTitle, blockParams(bottom = 18.dp()))
+        root.addView(setupCard, blockParams(top = 8.dp()))
+
+        return scrollContent(root)
     }
 
     private fun requestShizukuPermission() {
@@ -187,53 +238,68 @@ class MainActivity : Activity() {
     }
 
     private fun buildContent(): View {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            applySystemBarPadding(this)
-        }
+        val colors = palette()
+        val root = contentRoot()
         val title = TextView(this).apply {
             text = getString(R.string.app_name)
-            textSize = 24f
+            textSize = 34f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
         }
         diagnosticsView = TextView(this).apply {
-            textSize = 14f
-            setPadding(0, 24, 0, 0)
+            textSize = 13f
+            setTextColor(colors.textSecondary)
+            typeface = Typeface.MONOSPACE
+            setLineSpacing(2.dp().toFloat(), 1f)
+            setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+            background = rounded(colors.surfaceContainer, 24.dp())
         }
 
-        root.addView(title)
-        root.addView(button(getString(R.string.post_live_test_notification)) {
-            postLiveTestNotification()
-        })
-        root.addView(button(getString(R.string.cancel_live_test_notification)) {
-            getSystemService(NotificationManager::class.java)
-                .cancel(TEST_LIVE_NOTIFICATION_ID)
-            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_canceled_live_test))
-            refreshStatus()
-        })
+        root.addView(title, blockParams(bottom = 18.dp()))
+        root.addView(
+            button(getString(R.string.post_live_test_notification)) {
+                postLiveTestNotification()
+            },
+            blockParams(top = 6.dp())
+        )
+        root.addView(
+            button(
+                label = getString(R.string.cancel_live_test_notification),
+                style = ButtonStyle.Tonal
+            ) {
+                getSystemService(NotificationManager::class.java)
+                    .cancel(TEST_LIVE_NOTIFICATION_ID)
+                AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_canceled_live_test))
+                refreshStatus()
+            },
+            blockParams(top = 10.dp())
+        )
         settingsContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 24, 0, 0)
+            setPadding(0, 20.dp(), 0, 0)
         }
         root.addView(settingsContainer)
-        root.addView(diagnosticsView)
+        root.addView(diagnosticsView, blockParams(top = 18.dp()))
 
-        return ScrollView(this).apply { addView(root) }
+        return scrollContent(root)
     }
 
     private fun applySystemBarPadding(view: View) {
+        val contentPadding = CONTENT_PADDING_DP.dp()
         view.setPadding(
-            CONTENT_PADDING,
-            CONTENT_PADDING,
-            CONTENT_PADDING,
-            CONTENT_PADDING
+            contentPadding,
+            contentPadding,
+            contentPadding,
+            contentPadding
         )
         view.setOnApplyWindowInsetsListener { target, insets ->
             val systemBars = insets.getInsets(WindowInsets.Type.systemBars())
             target.setPadding(
-                CONTENT_PADDING + systemBars.left,
-                CONTENT_PADDING + systemBars.top,
-                CONTENT_PADDING + systemBars.right,
-                CONTENT_PADDING + systemBars.bottom
+                contentPadding + systemBars.left,
+                contentPadding + systemBars.top,
+                contentPadding + systemBars.right,
+                contentPadding + systemBars.bottom
             )
             insets
         }
@@ -245,15 +311,236 @@ class MainActivity : Activity() {
 
     private fun button(
         label: String,
-        enabled: Boolean,
+        style: ButtonStyle,
         action: () -> Unit
     ): Button {
+        return button(label = label, enabled = true, style = style, action = action)
+    }
+
+    private fun button(
+        label: String,
+        enabled: Boolean,
+        style: ButtonStyle = ButtonStyle.Filled,
+        action: () -> Unit
+    ): Button {
+        val colors = palette()
         return Button(this).apply {
             text = label
             isEnabled = enabled
             setAllCaps(false)
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            minHeight = 56.dp()
+            minimumHeight = 56.dp()
+            minWidth = 0
+            minimumWidth = 0
+            maxLines = 2
+            gravity = Gravity.CENTER
+            setTextColor(buttonTextColors(style, colors))
+            setPadding(20.dp(), 8.dp(), 20.dp(), 8.dp())
+            background = buttonBackground(style, enabled, colors)
             setOnClickListener { action() }
         }
+    }
+
+    private fun contentRoot(): LinearLayout {
+        val colors = palette()
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(colors.background)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            applySystemBarPadding(this)
+        }
+    }
+
+    private fun scrollContent(root: LinearLayout): ScrollView {
+        return ScrollView(this).apply {
+            setBackgroundColor(palette().background)
+            clipToPadding = false
+            addView(
+                root,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+    }
+
+    private fun settingRow(enabled: Boolean): LinearLayout {
+        val colors = palette()
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = 68.dp()
+            setPadding(18.dp(), 12.dp(), 14.dp(), 12.dp())
+            background = rowBackground(enabled, colors)
+            isClickable = enabled
+            isFocusable = enabled
+            layoutParams = blockParams(bottom = 10.dp())
+        }
+    }
+
+    private fun blockParams(
+        top: Int = 0,
+        bottom: Int = 0
+    ): LinearLayout.LayoutParams {
+        return LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(0, top, 0, bottom)
+        }
+    }
+
+    private fun buttonTextColors(
+        style: ButtonStyle,
+        colors: UiPalette
+    ): ColorStateList {
+        val normal = when (style) {
+            ButtonStyle.Filled -> colors.onPrimary
+            ButtonStyle.Tonal -> colors.onSecondaryContainer
+        }
+        return ColorStateList(
+            arrayOf(
+                intArrayOf(-android.R.attr.state_enabled),
+                intArrayOf()
+            ),
+            intArrayOf(colors.textDisabled, normal)
+        )
+    }
+
+    private fun buttonBackground(
+        style: ButtonStyle,
+        enabled: Boolean,
+        colors: UiPalette
+    ): Drawable {
+        if (!enabled) {
+            return rounded(colors.disabledContainer, 28.dp())
+        }
+        val normal = when (style) {
+            ButtonStyle.Filled -> colors.primary
+            ButtonStyle.Tonal -> colors.secondaryContainer
+        }
+        val pressed = when (style) {
+            ButtonStyle.Filled -> colors.primaryPressed
+            ButtonStyle.Tonal -> blend(colors.primary, colors.secondaryContainer, 0.10f)
+        }
+        return RippleDrawable(
+            ColorStateList.valueOf(colors.ripple),
+            rounded(normal, 28.dp()),
+            rounded(pressed, 28.dp())
+        )
+    }
+
+    private fun rowBackground(
+        enabled: Boolean,
+        colors: UiPalette
+    ): Drawable {
+        val surface = if (enabled) colors.surfaceContainer else colors.surface
+        if (!enabled) {
+            return rounded(surface, 26.dp(), colors.disabledContainer, 1.dp())
+        }
+        return RippleDrawable(
+            ColorStateList.valueOf(colors.ripple),
+            rounded(surface, 26.dp(), colors.outline, 1.dp()),
+            rounded(surface, 26.dp())
+        )
+    }
+
+    private fun rounded(
+        color: Int,
+        radius: Int,
+        strokeColor: Int? = null,
+        strokeWidth: Int = 0
+    ): GradientDrawable {
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(color)
+            cornerRadius = radius.toFloat()
+            if (strokeColor != null && strokeWidth > 0) {
+                setStroke(strokeWidth, strokeColor)
+            }
+        }
+    }
+
+    private fun palette(): UiPalette {
+        val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return if (nightMode == Configuration.UI_MODE_NIGHT_YES) {
+            UiPalette(
+                background = systemColor(android.R.color.system_neutral1_900),
+                surface = systemColor(android.R.color.system_neutral1_900),
+                surfaceContainer = systemColor(android.R.color.system_neutral1_800),
+                surfaceContainerHigh = systemColor(android.R.color.system_neutral1_700),
+                primary = systemColor(android.R.color.system_accent1_200),
+                primaryPressed = systemColor(android.R.color.system_accent1_100),
+                onPrimary = systemColor(android.R.color.system_accent1_900),
+                secondaryContainer = systemColor(android.R.color.system_accent2_800),
+                onSecondaryContainer = systemColor(android.R.color.system_accent2_100),
+                outline = systemColor(android.R.color.system_neutral2_700),
+                textPrimary = systemColor(android.R.color.system_neutral1_100),
+                textSecondary = systemColor(android.R.color.system_neutral2_200),
+                textDisabled = systemColor(android.R.color.system_neutral2_500),
+                disabledContainer = systemColor(android.R.color.system_neutral1_800),
+                ripple = withAlpha(systemColor(android.R.color.system_neutral1_100), 28)
+            )
+        } else {
+            UiPalette(
+                background = systemColor(android.R.color.system_neutral1_10),
+                surface = systemColor(android.R.color.system_neutral1_10),
+                surfaceContainer = systemColor(android.R.color.system_neutral1_50),
+                surfaceContainerHigh = systemColor(android.R.color.system_neutral1_100),
+                primary = systemColor(android.R.color.system_accent1_600),
+                primaryPressed = systemColor(android.R.color.system_accent1_700),
+                onPrimary = systemColor(android.R.color.system_neutral1_10),
+                secondaryContainer = systemColor(android.R.color.system_accent2_100),
+                onSecondaryContainer = systemColor(android.R.color.system_accent2_900),
+                outline = systemColor(android.R.color.system_neutral2_200),
+                textPrimary = systemColor(android.R.color.system_neutral1_900),
+                textSecondary = systemColor(android.R.color.system_neutral2_700),
+                textDisabled = systemColor(android.R.color.system_neutral2_400),
+                disabledContainer = systemColor(android.R.color.system_neutral1_100),
+                ripple = withAlpha(systemColor(android.R.color.system_accent1_600), 34)
+            )
+        }
+    }
+
+    private fun systemColor(colorRes: Int): Int {
+        return getColor(colorRes)
+    }
+
+    private fun blend(
+        foreground: Int,
+        background: Int,
+        ratio: Float
+    ): Int {
+        val clamped = ratio.coerceIn(0f, 1f)
+        val inverse = 1f - clamped
+        return Color.rgb(
+            (Color.red(foreground) * clamped + Color.red(background) * inverse).roundToInt(),
+            (Color.green(foreground) * clamped + Color.green(background) * inverse).roundToInt(),
+            (Color.blue(foreground) * clamped + Color.blue(background) * inverse).roundToInt()
+        )
+    }
+
+    private fun withAlpha(color: Int, alpha: Int): Int {
+        return Color.argb(
+            alpha.coerceIn(0, 255),
+            Color.red(color),
+            Color.green(color),
+            Color.blue(color)
+        )
+    }
+
+    private fun Int.dp(): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            toFloat(),
+            resources.displayMetrics
+        ).roundToInt()
     }
 
     private fun refreshStatus() {
@@ -385,10 +672,14 @@ class MainActivity : Activity() {
     }
 
     private fun sectionTitle(text: String): TextView {
+        val colors = palette()
         return TextView(this).apply {
             this.text = text
-            textSize = 18f
-            setPadding(0, 16, 0, 8)
+            textSize = 14f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.primary)
+            includeFontPadding = false
+            setPadding(4.dp(), 24.dp(), 0, 10.dp())
         }
     }
 
@@ -397,13 +688,38 @@ class MainActivity : Activity() {
         checked: Boolean,
         enabled: Boolean = true,
         onChanged: (Boolean) -> Unit
-    ): CheckBox {
-        return CheckBox(this).apply {
+    ): View {
+        val colors = palette()
+        val row = settingRow(enabled)
+        val labelView = TextView(this).apply {
             text = label
-            isChecked = checked
-            isEnabled = enabled
-            setOnCheckedChangeListener { _, isChecked -> onChanged(isChecked) }
+            textSize = 16f
+            setTextColor(if (enabled) colors.textPrimary else colors.textDisabled)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
         }
+        val switch = switchIndicator(checked, enabled, colors).apply {
+            contentDescription = label
+        }
+
+        row.addView(labelView)
+        row.addView(
+            switch,
+            LinearLayout.LayoutParams(
+                58.dp(),
+                36.dp()
+            ).apply {
+                marginStart = 16.dp()
+            }
+        )
+        row.setOnClickListener {
+            if (enabled) onChanged(!checked)
+        }
+        return row
     }
 
     private fun <T> dropdown(
@@ -413,53 +729,151 @@ class MainActivity : Activity() {
         enabled: Boolean = true,
         display: (T) -> String = { it.toString() },
         onChanged: (T) -> Unit
-    ): LinearLayout {
+    ): View {
+        val colors = palette()
         val selectedIndex = values.indexOf(selected).coerceAtLeast(0)
-        val adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            values.map(display)
-        ).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
+        val labels = values.map(display)
 
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 4, 0, 8)
+        val row = settingRow(enabled)
+        row.apply {
             addView(TextView(this@MainActivity).apply {
                 text = label
                 isEnabled = enabled
+                textSize = 16f
+                setTextColor(if (enabled) colors.textPrimary else colors.textDisabled)
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     1f
                 )
             })
-            addView(Spinner(this@MainActivity).apply {
-                this.adapter = adapter
-                isEnabled = enabled
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                setSelection(selectedIndex, false)
-                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(
-                        parent: AdapterView<*>?,
-                        view: View?,
-                        position: Int,
-                        id: Long
-                    ) {
-                        val value = values.getOrNull(position) ?: return
-                        if (value != selected) {
-                            onChanged(value)
-                        }
-                    }
-
-                    override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            val selectedPill = dropdownPill(
+                label = labels.getOrElse(selectedIndex) { "" },
+                enabled = enabled,
+                colors = colors
+            )
+            val openMenu = {
+                if (enabled) {
+                    showDropdownMenu(
+                        anchor = selectedPill,
+                        labels = labels,
+                        values = values,
+                        selected = selected,
+                        onChanged = onChanged
+                    )
                 }
-            })
+            }
+            selectedPill.setOnClickListener { openMenu() }
+            addView(
+                selectedPill,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    48.dp()
+                ).apply { marginStart = 16.dp() }
+            )
+            setOnClickListener { openMenu() }
         }
+        return row
+    }
+
+    private fun dropdownPill(
+        label: String,
+        enabled: Boolean,
+        colors: UiPalette
+    ): TextView {
+        return TextView(this).apply {
+            text = label
+            textSize = 15f
+            setTextColor(if (enabled) colors.onSecondaryContainer else colors.textDisabled)
+            gravity = Gravity.CENTER_VERTICAL
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
+            minWidth = 108.dp()
+            maxWidth = 210.dp()
+            setPadding(16.dp(), 0, 14.dp(), 0)
+            background = pillBackground(enabled, colors)
+            compoundDrawablePadding = 8.dp()
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, android.R.drawable.arrow_down_float, 0)
+            compoundDrawableTintList = ColorStateList.valueOf(
+                if (enabled) colors.onSecondaryContainer else colors.textDisabled
+            )
+        }
+    }
+
+    private fun <T> showDropdownMenu(
+        anchor: View,
+        labels: List<String>,
+        values: List<T>,
+        selected: T,
+        onChanged: (T) -> Unit
+    ) {
+        PopupMenu(this, anchor).apply {
+            labels.forEachIndexed { index, label ->
+                menu.add(0, index, index, label).isChecked = values.getOrNull(index) == selected
+            }
+            setOnMenuItemClickListener { item ->
+                val value = values.getOrNull(item.itemId) ?: return@setOnMenuItemClickListener true
+                if (value != selected) {
+                    onChanged(value)
+                }
+                true
+            }
+            show()
+        }
+    }
+
+    private fun switchIndicator(
+        checked: Boolean,
+        enabled: Boolean,
+        colors: UiPalette
+    ): FrameLayout {
+        val trackColor = when {
+            !enabled -> colors.disabledContainer
+            checked -> colors.primary
+            else -> blend(colors.textSecondary, colors.surfaceContainerHigh, 0.40f)
+        }
+        val trackStroke = when {
+            checked -> null
+            enabled -> colors.outline
+            else -> colors.textDisabled
+        }
+        val thumbColor = when {
+            !enabled -> colors.textDisabled
+            checked -> colors.onPrimary
+            else -> colors.surface
+        }
+        return FrameLayout(this).apply {
+            isEnabled = enabled
+            background = rounded(trackColor, 18.dp(), trackStroke, 1.dp())
+            setPadding(4.dp(), 4.dp(), 4.dp(), 4.dp())
+            addView(
+                View(this@MainActivity).apply {
+                    background = rounded(thumbColor, 14.dp())
+                    elevation = if (enabled) 2.dp().toFloat() else 0f
+                },
+                FrameLayout.LayoutParams(28.dp(), 28.dp()).apply {
+                    gravity = if (checked) {
+                        Gravity.CENTER_VERTICAL or Gravity.END
+                    } else {
+                        Gravity.CENTER_VERTICAL or Gravity.START
+                    }
+                }
+            )
+        }
+    }
+
+    private fun pillBackground(
+        enabled: Boolean,
+        colors: UiPalette
+    ): Drawable {
+        if (!enabled) {
+            return rounded(colors.disabledContainer, 18.dp(), colors.outline, 1.dp())
+        }
+        return RippleDrawable(
+            ColorStateList.valueOf(colors.ripple),
+            rounded(colors.secondaryContainer, 18.dp(), colors.outline, 1.dp()),
+            rounded(colors.secondaryContainer, 18.dp())
+        )
     }
 
     private fun mediaChanged() {
@@ -510,7 +924,7 @@ class MainActivity : Activity() {
             .setLocalOnly(true)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setColor(Color.rgb(11, 110, 79))
+            .setColor(SystemColorPalette.primary(this))
             .setShortCriticalText("42%")
             .setStyle(style)
 
