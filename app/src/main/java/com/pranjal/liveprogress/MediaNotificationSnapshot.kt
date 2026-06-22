@@ -74,8 +74,12 @@ data class MediaNotificationSnapshot(
                 priorityMode = priorityMode,
                 sourceKey = source?.original?.key,
                 appLabel = appLabel,
-                artworkKey = artworkKey(state)
+                artworkKey = effectiveArtworkKey(artworkKey(state), aodVisible)
             )
+        }
+
+        internal fun effectiveArtworkKey(artworkKey: String?, aodVisible: Boolean): String? {
+            return if (aodVisible) null else artworkKey
         }
 
         private fun artworkKey(state: MediaState): String? {

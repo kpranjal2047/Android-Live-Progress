@@ -2,6 +2,7 @@ package com.pranjal.liveprogress
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MediaNotificationSnapshotTest {
@@ -29,6 +30,15 @@ class MediaNotificationSnapshotTest {
         assertNotEquals(snapshot, snapshot.copy(artworkKey = "artwork-2"))
         assertNotEquals(snapshot, snapshot.copy(aodVisible = false))
         assertNotEquals(snapshot, snapshot.copy(priorityMode = MirrorPriorityMode.LOW))
+    }
+
+    @Test
+    fun aodVisibleIgnoresArtworkKey() {
+        assertNull(MediaNotificationSnapshot.effectiveArtworkKey("artwork-1", aodVisible = true))
+        assertEquals(
+            "artwork-1",
+            MediaNotificationSnapshot.effectiveArtworkKey("artwork-1", aodVisible = false)
+        )
     }
 
     private fun snapshot(): MediaNotificationSnapshot {

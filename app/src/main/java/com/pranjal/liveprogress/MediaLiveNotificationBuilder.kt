@@ -125,7 +125,9 @@ object MediaLiveNotificationBuilder {
                 }
             }
 
-        builder.setLargeIcon(largeIcon(context, state))
+        if (!aodVisible) {
+            builder.setLargeIcon(largeIcon(context, state))
+        }
         builder.setProgress(progress.max, progress.progress, progress.indeterminate)
         builder
             .addAction(
