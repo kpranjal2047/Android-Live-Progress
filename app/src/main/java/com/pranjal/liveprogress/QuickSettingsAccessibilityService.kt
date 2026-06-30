@@ -2,12 +2,14 @@ package com.pranjal.liveprogress
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
+@SuppressLint("AccessibilityPolicy")
 class QuickSettingsAccessibilityService : AccessibilityService() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var lastScanUptimeMs = 0L
@@ -22,7 +24,6 @@ class QuickSettingsAccessibilityService : AccessibilityService() {
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
                 AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
-            packageNames = arrayOf("com.android.systemui")
             notificationTimeout = SCAN_THROTTLE_MS
         }
         VisibilityState.register(this)
@@ -30,7 +31,13 @@ class QuickSettingsAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (event.packageName?.toString() != "com.android.systemui") return
+        val packageName = event.packageName?.toString()
+        if (packageName.isNullOrBlank()) return
+        if (packageName != SYSTEM_UI_PACKAGE && event.isForegroundWindowEvent()) {
+            VisibilityState.setForegroundPackage(this, packageName)
+            return
+        }
+        if (packageName != SYSTEM_UI_PACKAGE) return
         if (eventSuggestsQuickSettings(event)) {
             VisibilityState.setQuickSettingsExpanded(this, true)
             requestQuickSettingsScan()
@@ -102,7 +109,13 @@ class QuickSettingsAccessibilityService : AccessibilityService() {
         return false
     }
 
+    private fun AccessibilityEvent.isForegroundWindowEvent(): Boolean {
+        return eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+            eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
+    }
+
     private companion object {
+        const val SYSTEM_UI_PACKAGE = "com.android.systemui"
         const val SCAN_THROTTLE_MS = 250L
     }
 }

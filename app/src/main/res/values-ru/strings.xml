@@ -35,6 +35,10 @@
     <string name="setting_language">Язык</string>
     <string name="setting_hide_mirrors_qs">Скрывать зеркальные уведомления при раскрытых быстрых настройках</string>
     <string name="setting_enable_progress_live_updates">Включить живые обновления прогресса</string>
+    <string name="setting_notification_categories">Категории уведомлений</string>
+    <string name="notification_categories_title">Категории уведомлений</string>
+    <string name="setting_always_mirror_categories_empty">Категории уведомлений приложений еще не обнаружены. Откройте приложения и дождитесь появления уведомлений здесь.</string>
+    <string name="setting_always_mirror_categories_unknown">Неизвестная категория</string>
     <string name="setting_show_progress_aod">Показывать зеркало прогресса на AOD</string>
     <string name="setting_show_progress_lock_screen">Показывать зеркало прогресса на экране блокировки</string>
     <string name="setting_hide_original_lock_screen">Скрывать исходное уведомление на экране блокировки</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Настройка AOD для прогресса изменена</string>
     <string name="diagnostic_progress_lock_changed">Настройка экрана блокировки для прогресса изменена</string>
     <string name="diagnostic_progress_suppression_changed">Настройка скрытия исходного уведомления прогресса изменена</string>
+    <string name="diagnostic_progress_category_selection_changed">Выбор категории прогресса изменен</string>
     <string name="diagnostic_media_settings_changed">Настройки медиа изменены</string>
     <string name="diagnostic_language_setting_changed">Язык изменен</string>
     <string name="diagnostic_notification_permission_required">Перед публикацией живого теста требуется разрешение на публикацию уведомлений.</string>

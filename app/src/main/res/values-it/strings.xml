@@ -35,6 +35,10 @@
     <string name="setting_language">Lingua</string>
     <string name="setting_hide_mirrors_qs">Nascondi notifiche replicate quando le impostazioni rapide sono espanse</string>
     <string name="setting_enable_progress_live_updates">Attiva aggiornamenti avanzamento in tempo reale</string>
+    <string name="setting_notification_categories">Categorie di notifica</string>
+    <string name="notification_categories_title">Categorie di notifica</string>
+    <string name="setting_always_mirror_categories_empty">Non sono ancora state osservate categorie di notifica delle app. Apri le app e attendi che le notifiche compaiano qui.</string>
+    <string name="setting_always_mirror_categories_unknown">Categoria sconosciuta</string>
     <string name="setting_show_progress_aod">Mostra replica avanzamento su AOD</string>
     <string name="setting_show_progress_lock_screen">Mostra replica avanzamento nella schermata di blocco</string>
     <string name="setting_hide_original_lock_screen">Nascondi notifica originale nella schermata di blocco</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Impostazione AOD avanzamento modificata</string>
     <string name="diagnostic_progress_lock_changed">Impostazione schermata di blocco avanzamento modificata</string>
     <string name="diagnostic_progress_suppression_changed">Impostazione occultamento notifica originale avanzamento modificata</string>
+    <string name="diagnostic_progress_category_selection_changed">Selezione categoria avanzamento modificata</string>
     <string name="diagnostic_media_settings_changed">Impostazioni multimediali modificate</string>
     <string name="diagnostic_language_setting_changed">Lingua modificata</string>
     <string name="diagnostic_notification_permission_required">È richiesto il permesso di pubblicare notifiche prima di pubblicare una prova in tempo reale.</string>

@@ -242,6 +242,7 @@ class MediaLiveController(
             screenOff = VisibilityState.screenOff,
             quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
             hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
+            sourceAppInForeground = VisibilityState.isSourcePackageInForeground(state.packageName),
             progressMirrorActive = progressMirrorActive,
             showOnAod = preferences.showOnAod,
             showOnLockScreen = preferences.showOnLockScreen

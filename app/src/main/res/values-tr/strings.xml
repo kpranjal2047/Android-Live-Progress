@@ -35,6 +35,10 @@
     <string name="setting_language">Dil</string>
     <string name="setting_hide_mirrors_qs">Hızlı Ayarlar genişletildiğinde yansıtılmış bildirimleri gizle</string>
     <string name="setting_enable_progress_live_updates">Canlı ilerleme güncellemelerini etkinleştir</string>
+    <string name="setting_notification_categories">Bildirim kategorileri</string>
+    <string name="notification_categories_title">Bildirim kategorileri</string>
+    <string name="setting_always_mirror_categories_empty">Henüz uygulama bildirim kategorisi görülmedi. Uygulamaları açın ve bildirimlerin burada görünmesini bekleyin.</string>
+    <string name="setting_always_mirror_categories_unknown">Bilinmeyen kategori</string>
     <string name="setting_show_progress_aod">AOD üzerinde ilerleme aynasını göster</string>
     <string name="setting_show_progress_lock_screen">Kilit ekranında ilerleme aynasını göster</string>
     <string name="setting_hide_original_lock_screen">Kilit ekranında asıl bildirimi gizle</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">İlerleme AOD ayarı değişti</string>
     <string name="diagnostic_progress_lock_changed">İlerleme kilit ekranı ayarı değişti</string>
     <string name="diagnostic_progress_suppression_changed">Orijinal ilerleme bildirimi gizleme ayarı değişti</string>
+    <string name="diagnostic_progress_category_selection_changed">İlerleme kategorisi seçimi değişti</string>
     <string name="diagnostic_media_settings_changed">Medya ayarları değişti</string>
     <string name="diagnostic_language_setting_changed">Dil değişti</string>
     <string name="diagnostic_notification_permission_required">Canlı test göndermeden önce bildirim gönderme izni gerekir.</string>

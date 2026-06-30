@@ -35,6 +35,10 @@
     <string name="setting_language">زبان</string>
     <string name="setting_hide_mirrors_qs">Quick Settings کھلنے پر مرر نوٹیفکیشنز چھپائیں</string>
     <string name="setting_enable_progress_live_updates">پروگریس لائیو اپڈیٹس چالو کریں</string>
+    <string name="setting_notification_categories">نوٹیفکیشن زمرے</string>
+    <string name="notification_categories_title">نوٹیفکیشن زمرے</string>
+    <string name="setting_always_mirror_categories_empty">ابھی تک کسی ایپ کا نوٹیفکیشن زمرہ نہیں ملا۔ ایپس کھولیں اور نوٹیفکیشنز کے یہاں آنے کا انتظار کریں۔</string>
+    <string name="setting_always_mirror_categories_unknown">نامعلوم زمرہ</string>
     <string name="setting_show_progress_aod">AOD پر پروگریس مرر دکھائیں</string>
     <string name="setting_show_progress_lock_screen">لاک اسکرین پر پروگریس مرر دکھائیں</string>
     <string name="setting_hide_original_lock_screen">لاک اسکرین پر اصل نوٹیفکیشن چھپائیں</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">پروگریس AOD سیٹنگ بدلی</string>
     <string name="diagnostic_progress_lock_changed">پروگریس لاک اسکرین سیٹنگ بدلی</string>
     <string name="diagnostic_progress_suppression_changed">اصل پروگریس نوٹیفکیشن چھپانے کی سیٹنگ بدلی</string>
+    <string name="diagnostic_progress_category_selection_changed">پروگریس زمرہ انتخاب بدل گیا</string>
     <string name="diagnostic_media_settings_changed">میڈیا سیٹنگز بدلیں</string>
     <string name="diagnostic_language_setting_changed">زبان بدلی</string>
     <string name="diagnostic_notification_permission_required">لائیو ٹیسٹ بھیجنے سے پہلے نوٹیفکیشن بھیجنے کی اجازت ضروری ہے۔</string>

@@ -35,6 +35,10 @@
     <string name="setting_language">اللغة</string>
     <string name="setting_hide_mirrors_qs">إخفاء الإشعارات المعكوسة عند توسيع الإعدادات السريعة</string>
     <string name="setting_enable_progress_live_updates">تفعيل تحديثات التقدم المباشرة</string>
+    <string name="setting_notification_categories">فئات الإشعارات</string>
+    <string name="notification_categories_title">فئات الإشعارات</string>
+    <string name="setting_always_mirror_categories_empty">لم تُرصد أي فئات إشعارات للتطبيقات بعد. افتح التطبيقات وانتظر ظهور إشعاراتها هنا.</string>
+    <string name="setting_always_mirror_categories_unknown">فئة غير معروفة</string>
     <string name="setting_show_progress_aod">إظهار عاكس التقدم على AOD</string>
     <string name="setting_show_progress_lock_screen">إظهار عاكس التقدم على شاشة القفل</string>
     <string name="setting_hide_original_lock_screen">إخفاء الإشعار الأصلي على شاشة القفل</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">تم تغيير إعداد AOD للتقدم</string>
     <string name="diagnostic_progress_lock_changed">تم تغيير إعداد شاشة قفل التقدم</string>
     <string name="diagnostic_progress_suppression_changed">تم تغيير إعداد إخفاء إشعار التقدم الأصلي</string>
+    <string name="diagnostic_progress_category_selection_changed">تم تغيير اختيار فئة التقدم</string>
     <string name="diagnostic_media_settings_changed">تم تغيير إعدادات الوسائط</string>
     <string name="diagnostic_language_setting_changed">تم تغيير اللغة</string>
     <string name="diagnostic_notification_permission_required">إذن نشر الإشعارات مطلوب قبل نشر اختبار مباشر.</string>

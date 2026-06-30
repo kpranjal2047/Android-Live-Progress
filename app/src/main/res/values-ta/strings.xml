@@ -35,6 +35,10 @@
     <string name="setting_language">மொழி</string>
     <string name="setting_hide_mirrors_qs">Quick Settings விரிந்தால் மிரர் அறிவிப்புகளை மறை</string>
     <string name="setting_enable_progress_live_updates">Progress லைவ் updates-ஐ இயக்கு</string>
+    <string name="setting_notification_categories">அறிவிப்பு வகைகள்</string>
+    <string name="notification_categories_title">அறிவிப்பு வகைகள்</string>
+    <string name="setting_always_mirror_categories_empty">இன்னும் எந்த app அறிவிப்பு வகையும் காணப்படவில்லை. Apps-ஐ திறந்து, அறிவிப்புகள் இங்கு தோன்ற காத்திருக்கவும்.</string>
+    <string name="setting_always_mirror_categories_unknown">தெரியாத வகை</string>
     <string name="setting_show_progress_aod">AOD-இல் progress மிரர் காட்டு</string>
     <string name="setting_show_progress_lock_screen">லாக் ஸ்கிரீனில் progress மிரர் காட்டு</string>
     <string name="setting_hide_original_lock_screen">பூட்டு திரையில் அசல் அறிவிப்பை மறை</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">முன்னேற்ற AOD அமைப்பு மாற்றப்பட்டது</string>
     <string name="diagnostic_progress_lock_changed">Progress lock screen setting மாற்றப்பட்டது</string>
     <string name="diagnostic_progress_suppression_changed">அசல் முன்னேற்ற அறிவிப்பு மறைப்பு அமைப்பு மாற்றப்பட்டது</string>
+    <string name="diagnostic_progress_category_selection_changed">முன்னேற்ற வகை தேர்வு மாற்றப்பட்டது</string>
     <string name="diagnostic_media_settings_changed">மீடியா settings மாற்றப்பட்டன</string>
     <string name="diagnostic_language_setting_changed">மொழி மாற்றப்பட்டது</string>
     <string name="diagnostic_notification_permission_required">லைவ் சோதனையை வெளியிடுவதற்கு முன் அறிவிப்பு வெளியிடும் அனுமதி தேவை.</string>

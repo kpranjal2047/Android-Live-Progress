@@ -16,6 +16,7 @@ object MediaVisibilityPolicy {
         screenOff: Boolean,
         quickSettingsExpanded: Boolean,
         hideWhenQuickSettingsExpanded: Boolean = true,
+        sourceAppInForeground: Boolean = false,
         progressMirrorActive: Boolean,
         showOnAod: Boolean,
         showOnLockScreen: Boolean
@@ -36,6 +37,10 @@ object MediaVisibilityPolicy {
                 showShortCriticalText = true,
                 reason = "screen off; mirror required"
             )
+        }
+
+        if (sourceAppInForeground) {
+            return hidden("source app foreground")
         }
 
         if (quickSettingsExpanded && hideWhenQuickSettingsExpanded) {

@@ -35,6 +35,10 @@
     <string name="setting_language">Bahasa</string>
     <string name="setting_hide_mirrors_qs">Sembunyikan notifikasi cermin saat Setelan Cepat terbuka</string>
     <string name="setting_enable_progress_live_updates">Aktifkan pembaruan kemajuan langsung</string>
+    <string name="setting_notification_categories">Kategori notifikasi</string>
+    <string name="notification_categories_title">Kategori notifikasi</string>
+    <string name="setting_always_mirror_categories_empty">Belum ada kategori notifikasi aplikasi yang terlihat. Buka aplikasi dan tunggu notifikasinya muncul di sini.</string>
+    <string name="setting_always_mirror_categories_unknown">Kategori tidak dikenal</string>
     <string name="setting_show_progress_aod">Tampilkan cermin progres di AOD</string>
     <string name="setting_show_progress_lock_screen">Tampilkan cermin progres di layar kunci</string>
     <string name="setting_hide_original_lock_screen">Sembunyikan notifikasi asli di layar kunci</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Setelan AOD progres berubah</string>
     <string name="diagnostic_progress_lock_changed">Setelan layar kunci progres berubah</string>
     <string name="diagnostic_progress_suppression_changed">Setelan sembunyikan notifikasi progres asli berubah</string>
+    <string name="diagnostic_progress_category_selection_changed">Pilihan kategori progres berubah</string>
     <string name="diagnostic_media_settings_changed">Setelan media berubah</string>
     <string name="diagnostic_language_setting_changed">Bahasa berubah</string>
     <string name="diagnostic_notification_permission_required">Izin mengirim notifikasi diperlukan sebelum mengirim percobaan langsung.</string>

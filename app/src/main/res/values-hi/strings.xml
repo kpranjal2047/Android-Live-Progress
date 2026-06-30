@@ -35,6 +35,10 @@
     <string name="setting_language">भाषा</string>
     <string name="setting_hide_mirrors_qs">Quick Settings खुली होने पर मिरर नोटिफिकेशन छिपाएं</string>
     <string name="setting_enable_progress_live_updates">प्रोग्रेस लाइव अपडेट चालू करें</string>
+    <string name="setting_notification_categories">नोटिफिकेशन श्रेणियां</string>
+    <string name="notification_categories_title">नोटिफिकेशन श्रेणियां</string>
+    <string name="setting_always_mirror_categories_empty">अभी तक कोई ऐप नोटिफिकेशन श्रेणी नहीं दिखी। ऐप खोलें और नोटिफिकेशन आने दें।</string>
+    <string name="setting_always_mirror_categories_unknown">अज्ञात श्रेणी</string>
     <string name="setting_show_progress_aod">AOD पर प्रोग्रेस मिरर दिखाएं</string>
     <string name="setting_show_progress_lock_screen">लॉक स्क्रीन पर प्रोग्रेस मिरर दिखाएं</string>
     <string name="setting_hide_original_lock_screen">लॉक स्क्रीन पर मूल सूचना छिपाएं</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">प्रोग्रेस AOD सेटिंग बदली</string>
     <string name="diagnostic_progress_lock_changed">प्रोग्रेस लॉक स्क्रीन सेटिंग बदली</string>
     <string name="diagnostic_progress_suppression_changed">मूल प्रोग्रेस नोटिफिकेशन छिपाने की सेटिंग बदली</string>
+    <string name="diagnostic_progress_category_selection_changed">प्रोग्रेस श्रेणी चयन बदला</string>
     <string name="diagnostic_media_settings_changed">मीडिया सेटिंग बदली</string>
     <string name="diagnostic_language_setting_changed">भाषा सेटिंग बदली</string>
     <string name="diagnostic_notification_permission_required">लाइव टेस्ट भेजने से पहले नोटिफिकेशन भेजने की अनुमति जरूरी है।</string>

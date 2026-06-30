@@ -35,6 +35,10 @@
     <string name="setting_language">Ngôn ngữ</string>
     <string name="setting_hide_mirrors_qs">Ẩn thông báo phản chiếu khi Cài đặt nhanh được mở rộng</string>
     <string name="setting_enable_progress_live_updates">Bật cập nhật tiến trình trực tiếp</string>
+    <string name="setting_notification_categories">Danh mục thông báo</string>
+    <string name="notification_categories_title">Danh mục thông báo</string>
+    <string name="setting_always_mirror_categories_empty">Chưa quan sát thấy danh mục thông báo ứng dụng nào. Hãy mở ứng dụng và chờ thông báo xuất hiện tại đây.</string>
+    <string name="setting_always_mirror_categories_unknown">Danh mục không xác định</string>
     <string name="setting_show_progress_aod">Hiển thị phản chiếu tiến trình trên AOD</string>
     <string name="setting_show_progress_lock_screen">Hiển thị phản chiếu tiến trình trên màn hình khóa</string>
     <string name="setting_hide_original_lock_screen">Ẩn thông báo gốc trên màn hình khóa</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Cài đặt AOD tiến trình đã thay đổi</string>
     <string name="diagnostic_progress_lock_changed">Cài đặt màn hình khóa tiến trình đã thay đổi</string>
     <string name="diagnostic_progress_suppression_changed">Cài đặt ẩn thông báo tiến trình gốc đã thay đổi</string>
+    <string name="diagnostic_progress_category_selection_changed">Lựa chọn danh mục tiến trình đã thay đổi</string>
     <string name="diagnostic_media_settings_changed">Cài đặt phương tiện đã thay đổi</string>
     <string name="diagnostic_language_setting_changed">Ngôn ngữ đã thay đổi</string>
     <string name="diagnostic_notification_permission_required">Cần quyền đăng thông báo trước khi đăng thử nghiệm trực tiếp.</string>

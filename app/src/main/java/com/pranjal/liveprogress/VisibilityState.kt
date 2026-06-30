@@ -24,6 +24,10 @@ object VisibilityState {
     var screenOff: Boolean = false
         private set
 
+    @Volatile
+    var foregroundPackageName: String? = null
+        private set
+
     private val listeners = CopyOnWriteArraySet<() -> Unit>()
     private val mainHandler = Handler(Looper.getMainLooper())
     private var receiverRegistered = false
@@ -57,6 +61,14 @@ object VisibilityState {
         notifyListeners()
     }
 
+    fun setForegroundPackage(context: Context, packageName: String?) {
+        val normalized = packageName?.takeIf { it.isNotBlank() }
+        if (foregroundPackageName == normalized) return
+        foregroundPackageName = normalized
+        AppDiagnostics.note(context, "visibility", "Foreground app=${normalized ?: "unknown"}")
+        notifyListeners()
+    }
+
     fun refreshLockState(context: Context) {
         refreshLockState(context, forceNotifyIfUnlocked = false)
     }
@@ -76,14 +88,23 @@ object VisibilityState {
 
     fun shouldShowMirror(
         context: Context,
-        hideWhenQuickSettingsExpanded: Boolean = true
+        hideWhenQuickSettingsExpanded: Boolean = true,
+        sourcePackageName: String? = null
     ): Boolean {
         refreshLockState(context)
         return MirrorVisibilityPolicy.shouldShow(
             locked = locked,
             quickSettingsExpanded = quickSettingsExpanded,
-            hideWhenQuickSettingsExpanded = hideWhenQuickSettingsExpanded
+            hideWhenQuickSettingsExpanded = hideWhenQuickSettingsExpanded,
+            sourceAppInForeground = isSourcePackageInForeground(sourcePackageName)
         )
+    }
+
+    fun isSourcePackageInForeground(sourcePackageName: String?): Boolean {
+        return !locked &&
+            !screenOff &&
+            !sourcePackageName.isNullOrBlank() &&
+            sourcePackageName == foregroundPackageName
     }
 
     private fun notifyListeners() {

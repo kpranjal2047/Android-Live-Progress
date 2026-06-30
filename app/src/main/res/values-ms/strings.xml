@@ -35,6 +35,10 @@
     <string name="setting_language">Bahasa</string>
     <string name="setting_hide_mirrors_qs">Sembunyikan pemberitahuan cermin apabila Tetapan Pantas dikembangkan</string>
     <string name="setting_enable_progress_live_updates">Dayakan kemas kini kemajuan langsung</string>
+    <string name="setting_notification_categories">Kategori pemberitahuan</string>
+    <string name="notification_categories_title">Kategori pemberitahuan</string>
+    <string name="setting_always_mirror_categories_empty">Tiada kategori pemberitahuan apl diperhatikan lagi. Buka apl dan tunggu pemberitahuan muncul di sini.</string>
+    <string name="setting_always_mirror_categories_unknown">Kategori tidak diketahui</string>
     <string name="setting_show_progress_aod">Tunjukkan cermin kemajuan pada AOD</string>
     <string name="setting_show_progress_lock_screen">Tunjukkan cermin kemajuan pada skrin kunci</string>
     <string name="setting_hide_original_lock_screen">Sembunyikan pemberitahuan asal pada skrin kunci</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Tetapan AOD kemajuan berubah</string>
     <string name="diagnostic_progress_lock_changed">Tetapan skrin kunci kemajuan berubah</string>
     <string name="diagnostic_progress_suppression_changed">Tetapan sembunyikan pemberitahuan kemajuan asal berubah</string>
+    <string name="diagnostic_progress_category_selection_changed">Pilihan kategori kemajuan berubah</string>
     <string name="diagnostic_media_settings_changed">Tetapan media berubah</string>
     <string name="diagnostic_language_setting_changed">Bahasa berubah</string>
     <string name="diagnostic_notification_permission_required">Kebenaran menyiarkan pemberitahuan diperlukan sebelum menyiarkan ujian langsung.</string>

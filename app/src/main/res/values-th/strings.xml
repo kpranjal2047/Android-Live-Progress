@@ -35,6 +35,10 @@
     <string name="setting_language">ภาษา</string>
     <string name="setting_hide_mirrors_qs">ซ่อนการแจ้งเตือนที่สะท้อนเมื่อการตั้งค่าด่วนถูกขยาย</string>
     <string name="setting_enable_progress_live_updates">เปิดการอัปเดตความคืบหน้าแบบสด</string>
+    <string name="setting_notification_categories">หมวดหมู่การแจ้งเตือน</string>
+    <string name="notification_categories_title">หมวดหมู่การแจ้งเตือน</string>
+    <string name="setting_always_mirror_categories_empty">ยังไม่พบหมวดหมู่การแจ้งเตือนของแอป เปิดแอปและรอให้การแจ้งเตือนปรากฏที่นี่</string>
+    <string name="setting_always_mirror_categories_unknown">หมวดหมู่ที่ไม่รู้จัก</string>
     <string name="setting_show_progress_aod">แสดงมิเรอร์ความคืบหน้าบน AOD</string>
     <string name="setting_show_progress_lock_screen">แสดงมิเรอร์ความคืบหน้าบนหน้าจอล็อก</string>
     <string name="setting_hide_original_lock_screen">ซ่อนการแจ้งเตือนต้นฉบับบนหน้าจอล็อก</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">เปลี่ยนการตั้งค่า AOD ความคืบหน้าแล้ว</string>
     <string name="diagnostic_progress_lock_changed">เปลี่ยนการตั้งค่าหน้าจอล็อกความคืบหน้าแล้ว</string>
     <string name="diagnostic_progress_suppression_changed">เปลี่ยนการตั้งค่าซ่อนการแจ้งเตือนความคืบหน้าต้นฉบับแล้ว</string>
+    <string name="diagnostic_progress_category_selection_changed">เปลี่ยนการเลือกหมวดหมู่ความคืบหน้าแล้ว</string>
     <string name="diagnostic_media_settings_changed">เปลี่ยนการตั้งค่าสื่อแล้ว</string>
     <string name="diagnostic_language_setting_changed">เปลี่ยนภาษาแล้ว</string>
     <string name="diagnostic_notification_permission_required">ต้องมีสิทธิ์ส่งการแจ้งเตือนก่อนส่งการทดสอบแบบสด</string>

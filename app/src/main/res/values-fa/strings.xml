@@ -35,6 +35,10 @@
     <string name="setting_language">زبان</string>
     <string name="setting_hide_mirrors_qs">هنگام باز بودن تنظیمات سریع، اعلان‌های بازتابی را پنهان کن</string>
     <string name="setting_enable_progress_live_updates">به‌روزرسانی‌های پیشرفت زنده را فعال کن</string>
+    <string name="setting_notification_categories">دسته‌های اعلان</string>
+    <string name="notification_categories_title">دسته‌های اعلان</string>
+    <string name="setting_always_mirror_categories_empty">هنوز هیچ دسته اعلان برنامه‌ای دیده نشده است. برنامه‌ها را باز کن و منتظر بمان اعلان‌ها اینجا ظاهر شوند.</string>
+    <string name="setting_always_mirror_categories_unknown">دسته ناشناخته</string>
     <string name="setting_show_progress_aod">بازتاب پیشرفت را روی AOD نشان بده</string>
     <string name="setting_show_progress_lock_screen">بازتاب پیشرفت را روی صفحه قفل نشان بده</string>
     <string name="setting_hide_original_lock_screen">اعلان اصلی را روی صفحه قفل پنهان کن</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">تنظیم AOD پیشرفت تغییر کرد</string>
     <string name="diagnostic_progress_lock_changed">تنظیم صفحه قفل پیشرفت تغییر کرد</string>
     <string name="diagnostic_progress_suppression_changed">تنظیم پنهان کردن اعلان اصلی پیشرفت تغییر کرد</string>
+    <string name="diagnostic_progress_category_selection_changed">انتخاب دسته پیشرفت تغییر کرد</string>
     <string name="diagnostic_media_settings_changed">تنظیمات رسانه تغییر کرد</string>
     <string name="diagnostic_language_setting_changed">زبان تغییر کرد</string>
     <string name="diagnostic_notification_permission_required">پیش از فرستادن آزمون زنده، اجازه فرستادن اعلان لازم است.</string>

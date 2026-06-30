@@ -35,6 +35,10 @@
     <string name="setting_language">언어</string>
     <string name="setting_hide_mirrors_qs">빠른 설정이 펼쳐지면 복제 알림 숨기기</string>
     <string name="setting_enable_progress_live_updates">실시간 진행 업데이트 켜기</string>
+    <string name="setting_notification_categories">알림 카테고리</string>
+    <string name="notification_categories_title">알림 카테고리</string>
+    <string name="setting_always_mirror_categories_empty">아직 관찰된 앱 알림 카테고리가 없습니다. 앱을 열고 알림이 여기에 나타날 때까지 기다리세요.</string>
+    <string name="setting_always_mirror_categories_unknown">알 수 없는 카테고리</string>
     <string name="setting_show_progress_aod">AOD에 진행 미러 표시</string>
     <string name="setting_show_progress_lock_screen">잠금 화면에 진행 미러 표시</string>
     <string name="setting_hide_original_lock_screen">잠금 화면에서 원본 알림 숨기기</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">진행 AOD 설정이 변경됨</string>
     <string name="diagnostic_progress_lock_changed">진행 잠금 화면 설정이 변경됨</string>
     <string name="diagnostic_progress_suppression_changed">원본 진행 알림 숨김 설정이 변경됨</string>
+    <string name="diagnostic_progress_category_selection_changed">진행 카테고리 선택이 변경됨</string>
     <string name="diagnostic_media_settings_changed">미디어 설정이 변경됨</string>
     <string name="diagnostic_language_setting_changed">언어가 변경됨</string>
     <string name="diagnostic_notification_permission_required">실시간 시험을 보내기 전에 알림 보내기 권한이 필요합니다.</string>

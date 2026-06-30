@@ -27,7 +27,7 @@
 
 It helps you glance at:
 
-- 📊 Download, upload, delivery, ride, shopping, and navigation progress
+- 📊 Download, upload, and other real progress notifications
 - 🎵 Current media playback with title, time, and controls
 - 🌙 Always-on display updates while the screen is off
 - 🔒 Optional lock screen mirrors
@@ -42,10 +42,11 @@ The app keeps the original notification active so updates continue normally.
 ### 📊 Progress Mirrors
 
 - Shows eligible progress notifications as Android 16 live updates.
-- Displays progress percentage in the status bar.
+- Displays progress percentage in the status bar when the original notification provides real progress.
 - Keeps expanded mirror content updated in real time.
 - Supports multiple progress notifications.
 - Can optionally show progress mirrors on the lock screen and AOD.
+- Hides the mirror while the source app is open, when foreground detection is available.
 
 ### 🎵 Media Live Updates
 
@@ -53,21 +54,18 @@ The app keeps the original notification active so updates continue normally.
 - Supports status bar text modes: **Title**, **Elapsed**, and **Remaining**.
 - Shows media progress and playback actions.
 - Can show media progress on AOD.
+- Hides the mirror while the media app is open, when foreground detection is available.
 - Automatically hides media mirrors when a progress mirror is active.
 
-### 🧩 Extra App Support
+### 🧩 Notification Category Picker
 
-Some apps use custom notifications instead of standard progress bars. Live Progress includes best-effort support for selected popular apps:
+Some apps use useful custom notification categories without exposing real Android progress. Live Progress lets you open a dedicated **Notification categories** page from Progress settings and choose which observed categories should always mirror as live updates.
 
-| Category | Apps |
-| :--- | :--- |
-| 🚕 Ride / mobility | Uber, Lyft, Ola, Rapido, Grab, Gojek |
-| 🍔 Food delivery | Uber Eats, DoorDash, Swiggy, Zomato, Deliveroo, Grubhub |
-| 🛒 Grocery / quick commerce | Blinkit, Zepto, Instacart |
-| 📦 Shopping delivery | Amazon Shopping, Flipkart |
-| 🗺️ Navigation | Google Maps, Waze |
-
-These fallbacks are approximate and only apply to active status notifications. Promotions, receipts, completed orders, login alerts, and payment messages are ignored.
+- Categories appear after Live Progress has observed notifications from those apps.
+- Selected categories mirror as indeterminate live updates when the original has no real progress.
+- If a selected category later exposes real progress, the mirror shows that real progress.
+- Media notifications still use the media mirror path and are not converted into progress mirrors.
+- Live Progress does not guess percentages from notification text.
 
 ### 🎨 Native Look
 
@@ -83,6 +81,7 @@ These fallbacks are approximate and only apply to active status notifications. P
 | Surface | Progress | Media |
 | :--- | :--- | :--- |
 | 🔓 Unlocked | Shows live mirror | Shows live mirror unless progress is active |
+| 📱 Source app open | Hidden when foreground detection is available | Hidden when foreground detection is available |
 | ⚙️ Quick Settings expanded | Can hide mirror | Can hide mirror |
 | 🔒 Lock screen | Optional | Optional |
 | 🌙 AOD / screen off | Optional | Optional unless progress is active |
@@ -100,7 +99,7 @@ Live Progress asks for permissions only when needed.
 | 🔔 Notifications | Posts mirrored live updates and test notifications. |
 | ⭐ Live notification access | Enables Android 16 promoted/live notification behavior. |
 | 👂 Notification listener | Reads eligible notifications from other apps. |
-| ⚙️ Accessibility service | Optional. Detects expanded Quick Settings so mirrors can hide while QS is open. |
+| ⚙️ Accessibility service | Optional. Detects expanded Quick Settings and foreground apps so mirrors can hide when they should. |
 | 🧰 Shizuku | Optional. Helps hide original progress notifications on the lock screen when enabled. |
 
 Live Progress does **not** use root.
@@ -128,6 +127,7 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 ### Progress
 
 - Enable progress live updates
+- Notification categories
 - Show progress mirror on AOD
 - Show progress mirror on lock screen
 - Hide original notification on lock screen, when supported
@@ -146,9 +146,10 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 
 - Android 16 / API 36+ is required.
 - Some manufacturers may customize live notification behavior.
+- Hiding mirrors while the source app is open requires the optional accessibility service.
 - Original notification hiding is best-effort and may not work for every app or device.
 - Custom notification layouts are not copied exactly.
-- App-specific progress detection is approximate when the source app does not expose a real progress bar.
+- User-selected notification categories mirror as indeterminate updates unless the original notification exposes real progress.
 
 ---
 

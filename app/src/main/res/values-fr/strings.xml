@@ -35,6 +35,10 @@
     <string name="setting_language">Langue</string>
     <string name="setting_hide_mirrors_qs">Masquer les notifications miroirs lorsque les réglages rapides sont ouverts</string>
     <string name="setting_enable_progress_live_updates">Activer les mises à jour de progression en direct</string>
+    <string name="setting_notification_categories">Catégories de notifications</string>
+    <string name="notification_categories_title">Catégories de notifications</string>
+    <string name="setting_always_mirror_categories_empty">Aucune catégorie de notification d’app n’a encore été observée. Ouvrez des apps et attendez que leurs notifications apparaissent ici.</string>
+    <string name="setting_always_mirror_categories_unknown">Catégorie inconnue</string>
     <string name="setting_show_progress_aod">Afficher le miroir de progression sur AOD</string>
     <string name="setting_show_progress_lock_screen">Afficher le miroir de progression sur l’écran de verrouillage</string>
     <string name="setting_hide_original_lock_screen">Masquer la notification originale sur l’écran de verrouillage</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Réglage AOD de progression modifié</string>
     <string name="diagnostic_progress_lock_changed">Réglage de verrouillage de progression modifié</string>
     <string name="diagnostic_progress_suppression_changed">Réglage de masquage de la notification originale modifié</string>
+    <string name="diagnostic_progress_category_selection_changed">Sélection des catégories de progression modifiée</string>
     <string name="diagnostic_media_settings_changed">Réglages média modifiés</string>
     <string name="diagnostic_language_setting_changed">Langue modifiée</string>
     <string name="diagnostic_notification_permission_required">L’autorisation de publier des notifications est requise avant de publier un test en direct.</string>

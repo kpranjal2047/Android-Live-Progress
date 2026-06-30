@@ -547,7 +547,11 @@ class MainActivity : Activity() {
         val progressPreferences = ProgressPreferences(this)
         val mediaPreferences = MediaPreferences(this)
         val visibilityPreferences = VisibilityPreferences(this)
-        rebuildSettings(progressPreferences, mediaPreferences, visibilityPreferences)
+        rebuildSettings(
+            progressPreferences,
+            mediaPreferences,
+            visibilityPreferences
+        )
         diagnosticsView.text = AppDiagnostics.snapshot(this)
             .joinToString(separator = "\n") { (key, value) -> "$key: $value" }
     }
@@ -595,6 +599,12 @@ class MainActivity : Activity() {
             progressPreferences.enabled = it
             AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_enabled_changed))
             progressChanged()
+        })
+        settingsContainer.addView(settingNavigationRow(
+            label = getString(R.string.setting_notification_categories),
+            enabled = progressPreferences.enabled
+        ) {
+            startActivity(Intent(this, NotificationChannelSelectionActivity::class.java))
         })
         settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_show_progress_aod),
@@ -718,6 +728,48 @@ class MainActivity : Activity() {
         )
         row.setOnClickListener {
             if (enabled) onChanged(!checked)
+        }
+        return row
+    }
+
+    private fun settingNavigationRow(
+        label: String,
+        enabled: Boolean = true,
+        onClick: () -> Unit
+    ): View {
+        val colors = palette()
+        val row = settingRow(enabled)
+        val labelView = TextView(this).apply {
+            text = label
+            textSize = 16f
+            setTextColor(if (enabled) colors.textPrimary else colors.textDisabled)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        }
+        val arrow = TextView(this).apply {
+            text = ">"
+            textSize = 22f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(if (enabled) colors.textSecondary else colors.textDisabled)
+            gravity = Gravity.CENTER
+        }
+
+        row.addView(labelView)
+        row.addView(
+            arrow,
+            LinearLayout.LayoutParams(
+                32.dp(),
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginStart = 16.dp()
+            }
+        )
+        row.setOnClickListener {
+            if (enabled) onClick()
         }
         return row
     }

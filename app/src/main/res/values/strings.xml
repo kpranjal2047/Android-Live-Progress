@@ -3,7 +3,7 @@
     <string name="notification_listener_label">Live Progress Notification Mirror</string>
     <string name="notification_assistant_label">Live Progress Notification Assistant</string>
     <string name="accessibility_service_label">Live Progress QS Detector</string>
-    <string name="accessibility_service_description">Detects whether quick settings is expanded so mirrored live progress notifications can be hidden while the shade is open.</string>
+    <string name="accessibility_service_description">Detects Quick Settings and foreground apps so mirrored live progress notifications can be hidden at the right time.</string>
     <string name="mirror_channel_name">Mirrored live progress</string>
     <string name="mirror_channel_description">Live progress notifications mirrored from other apps.</string>
     <string name="media_channel_name">Media live updates</string>
@@ -18,7 +18,7 @@
     <string name="setup_listener_reason">Live Progress needs notification listener access to read eligible progress and media notifications.</string>
     <string name="setup_listener_action">Open notification listener settings</string>
     <string name="setup_accessibility_title">Enable Quick Settings detection</string>
-    <string name="setup_accessibility_reason">Enable this only if you want Live Progress to hide mirrored notifications when Quick Settings is expanded. Skip turns that setting off.</string>
+    <string name="setup_accessibility_reason">Enable this only if you want Live Progress to hide mirrored notifications when Quick Settings is expanded and when the source app is open. Skip turns Quick Settings hiding off.</string>
     <string name="setup_accessibility_action">Open accessibility settings</string>
     <string name="setup_shizuku_title">Grant Shizuku permission</string>
     <string name="setup_shizuku_reason">Grant this only if you want Live Progress to hide original progress notifications on the lock screen. Skip turns that setting off.</string>
@@ -35,6 +35,10 @@
     <string name="setting_language">Language</string>
     <string name="setting_hide_mirrors_qs">Hide mirrored notifications when Quick Settings is expanded</string>
     <string name="setting_enable_progress_live_updates">Enable progress live updates</string>
+    <string name="setting_notification_categories">Notification categories</string>
+    <string name="notification_categories_title">Notification categories</string>
+    <string name="setting_always_mirror_categories_empty">No app notification categories observed yet. Open apps and wait for notifications to appear here.</string>
+    <string name="setting_always_mirror_categories_unknown">Unknown category</string>
     <string name="setting_show_progress_aod">Show progress mirror on AOD</string>
     <string name="setting_show_progress_lock_screen">Show progress mirror on lock screen</string>
     <string name="setting_hide_original_lock_screen">Hide original notification on lock screen</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Progress AOD setting changed</string>
     <string name="diagnostic_progress_lock_changed">Progress lock screen setting changed</string>
     <string name="diagnostic_progress_suppression_changed">Progress original suppression setting changed</string>
+    <string name="diagnostic_progress_category_selection_changed">Progress category selection changed</string>
     <string name="diagnostic_media_settings_changed">Media settings changed</string>
     <string name="diagnostic_language_setting_changed">Language setting changed</string>
     <string name="diagnostic_notification_permission_required">Notification posting permission is required before posting a live test.</string>

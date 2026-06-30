@@ -15,6 +15,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private lateinit var notificationManager: NotificationManager
     private lateinit var mediaLiveController: MediaLiveController
     private lateinit var progressPreferences: ProgressPreferences
+    private lateinit var categoryPreferences: NotificationCategoryPreferences
     private lateinit var visibilityPreferences: VisibilityPreferences
     private var progressMirrorActive = false
     private var lastRefreshUptimeMs = 0L
@@ -49,6 +50,7 @@ class NotificationMirrorService : NotificationListenerService() {
         super.onCreate()
         notificationManager = getSystemService(NotificationManager::class.java)
         progressPreferences = ProgressPreferences(this)
+        categoryPreferences = NotificationCategoryPreferences(this)
         visibilityPreferences = VisibilityPreferences(this)
         MirrorNotificationBuilder.ensureChannel(this)
         mediaLiveController = MediaLiveController(this, notificationManager)
@@ -82,14 +84,14 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        handlePosted(sbn)
+        handlePosted(sbn, rankingMap = null)
     }
 
     override fun onNotificationPosted(
         sbn: StatusBarNotification,
         rankingMap: RankingMap
     ) {
-        handlePosted(sbn)
+        handlePosted(sbn, rankingMap)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
@@ -117,6 +119,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun refreshActiveNotifications(reason: String) {
         lastRefreshUptimeMs = SystemClock.uptimeMillis()
         val active = activeNotificationsSnapshot(reason)
+        val rankingMap = currentRankingMap(reason)
         AppDiagnostics.note(
             this,
             "listener",
@@ -125,6 +128,7 @@ class NotificationMirrorService : NotificationListenerService() {
         if (!progressPreferences.enabled) {
             clearProgressMirrors("progress live updates disabled")
             active.forEach { sbn ->
+                observeNotificationCategory(sbn, rankingMap)
                 mediaLiveController.onNotificationPosted(sbn)
             }
             publishProgressMirrorActivity()
@@ -133,8 +137,10 @@ class NotificationMirrorService : NotificationListenerService() {
         }
         candidates.clear()
         active.forEach { sbn ->
+            observeNotificationCategory(sbn, rankingMap)
             mediaLiveController.onNotificationPosted(sbn)
-            NotificationClassifier.toCandidate(this, sbn)?.let { candidates[it.key] = it }
+            NotificationClassifier.toCandidate(this, sbn, ::isSelectedNotificationCategory)
+                ?.let { candidates[it.key] = it }
         }
         AppDiagnostics.note(
             this,
@@ -144,13 +150,17 @@ class NotificationMirrorService : NotificationListenerService() {
         reconcileVisibility()
     }
 
-    private fun handlePosted(sbn: StatusBarNotification) {
+    private fun handlePosted(
+        sbn: StatusBarNotification,
+        rankingMap: RankingMap?
+    ) {
+        observeNotificationCategory(sbn, rankingMap)
         mediaLiveController.onNotificationPosted(sbn)
         if (!progressPreferences.enabled) {
             removeMirrorFor(sbn)
             return
         }
-        val candidate = NotificationClassifier.toCandidate(this, sbn)
+        val candidate = NotificationClassifier.toCandidate(this, sbn, ::isSelectedNotificationCategory)
         if (candidate == null) {
             removeMirrorFor(sbn)
             return
@@ -228,6 +238,7 @@ class NotificationMirrorService : NotificationListenerService() {
 
     private fun onProgressPreferencesChanged() {
         progressPreferences = ProgressPreferences(this)
+        categoryPreferences = NotificationCategoryPreferences(this)
         progressSnapshotsByKey.clear()
         progressUseSourceIconByKey.clear()
         if (!progressPreferences.enabled) {
@@ -244,18 +255,28 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     private fun applyVisibility(candidate: MirrorCandidate) {
-        if (!VisibilityState.shouldShowMirror(
-                this,
-                visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded
+        VisibilityState.refreshLockState(this)
+        val sourceAppInForeground = VisibilityState.isSourcePackageInForeground(candidate.packageName)
+        if (!MirrorVisibilityPolicy.shouldShow(
+                locked = VisibilityState.locked,
+                quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
+                hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
+                sourceAppInForeground = sourceAppInForeground
             )
         ) {
-            OriginalSuppressionController.restoreAll(this, "mirror hidden while quick settings is expanded")
+            val hiddenState = if (sourceAppInForeground) "hidden:foreground" else "hidden:qs"
+            val hiddenReason = if (sourceAppInForeground) {
+                "source app is foreground"
+            } else {
+                "quick settings is expanded"
+            }
+            OriginalSuppressionController.restoreAll(this, "mirror hidden while $hiddenReason")
             notificationManager.cancel(candidate.notificationId)
             clearProgressSnapshot(candidate.key)
             noteMirrorVisibility(
                 candidate,
-                "hidden:qs",
-                "Mirror hidden while quick settings is expanded for ${candidate.appLabel}"
+                hiddenState,
+                "Mirror hidden while $hiddenReason for ${candidate.appLabel}"
             )
             return
         }
@@ -451,6 +472,58 @@ class NotificationMirrorService : NotificationListenerService() {
             )
             emptyArray()
         }
+    }
+
+    private fun currentRankingMap(reason: String): RankingMap? {
+        return try {
+            currentRanking
+        } catch (error: SecurityException) {
+            AppDiagnostics.note(
+                this,
+                "listener",
+                "Unable to read notification ranking; reason=$reason; ${error.shortMessage()}"
+            )
+            null
+        }
+    }
+
+    private fun observeNotificationCategory(
+        sbn: StatusBarNotification,
+        rankingMap: RankingMap?
+    ) {
+        if (sbn.packageName == packageName) return
+        val notification = sbn.notification ?: return
+        if (NotificationClassifier.isAlreadyLiveProgress(notification)) return
+        if (NotificationClassifier.isMediaLike(notification)) return
+        val channelId = notification.channelId?.takeIf { it.isNotBlank() } ?: return
+        categoryPreferences.observe(
+            packageName = sbn.packageName,
+            uid = sbn.uid,
+            channelId = channelId,
+            appLabel = AppLabelResolver.label(this, sbn.packageName, notification),
+            channelName = channelNameFor(sbn.key, rankingMap)
+        )
+    }
+
+    private fun channelNameFor(
+        key: String,
+        rankingMap: RankingMap?
+    ): String? {
+        val ranking = Ranking()
+        val channel = if (rankingMap?.getRanking(key, ranking) == true) {
+            ranking.channel
+        } else {
+            null
+        }
+        return channel?.name?.toString()?.takeIf { it.isNotBlank() }
+    }
+
+    private fun isSelectedNotificationCategory(
+        packageName: String,
+        uid: Int,
+        channelId: String?
+    ): Boolean {
+        return categoryPreferences.isSelected(packageName, uid, channelId)
     }
 
     private fun SecurityException.shortMessage(): String {

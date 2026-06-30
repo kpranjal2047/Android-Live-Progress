@@ -35,6 +35,10 @@
     <string name="setting_language">言語</string>
     <string name="setting_hide_mirrors_qs">クイック設定が展開されたらミラー通知を非表示にする</string>
     <string name="setting_enable_progress_live_updates">リアルタイム進行状況更新を有効にする</string>
+    <string name="setting_notification_categories">通知カテゴリ</string>
+    <string name="notification_categories_title">通知カテゴリ</string>
+    <string name="setting_always_mirror_categories_empty">アプリの通知カテゴリはまだ検出されていません。アプリを開き、通知がここに表示されるのを待ってください。</string>
+    <string name="setting_always_mirror_categories_unknown">不明なカテゴリ</string>
     <string name="setting_show_progress_aod">AOD に進行状況ミラーを表示</string>
     <string name="setting_show_progress_lock_screen">ロック画面に進行状況ミラーを表示</string>
     <string name="setting_hide_original_lock_screen">ロック画面で元の通知を非表示にする</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">進行状況 AOD 設定を変更しました</string>
     <string name="diagnostic_progress_lock_changed">進行状況ロック画面設定を変更しました</string>
     <string name="diagnostic_progress_suppression_changed">進行状況の元通知非表示設定を変更しました</string>
+    <string name="diagnostic_progress_category_selection_changed">進行状況カテゴリの選択を変更しました</string>
     <string name="diagnostic_media_settings_changed">メディア設定を変更しました</string>
     <string name="diagnostic_language_setting_changed">言語を変更しました</string>
     <string name="diagnostic_notification_permission_required">リアルタイムテストを送信する前に通知送信の許可が必要です。</string>

@@ -28,6 +28,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".NotificationChannelSelectionActivity"
+            android:exported="false"
+            android:label="@string/notification_categories_title" />
+
         <receiver
             android:name=".BackgroundStartupReceiver"
             android:enabled="true"
@@ -67,7 +72,8 @@
             android:name=".QuickSettingsAccessibilityService"
             android:exported="true"
             android:label="@string/accessibility_service_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            tools:ignore="AccessibilityPolicy">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>

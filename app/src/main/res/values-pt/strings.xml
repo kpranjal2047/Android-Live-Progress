@@ -35,6 +35,10 @@
     <string name="setting_language">Idioma</string>
     <string name="setting_hide_mirrors_qs">Ocultar notificações espelhadas quando as configurações rápidas estiverem expandidas</string>
     <string name="setting_enable_progress_live_updates">Ativar atualizações de progresso ao vivo</string>
+    <string name="setting_notification_categories">Categorias de notificação</string>
+    <string name="notification_categories_title">Categorias de notificação</string>
+    <string name="setting_always_mirror_categories_empty">Nenhuma categoria de notificação de app foi observada ainda. Abra apps e aguarde as notificações aparecerem aqui.</string>
+    <string name="setting_always_mirror_categories_unknown">Categoria desconhecida</string>
     <string name="setting_show_progress_aod">Mostrar espelho de progresso no AOD</string>
     <string name="setting_show_progress_lock_screen">Mostrar espelho de progresso na tela de bloqueio</string>
     <string name="setting_hide_original_lock_screen">Ocultar notificação original na tela de bloqueio</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">Configuração AOD de progresso alterada</string>
     <string name="diagnostic_progress_lock_changed">Configuração de bloqueio de progresso alterada</string>
     <string name="diagnostic_progress_suppression_changed">Configuração de ocultação da notificação original alterada</string>
+    <string name="diagnostic_progress_category_selection_changed">Seleção de categoria de progresso alterada</string>
     <string name="diagnostic_media_settings_changed">Configurações de mídia alteradas</string>
     <string name="diagnostic_language_setting_changed">Idioma alterado</string>
     <string name="diagnostic_notification_permission_required">A permissão para postar notificações é necessária antes de publicar um teste ao vivo.</string>

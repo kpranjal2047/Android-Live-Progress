@@ -14,22 +14,29 @@ object NotificationClassifier {
 
     private const val MAX_ACTIONS = 3
 
-    fun toCandidate(context: Context, sbn: StatusBarNotification): MirrorCandidate? {
+    fun toCandidate(
+        context: Context,
+        sbn: StatusBarNotification,
+        selectedCategory: (packageName: String, uid: Int, channelId: String?) -> Boolean = { _, _, _ -> false }
+    ): MirrorCandidate? {
         if (sbn.packageName == context.packageName) return null
 
         val notification = sbn.notification ?: return null
-        val extras = notification.extras ?: return null
+        val extras = notification.extras ?: Bundle.EMPTY
         if (notification.isAlreadyLiveProgress()) return null
-        val isAppProgressNotification =
-            AppProgressNotificationSupport.isSupportedPackage(sbn.packageName)
-        if (!isAppProgressNotification && notification.isMediaLike()) return null
+        if (isMediaLike(notification)) return null
 
-        val progressInfo = standardProgressInfo(extras)
-            ?: AppProgressNotificationSupport.fallbackProgressInfo(
-                packageName = sbn.packageName,
-                textFields = extras.progressTextFields(),
-                ongoing = notification.isOngoingStatus()
-            )
+        val forceSelectedCategory = selectedCategory(
+            sbn.packageName,
+            sbn.uid,
+            notification.channelId
+        )
+        val progressInfo = progressInfoFromValues(
+            indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false),
+            max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0),
+            progress = extras.getInt(Notification.EXTRA_PROGRESS, 0),
+            forceIndeterminate = forceSelectedCategory
+        )
             ?: return null
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)
@@ -66,38 +73,24 @@ object NotificationClassifier {
         )
     }
 
-    private fun standardProgressInfo(extras: Bundle): ProgressInfo? {
-        val indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false)
-        val max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0)
-        val progress = extras.getInt(Notification.EXTRA_PROGRESS, 0)
-        if (!indeterminate && max <= 0) return null
+    internal fun progressInfoFromValues(
+        indeterminate: Boolean,
+        max: Int,
+        progress: Int,
+        forceIndeterminate: Boolean
+    ): ProgressInfo? {
+        if (!indeterminate && max <= 0) {
+            return if (forceIndeterminate) {
+                ProgressInfo(progress = 0, max = 0, indeterminate = true)
+            } else {
+                null
+            }
+        }
         return ProgressInfo(
             progress = progress.coerceAtLeast(0),
             max = max.coerceAtLeast(0),
             indeterminate = indeterminate
         )
-    }
-
-    private fun Bundle.progressTextFields(): List<String> {
-        val fields = mutableListOf<String>()
-        listOf(
-            Notification.EXTRA_TITLE,
-            Notification.EXTRA_TITLE_BIG,
-            Notification.EXTRA_TEXT,
-            Notification.EXTRA_BIG_TEXT,
-            Notification.EXTRA_SUB_TEXT,
-            Notification.EXTRA_SUMMARY_TEXT
-        ).forEach { key ->
-            getCharSequence(key)?.toString()?.takeIf { it.isNotBlank() }?.let(fields::add)
-        }
-        getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
-            ?.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }
-            ?.let(fields::addAll)
-        return fields
-    }
-
-    private fun Notification.isOngoingStatus(): Boolean {
-        return flags and (Notification.FLAG_ONGOING_EVENT or Notification.FLAG_NO_CLEAR) != 0
     }
 
     private fun Notification.isAlreadyLiveProgress(): Boolean {
@@ -106,6 +99,10 @@ object NotificationClassifier {
             flags = flags,
             requestedPromotedOngoing = PromotedOngoingCompat.isRequested(this)
         )
+    }
+
+    internal fun isAlreadyLiveProgress(notification: Notification): Boolean {
+        return notification.isAlreadyLiveProgress()
     }
 
     internal fun isAlreadyLiveProgressTemplate(
@@ -117,6 +114,10 @@ object NotificationClassifier {
         val isPromoted = requestedPromotedOngoing ||
             (flags and Notification.FLAG_PROMOTED_ONGOING) != 0
         return isProgressStyle && isPromoted
+    }
+
+    internal fun isMediaLike(notification: Notification): Boolean {
+        return notification.isMediaLike()
     }
 
     private fun Notification.isMediaLike(): Boolean {

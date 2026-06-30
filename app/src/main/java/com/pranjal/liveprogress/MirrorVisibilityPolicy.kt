@@ -4,8 +4,10 @@ object MirrorVisibilityPolicy {
     fun shouldShow(
         locked: Boolean,
         quickSettingsExpanded: Boolean,
-        hideWhenQuickSettingsExpanded: Boolean
+        hideWhenQuickSettingsExpanded: Boolean,
+        sourceAppInForeground: Boolean = false
     ): Boolean {
-        return locked || !hideWhenQuickSettingsExpanded || !quickSettingsExpanded
+        return locked || (!sourceAppInForeground &&
+            (!hideWhenQuickSettingsExpanded || !quickSettingsExpanded))
     }
 }

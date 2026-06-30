@@ -35,6 +35,10 @@
     <string name="setting_language">ভাষা</string>
     <string name="setting_hide_mirrors_qs">Quick Settings খোলা থাকলে মিরর নোটিফিকেশন লুকান</string>
     <string name="setting_enable_progress_live_updates">প্রগ্রেস লাইভ আপডেট চালু করুন</string>
+    <string name="setting_notification_categories">নোটিফিকেশন বিভাগ</string>
+    <string name="notification_categories_title">নোটিফিকেশন বিভাগ</string>
+    <string name="setting_always_mirror_categories_empty">এখনও কোনো অ্যাপ নোটিফিকেশন বিভাগ দেখা যায়নি। অ্যাপ খুলুন এবং নোটিফিকেশন এখানে আসার অপেক্ষা করুন।</string>
+    <string name="setting_always_mirror_categories_unknown">অজানা বিভাগ</string>
     <string name="setting_show_progress_aod">AOD-তে প্রগ্রেস মিরর দেখান</string>
     <string name="setting_show_progress_lock_screen">লক স্ক্রিনে প্রগ্রেস মিরর দেখান</string>
     <string name="setting_hide_original_lock_screen">লক স্ক্রিনে আসল নোটিফিকেশন লুকান</string>
@@ -59,6 +63,7 @@
     <string name="diagnostic_progress_aod_changed">প্রগ্রেস AOD সেটিং বদলেছে</string>
     <string name="diagnostic_progress_lock_changed">প্রগ্রেস লক স্ক্রিন সেটিং বদলেছে</string>
     <string name="diagnostic_progress_suppression_changed">আসল প্রগ্রেস নোটিফিকেশন লুকানোর সেটিং বদলেছে</string>
+    <string name="diagnostic_progress_category_selection_changed">প্রগ্রেস বিভাগ নির্বাচন বদলেছে</string>
     <string name="diagnostic_media_settings_changed">মিডিয়া সেটিং বদলেছে</string>
     <string name="diagnostic_language_setting_changed">ভাষা বদলেছে</string>
     <string name="diagnostic_notification_permission_required">লাইভ টেস্ট পাঠানোর আগে নোটিফিকেশন পাঠানোর অনুমতি প্রয়োজন।</string>
