@@ -1,6 +1,5 @@
 package com.pranjal.liveprogress
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
@@ -18,21 +17,7 @@ data class PrivilegedState(
     val shizukuGranted: Boolean,
     val shizukuUid: Int?,
     val temporaryAssistantActive: Boolean
-) {
-    fun summary(): String {
-        val shizuku = when {
-            shizukuGranted -> "Shizuku granted uid=$shizukuUid"
-            shizukuAvailable -> "Shizuku available, permission not granted"
-            else -> "Shizuku unavailable"
-        }
-        val temporary = if (temporaryAssistantActive) {
-            "temporary assistant active"
-        } else {
-            "temporary assistant inactive"
-        }
-        return "$shizuku; $temporary"
-    }
-}
+)
 
 object PrivilegedAccess {
     private const val SHIZUKU_REQUEST_CODE = 7001
@@ -66,7 +51,7 @@ object PrivilegedAccess {
         return hasTemporaryAssistantSession(context) || (shizukuPing() && shizukuPermissionGranted())
     }
 
-    fun requestShizukuPermission(activity: Activity): String {
+    fun requestShizukuPermission(): String {
         if (!shizukuPing()) return "Shizuku is not running"
         if (shizukuPermissionGranted()) return "Shizuku permission already granted"
         return try {
@@ -81,34 +66,6 @@ object PrivilegedAccess {
             "Requested Shizuku permission"
         } catch (error: ReflectiveOperationException) {
             "Unable to request Shizuku permission: ${error.javaClass.simpleName}"
-        }
-    }
-
-    fun runSetupAsync(context: Context, callback: (String) -> Unit) {
-        val appContext = context.applicationContext
-        executor.execute {
-            val assistant = ComponentName(appContext, NotificationAssistantBridgeService::class.java)
-                .flattenToString()
-            val result = runPrivileged(capabilityCheckCommand(assistant))
-            val detail = result.stdout
-                .lineSequence()
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .take(3)
-                .joinToString("; ")
-            val message = if (result.exitCode == 0) {
-                if (detail.isBlank()) {
-                    "Elevated access check completed"
-                } else {
-                    "Elevated access check completed: $detail"
-                }
-            } else {
-                "Elevated access check failed: ${
-                    result.stderr.ifBlank { result.stdout }.ifBlank { "exit ${result.exitCode}" }
-                }"
-            }
-            AppDiagnostics.note(appContext, "privileged_setup", message)
-            main.post { callback(message) }
         }
     }
 
@@ -229,21 +186,37 @@ object PrivilegedAccess {
         }
     }
 
+    fun listInstalledNotificationAppsAsync(
+        context: Context,
+        callback: (Result<List<InstalledNotificationApp>>) -> Unit
+    ) {
+        val appContext = context.applicationContext
+        executor.execute {
+            val result = runPrivileged(listInstalledPackagesCommand())
+            val parsed = if (result.exitCode == 0) {
+                runCatching { InstalledPackageListParser.parse(result.stdout) }
+            } else {
+                Result.failure(
+                    IllegalStateException(
+                        result.stderr.ifBlank { result.stdout }.ifBlank { "exit ${result.exitCode}" }
+                    )
+                )
+            }
+            AppDiagnostics.verbose(
+                appContext,
+                "privileged_setup",
+                "Installed app category refresh scan result: exit=${result.exitCode}; apps=${
+                    parsed.getOrNull()?.size ?: 0
+                }"
+            )
+            main.post { callback(parsed) }
+        }
+    }
+
     fun hasTemporaryAssistantSession(context: Context): Boolean {
         return context.applicationContext
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getBoolean(KEY_TEMPORARY_ACTIVE, false)
-    }
-
-    private fun capabilityCheckCommand(assistant: String): String {
-        return """
-            set -e
-            assistant='$assistant'
-            user=${'$'}(am get-current-user 2>/dev/null || echo 0)
-            approved=${'$'}(cmd notification get_approved_assistant "${'$'}user" | tr -d '\r')
-            echo "approved assistant: ${'$'}approved"
-            echo "expected assistant: ${'$'}assistant"
-        """.trimIndent()
     }
 
     private fun beginTemporaryAssistantCommand(
@@ -386,6 +359,17 @@ object PrivilegedAccess {
             fi
             pm revoke "${'$'}pkg" android.permission.REQUEST_NOTIFICATION_ASSISTANT_SERVICE >/dev/null 2>&1 || true
             cmd role remove-role-holder --user "${'$'}user" "${'$'}role" "${'$'}pkg" >/dev/null 2>&1 || true
+        """.trimIndent()
+    }
+
+    private fun listInstalledPackagesCommand(): String {
+        return """
+            set -e
+            user=${'$'}(am get-current-user 2>/dev/null || echo 0)
+            echo "__ALL__"
+            pm list packages --user "${'$'}user" -f -U
+            echo "__SYSTEM__"
+            pm list packages --user "${'$'}user" -s -f -U
         """.trimIndent()
     }
 

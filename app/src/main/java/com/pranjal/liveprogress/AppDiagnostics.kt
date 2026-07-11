@@ -1,11 +1,10 @@
 package com.pranjal.liveprogress
 
 import android.content.Context
-import java.text.DateFormat
-import java.util.Date
 
 object AppDiagnostics {
     private const val PREFS = "android_live_progress_diagnostics"
+    private const val KEY_ENTRIES = "log_entries"
     private val deduper = DiagnosticMessageDeduper()
 
     fun clear(context: Context) {
@@ -18,34 +17,67 @@ object AppDiagnostics {
     }
 
     fun note(context: Context, key: String, value: String) {
-        if (!deduper.shouldWrite(key, value)) return
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(key, "${DateFormat.getTimeInstance().format(Date())}: $value")
-            .apply()
+        write(context, key, value, DiagnosticLoggingLevel.NORMAL)
     }
 
-    fun snapshot(context: Context): List<Pair<String, String>> {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return listOf(
-            context.getString(R.string.diagnostic_category_listener) to
-                prefs.getString("listener", context.getString(R.string.diagnostic_default_listener)).orEmpty(),
-            context.getString(R.string.diagnostic_category_mirror) to
-                prefs.getString("mirror", context.getString(R.string.diagnostic_default_mirror)).orEmpty(),
-            context.getString(R.string.diagnostic_category_media) to
-                prefs.getString("media", context.getString(R.string.diagnostic_default_media)).orEmpty(),
-            context.getString(R.string.diagnostic_category_visibility) to
-                prefs.getString("visibility", context.getString(R.string.diagnostic_default_visibility)).orEmpty(),
-            context.getString(R.string.diagnostic_category_suppression) to
-                prefs.getString("suppression", context.getString(R.string.diagnostic_default_suppression)).orEmpty(),
-            context.getString(R.string.diagnostic_category_battery) to BatteryDiagnostics.summary(context),
-            context.getString(R.string.diagnostic_category_background) to
-                prefs.getString("background", context.getString(R.string.diagnostic_default_background)).orEmpty(),
-            context.getString(R.string.diagnostic_category_privileged_access) to
-                prefs.getString(
-                    "privileged_setup",
-                    context.getString(R.string.diagnostic_default_privileged_access)
-                ).orEmpty()
+    fun verbose(context: Context, key: String, value: String) {
+        write(context, key, value, DiagnosticLoggingLevel.VERBOSE)
+    }
+
+    fun entries(context: Context): List<DiagnosticLogEntry> {
+        val appContext = context.applicationContext
+        val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val developerPreferences = DeveloperPreferences(appContext)
+        val entries = DiagnosticLogStore.decode(prefs.getString(KEY_ENTRIES, null))
+        val pruned = DiagnosticLogStore.prune(
+            entries = entries,
+            policy = developerPreferences.logClearPolicy,
+            nowMillis = System.currentTimeMillis()
         )
+        if (pruned != entries) {
+            prefs.edit()
+                .putString(KEY_ENTRIES, DiagnosticLogStore.encode(pruned))
+                .apply()
+        }
+        return pruned
+    }
+
+    fun pruneExpired(context: Context) {
+        entries(context)
+    }
+
+    private fun write(
+        context: Context,
+        key: String,
+        value: String,
+        messageLevel: DiagnosticLoggingLevel
+    ) {
+        val appContext = context.applicationContext
+        val developerPreferences = DeveloperPreferences(appContext)
+        val loggingLevel = developerPreferences.loggingLevel
+        if (!loggingLevel.allows(messageLevel)) return
+        if (loggingLevel != DiagnosticLoggingLevel.VERBOSE && !deduper.shouldWrite(key, value)) {
+            pruneExpired(appContext)
+            return
+        }
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val nowMillis = System.currentTimeMillis()
+        val currentEntries = DiagnosticLogStore.decode(prefs.getString(KEY_ENTRIES, null))
+        val prunedEntries = DiagnosticLogStore.prune(
+            entries = currentEntries,
+            policy = developerPreferences.logClearPolicy,
+            nowMillis = nowMillis
+        )
+        val nextEntries = DiagnosticLogStore.prepend(
+            entries = prunedEntries,
+            entry = DiagnosticLogEntry(
+                timestampMillis = nowMillis,
+                logType = key,
+                message = value
+            )
+        )
+        prefs.edit()
+            .putString(KEY_ENTRIES, DiagnosticLogStore.encode(nextEntries))
+            .apply()
     }
 }

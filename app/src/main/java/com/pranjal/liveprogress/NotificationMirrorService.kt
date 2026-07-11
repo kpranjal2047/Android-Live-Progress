@@ -20,6 +20,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private var progressMirrorActive = false
     private var lastRefreshUptimeMs = 0L
     private val progressPreferenceListener = { onProgressPreferencesChanged() }
+    private val additionalPreferenceListener = { onAdditionalPreferencesChanged() }
     private val visibilityPreferenceListener = { onVisibilityPreferencesChanged() }
 
     companion object {
@@ -56,18 +57,22 @@ class NotificationMirrorService : NotificationListenerService() {
         mediaLiveController = MediaLiveController(this, notificationManager)
         mediaLiveController.initialize()
         ProgressPreferenceEvents.addListener(progressPreferenceListener)
+        AdditionalNotificationPreferenceEvents.addListener(additionalPreferenceListener)
         VisibilityPreferenceEvents.addListener(visibilityPreferenceListener)
         VisibilityState.register(this)
         VisibilityState.addListener(visibilityListener)
+        AppDiagnostics.verbose(this, "listener", "Notification mirror service created")
     }
 
     override fun onDestroy() {
         if (activeService === this) activeService = null
         mediaLiveController.destroy()
         ProgressPreferenceEvents.removeListener(progressPreferenceListener)
+        AdditionalNotificationPreferenceEvents.removeListener(additionalPreferenceListener)
         VisibilityPreferenceEvents.removeListener(visibilityPreferenceListener)
         OriginalSuppressionController.restoreAll(this, "notification listener destroyed")
         VisibilityState.removeListener(visibilityListener)
+        AppDiagnostics.verbose(this, "listener", "Notification mirror service destroyed")
         super.onDestroy()
     }
 
@@ -125,22 +130,31 @@ class NotificationMirrorService : NotificationListenerService() {
             "listener",
             "Refreshing ${active.size} active notifications; progress enabled=${progressPreferences.enabled}; reason=$reason"
         )
-        if (!progressPreferences.enabled) {
-            clearProgressMirrors("progress live updates disabled")
-            active.forEach { sbn ->
-                observeNotificationCategory(sbn, rankingMap)
-                mediaLiveController.onNotificationPosted(sbn)
-            }
-            publishProgressMirrorActivity()
-            mediaLiveController.onVisibilityChanged()
-            return
-        }
-        candidates.clear()
+        val previous = candidates.toMap()
+        val refreshed = linkedMapOf<String, MirrorCandidate>()
         active.forEach { sbn ->
             observeNotificationCategory(sbn, rankingMap)
             mediaLiveController.onNotificationPosted(sbn)
-            NotificationClassifier.toCandidate(this, sbn, ::isSelectedNotificationCategory)
-                ?.let { candidates[it.key] = it }
+            classifyCandidate(sbn)?.let { refreshed[it.key] = it }
+        }
+        previous.values
+            .filter { it.key !in refreshed }
+            .forEach { removed ->
+                OriginalSuppressionController.onMirrorHidden(this, removed, "source notification no longer eligible")
+                notificationManager.cancel(removed.notificationId)
+                mirrorVisibilityByKey.remove(removed.key)
+                clearProgressSnapshot(removed.key)
+                AppDiagnostics.verbose(
+                    this,
+                    "mirror",
+                    "Progress mirror removed during refresh; app=${removed.appLabel}; reason=source notification no longer eligible"
+                )
+            }
+        candidates.clear()
+        candidates.putAll(refreshed)
+        if (candidates.isEmpty()) {
+            publishProgressMirrorActivity()
+            mediaLiveController.onVisibilityChanged()
         }
         AppDiagnostics.note(
             this,
@@ -156,11 +170,7 @@ class NotificationMirrorService : NotificationListenerService() {
     ) {
         observeNotificationCategory(sbn, rankingMap)
         mediaLiveController.onNotificationPosted(sbn)
-        if (!progressPreferences.enabled) {
-            removeMirrorFor(sbn)
-            return
-        }
-        val candidate = NotificationClassifier.toCandidate(this, sbn, ::isSelectedNotificationCategory)
+        val candidate = classifyCandidate(sbn)
         if (candidate == null) {
             removeMirrorFor(sbn)
             return
@@ -189,18 +199,6 @@ class NotificationMirrorService : NotificationListenerService() {
         publishProgressMirrorActivity()
     }
 
-    private fun clearProgressMirrors(reason: String) {
-        if (candidates.isEmpty()) return
-        candidates.values.forEach { candidate ->
-            OriginalSuppressionController.onMirrorHidden(this, candidate, reason)
-            notificationManager.cancel(candidate.notificationId)
-            mirrorVisibilityByKey.remove(candidate.key)
-            clearProgressSnapshot(candidate.key)
-        }
-        candidates.clear()
-        publishProgressMirrorActivity()
-    }
-
     private fun reconcileVisibility() {
         VisibilityState.refreshLockState(this)
         val activeKeys = activeNotificationsSnapshot("visibility reconcile")
@@ -220,6 +218,11 @@ class NotificationMirrorService : NotificationListenerService() {
                 notificationManager.cancel(entry.value.notificationId)
                 mirrorVisibilityByKey.remove(entry.key)
                 clearProgressSnapshot(entry.key)
+                AppDiagnostics.verbose(
+                    this,
+                    "mirror",
+                    "Progress mirror removed during visibility reconcile; app=${entry.value.appLabel}; reason=source notification no longer active"
+                )
                 iterator.remove()
             } else {
                 applyVisibility(entry.value)
@@ -233,30 +236,50 @@ class NotificationMirrorService : NotificationListenerService() {
         val active = candidates.isNotEmpty()
         if (active == progressMirrorActive) return
         progressMirrorActive = active
+        AppDiagnostics.verbose(this, "mirror", "Progress mirror active=$active; count=${candidates.size}")
         mediaLiveController.onProgressMirrorActivityChanged(active)
     }
 
     private fun onProgressPreferencesChanged() {
         progressPreferences = ProgressPreferences(this)
+        progressSnapshotsByKey.clear()
+        progressUseSourceIconByKey.clear()
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Progress preferences reloaded; enabled=${progressPreferences.enabled}; aod=${progressPreferences.showOnAod}; lock=${progressPreferences.showOnLockScreen}; hideOriginal=${progressPreferences.suppressOriginalNotification}"
+        )
+        refreshActiveNotifications("progress preferences changed")
+    }
+
+    private fun onAdditionalPreferencesChanged() {
         categoryPreferences = NotificationCategoryPreferences(this)
         progressSnapshotsByKey.clear()
         progressUseSourceIconByKey.clear()
-        if (!progressPreferences.enabled) {
-            clearProgressMirrors("progress live updates disabled")
-            mediaLiveController.onProgressMirrorActivityChanged(false)
-            return
-        }
-        refreshActiveNotifications("progress preferences changed")
+        AppDiagnostics.verbose(this, "mirror", "Additional notification preferences reloaded")
+        refreshActiveNotifications("additional notification preferences changed")
+        mediaLiveController.onPreferencesChanged()
     }
 
     private fun onVisibilityPreferencesChanged() {
         visibilityPreferences = VisibilityPreferences(this)
+        AppDiagnostics.verbose(
+            this,
+            "visibility",
+            "Visibility preferences reloaded; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}"
+        )
         reconcileVisibility()
     }
 
     private fun applyVisibility(candidate: MirrorCandidate) {
         VisibilityState.refreshLockState(this)
+        val displaySettings = candidate.displaySettings
         val sourceAppInForeground = VisibilityState.isSourcePackageInForeground(candidate.packageName)
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnAod}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}"
+        )
         if (!MirrorVisibilityPolicy.shouldShow(
                 locked = VisibilityState.locked,
                 quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
@@ -281,18 +304,18 @@ class NotificationMirrorService : NotificationListenerService() {
             return
         }
 
-        if (VisibilityState.screenOff && !progressPreferences.showOnAod) {
+        if (VisibilityState.screenOff && !displaySettings.showOnAod) {
             OriginalSuppressionController.onMirrorHidden(
                 this,
                 candidate,
-                "progress AOD disabled"
+                "${displaySettings.diagnosticName()} AOD disabled"
             )
             notificationManager.cancel(candidate.notificationId)
             clearProgressSnapshot(candidate.key)
             noteMirrorVisibility(
                 candidate,
                 "hidden:aod_disabled",
-                "Mirror hidden on AOD for ${candidate.appLabel}; progress AOD disabled"
+                "Mirror hidden on AOD for ${candidate.appLabel}; ${displaySettings.diagnosticName()} AOD disabled"
             )
             return
         }
@@ -300,12 +323,12 @@ class NotificationMirrorService : NotificationListenerService() {
         if (
             VisibilityState.locked &&
             !VisibilityState.screenOff &&
-            !progressPreferences.showOnLockScreen
+            !displaySettings.showOnLockScreen
         ) {
             OriginalSuppressionController.onMirrorHidden(
                 this,
                 candidate,
-                "progress lock screen mirror disabled"
+                "${displaySettings.diagnosticName()} lock screen mirror disabled"
             )
             notificationManager.cancel(candidate.notificationId)
             clearProgressSnapshot(candidate.key)
@@ -318,7 +341,7 @@ class NotificationMirrorService : NotificationListenerService() {
         }
 
         val shouldSuppressOriginal = VisibilityState.locked &&
-            progressPreferences.suppressOriginalNotification &&
+            displaySettings.hideOriginalNotification &&
             PrivilegedAccess.canUseOriginalNotificationSuppression(this)
         val priorityMode = MirrorPriorityPolicy.forSurface(
             locked = VisibilityState.locked,
@@ -364,13 +387,17 @@ class NotificationMirrorService : NotificationListenerService() {
         )
         if (progressSnapshotsByKey[candidate.key] == snapshot) {
             BatteryDiagnostics.increment(BatteryDiagnostics.Counter.PROGRESS_SKIPPED_REPOSTS)
+            AppDiagnostics.verbose(
+                this,
+                "mirror",
+                "Progress repost skipped; unchanged snapshot for ${candidate.appLabel}; priority=$priorityMode; suppressOriginal=$shouldSuppressOriginal"
+            )
             return ProgressPostResult(notification = null)
         }
 
         val notification = MirrorNotificationBuilder.build(
             context = this,
             candidate = candidate,
-            aodVisible = VisibilityState.screenOff,
             useSourceSmallIcon = useSourceIcon,
             priorityMode = priorityMode
         )
@@ -378,6 +405,11 @@ class NotificationMirrorService : NotificationListenerService() {
             notificationManager.notify(candidate.notificationId, notification)
             progressSnapshotsByKey[candidate.key] = snapshot
             BatteryDiagnostics.increment(BatteryDiagnostics.Counter.PROGRESS_REPOSTS)
+            AppDiagnostics.verbose(
+                this,
+                "mirror",
+                "Progress notification posted; app=${candidate.appLabel}; priority=$priorityMode; sourceIcon=$useSourceIcon; suppressOriginal=$shouldSuppressOriginal"
+            )
             ProgressPostResult(notification = notification)
         } catch (error: RuntimeException) {
             if (!useSourceIcon) {
@@ -404,12 +436,16 @@ class NotificationMirrorService : NotificationListenerService() {
             )
             if (progressSnapshotsByKey[candidate.key] == fallbackSnapshot) {
                 BatteryDiagnostics.increment(BatteryDiagnostics.Counter.PROGRESS_SKIPPED_REPOSTS)
+                AppDiagnostics.verbose(
+                    this,
+                    "mirror",
+                    "Progress fallback repost skipped; unchanged snapshot for ${candidate.appLabel}; priority=$priorityMode"
+                )
                 return ProgressPostResult(notification = null)
             }
             val fallback = MirrorNotificationBuilder.build(
                 context = this,
                 candidate = candidate,
-                aodVisible = VisibilityState.screenOff,
                 useSourceSmallIcon = false,
                 priorityMode = priorityMode
             )
@@ -417,6 +453,11 @@ class NotificationMirrorService : NotificationListenerService() {
                 notificationManager.notify(candidate.notificationId, fallback)
                 progressSnapshotsByKey[candidate.key] = fallbackSnapshot
                 BatteryDiagnostics.increment(BatteryDiagnostics.Counter.PROGRESS_REPOSTS)
+                AppDiagnostics.verbose(
+                    this,
+                    "mirror",
+                    "Progress notification posted with fallback icon; app=${candidate.appLabel}; priority=$priorityMode; suppressOriginal=$shouldSuppressOriginal"
+                )
                 ProgressPostResult(notification = fallback)
             } catch (fallbackError: RuntimeException) {
                 AppDiagnostics.note(
@@ -494,15 +535,42 @@ class NotificationMirrorService : NotificationListenerService() {
         if (sbn.packageName == packageName) return
         val notification = sbn.notification ?: return
         if (NotificationClassifier.isAlreadyLiveProgress(notification)) return
-        if (NotificationClassifier.isMediaLike(notification)) return
         val channelId = notification.channelId?.takeIf { it.isNotBlank() } ?: return
-        categoryPreferences.observe(
+        val channelName = channelNameFor(sbn.key, rankingMap)
+        val systemApp = AppLabelResolver.isSystemApp(this, sbn.packageName)
+        val changed = categoryPreferences.observe(
             packageName = sbn.packageName,
             uid = sbn.uid,
             channelId = channelId,
             appLabel = AppLabelResolver.label(this, sbn.packageName, notification),
-            channelName = channelNameFor(sbn.key, rankingMap)
+            channelName = channelName,
+            isSystemApp = systemApp
         )
+        if (changed) {
+            AppDiagnostics.verbose(
+                this,
+                "mirror",
+                "Observed notification category; ${sbn.debugIdentity()}; name=${channelName.orEmpty()}; systemApp=${systemApp ?: false}"
+            )
+        }
+    }
+
+    private fun classifyCandidate(sbn: StatusBarNotification): MirrorCandidate? {
+        var classification = "no_result"
+        val candidate = NotificationClassifier.toCandidate(
+            context = this,
+            sbn = sbn,
+            progressEnabled = progressPreferences.enabled,
+            progressDisplaySettings = progressDisplaySettings(),
+            additionalCategorySettings = ::additionalCategorySettings,
+            debug = { classification = it }
+        )
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Progress classification; ${sbn.debugIdentity()}; $classification"
+        )
+        return candidate
     }
 
     private fun channelNameFor(
@@ -518,12 +586,21 @@ class NotificationMirrorService : NotificationListenerService() {
         return channel?.name?.toString()?.takeIf { it.isNotBlank() }
     }
 
-    private fun isSelectedNotificationCategory(
+    private fun additionalCategorySettings(
         packageName: String,
         uid: Int,
         channelId: String?
-    ): Boolean {
-        return categoryPreferences.isSelected(packageName, uid, channelId)
+    ): NotificationCategorySettings {
+        return categoryPreferences.settingsFor(packageName, uid, channelId)
+    }
+
+    private fun progressDisplaySettings(): MirrorCandidateDisplaySettings {
+        return MirrorCandidateDisplaySettings(
+            source = MirrorCandidateSource.PROGRESS,
+            showOnAod = progressPreferences.showOnAod,
+            showOnLockScreen = progressPreferences.showOnLockScreen,
+            hideOriginalNotification = progressPreferences.suppressOriginalNotification
+        )
     }
 
     private fun SecurityException.shortMessage(): String {
@@ -536,5 +613,18 @@ class NotificationMirrorService : NotificationListenerService() {
 
     private fun ProgressInfo.diagnosticSuffix(): String {
         return shortText.takeIf { it.isNotBlank() }?.let { " $it" }.orEmpty()
+    }
+
+    private fun MirrorCandidateDisplaySettings.diagnosticName(): String {
+        return when (source) {
+            MirrorCandidateSource.PROGRESS -> "progress"
+            MirrorCandidateSource.ADDITIONAL -> "additional notification"
+        }
+    }
+
+    private fun StatusBarNotification.debugIdentity(): String {
+        val channel = notification?.channelId.orEmpty()
+        val tagText = tag ?: "none"
+        return "pkg=$packageName; uid=$uid; id=$id; tag=$tagText; channel=$channel"
     }
 }

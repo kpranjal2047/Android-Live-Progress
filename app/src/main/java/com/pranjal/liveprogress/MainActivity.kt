@@ -26,10 +26,12 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
@@ -40,12 +42,10 @@ class MainActivity : Activity() {
             "android.settings.APP_NOTIFICATION_PROMOTION_SETTINGS"
         const val ACTION_MANAGE_APP_PROMOTED_NOTIFICATIONS_VALUE =
             "android.settings.MANAGE_APP_PROMOTED_NOTIFICATIONS"
-        const val POST_PROMOTED_NOTIFICATIONS_PERMISSION =
-            "android.permission.POST_PROMOTED_NOTIFICATIONS"
         const val CONTENT_PADDING_DP = 20
+        const val SOURCE_CODE_URL = "https://github.com/kpranjal2047/Android-Live-Progress"
     }
 
-    private lateinit var diagnosticsView: TextView
     private lateinit var settingsContainer: LinearLayout
 
     private enum class ButtonStyle {
@@ -81,14 +81,24 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AppDiagnostics.clear(this)
+        AppDiagnostics.pruneExpired(this)
         BackgroundRuntime.initialize(this, getString(R.string.diagnostic_main_activity_started))
         renderCurrentScreen()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        AppUiLifecycleTracker.onActivityStarted()
     }
 
     override fun onResume() {
         super.onResume()
         renderCurrentScreen()
+    }
+
+    override fun onStop() {
+        AppUiLifecycleTracker.onActivityStopped(this)
+        super.onStop()
     }
 
     override fun onRequestPermissionsResult(
@@ -218,7 +228,7 @@ class MainActivity : Activity() {
     }
 
     private fun requestShizukuPermission() {
-        val message = PrivilegedAccess.requestShizukuPermission(this)
+        val message = PrivilegedAccess.requestShizukuPermission()
         AppDiagnostics.note(this, "privileged_setup", message)
         renderCurrentScreen()
     }
@@ -247,15 +257,6 @@ class MainActivity : Activity() {
             setTextColor(colors.textPrimary)
             includeFontPadding = false
         }
-        diagnosticsView = TextView(this).apply {
-            textSize = 13f
-            setTextColor(colors.textSecondary)
-            typeface = Typeface.MONOSPACE
-            setLineSpacing(2.dp().toFloat(), 1f)
-            setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
-            background = rounded(colors.surfaceContainer, 24.dp())
-        }
-
         root.addView(title, blockParams(bottom = 18.dp()))
         root.addView(
             button(getString(R.string.post_live_test_notification)) {
@@ -280,7 +281,6 @@ class MainActivity : Activity() {
             setPadding(0, 20.dp(), 0, 0)
         }
         root.addView(settingsContainer)
-        root.addView(diagnosticsView, blockParams(top = 18.dp()))
 
         return scrollContent(root)
     }
@@ -327,7 +327,7 @@ class MainActivity : Activity() {
         return Button(this).apply {
             text = label
             isEnabled = enabled
-            setAllCaps(false)
+            isAllCaps = false
             textSize = 15f
             typeface = Typeface.DEFAULT_BOLD
             minHeight = 56.dp()
@@ -547,19 +547,23 @@ class MainActivity : Activity() {
         val progressPreferences = ProgressPreferences(this)
         val mediaPreferences = MediaPreferences(this)
         val visibilityPreferences = VisibilityPreferences(this)
+        val categoryPreferences = NotificationCategoryPreferences(this)
+        val developerPreferences = DeveloperPreferences(this)
         rebuildSettings(
             progressPreferences,
             mediaPreferences,
-            visibilityPreferences
+            visibilityPreferences,
+            categoryPreferences,
+            developerPreferences
         )
-        diagnosticsView.text = AppDiagnostics.snapshot(this)
-            .joinToString(separator = "\n") { (key, value) -> "$key: $value" }
     }
 
     private fun rebuildSettings(
         progressPreferences: ProgressPreferences,
         mediaPreferences: MediaPreferences,
-        visibilityPreferences: VisibilityPreferences
+        visibilityPreferences: VisibilityPreferences,
+        categoryPreferences: NotificationCategoryPreferences,
+        developerPreferences: DeveloperPreferences
     ) {
         if (!::settingsContainer.isInitialized) return
         val privileged = PrivilegedAccess.currentState(this)
@@ -599,12 +603,6 @@ class MainActivity : Activity() {
             progressPreferences.enabled = it
             AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_enabled_changed))
             progressChanged()
-        })
-        settingsContainer.addView(settingNavigationRow(
-            label = getString(R.string.setting_notification_categories),
-            enabled = progressPreferences.enabled
-        ) {
-            startActivity(Intent(this, NotificationChannelSelectionActivity::class.java))
         })
         settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_show_progress_aod),
@@ -679,6 +677,50 @@ class MainActivity : Activity() {
             mediaPreferences.scrollTitle = it
             mediaChanged()
         })
+
+        settingsContainer.addView(sectionTitle(getString(R.string.section_additional_live_notifications)))
+        settingsContainer.addView(settingToggle(
+            label = getString(R.string.setting_auto_enable_new_categories),
+            checked = categoryPreferences.autoEnableNewCategories
+        ) {
+            categoryPreferences.autoEnableNewCategories = it
+            AdditionalNotificationPreferenceEvents.notifyChanged()
+            refreshStatus()
+        })
+        settingsContainer.addView(settingNavigationRow(
+            label = getString(R.string.setting_notification_categories),
+            enabled = true
+        ) {
+            startActivity(Intent(this, NotificationChannelSelectionActivity::class.java))
+        })
+
+        settingsContainer.addView(sectionTitle(getString(R.string.section_developer)))
+        settingsContainer.addView(dropdown(
+            label = getString(R.string.setting_logging_level),
+            values = DiagnosticLoggingLevel.entries,
+            selected = developerPreferences.loggingLevel,
+            display = { getString(it.labelRes) }
+        ) {
+            developerPreferences.loggingLevel = it
+            refreshStatus()
+        })
+        settingsContainer.addView(dropdown(
+            label = getString(R.string.setting_clear_logs),
+            values = LogClearPolicy.entries,
+            selected = developerPreferences.logClearPolicy,
+            display = { getString(it.labelRes) }
+        ) {
+            developerPreferences.logClearPolicy = it
+            AppDiagnostics.pruneExpired(this)
+            refreshStatus()
+        })
+        settingsContainer.addView(settingNavigationRow(
+            label = getString(R.string.logs_title),
+            enabled = true
+        ) {
+            startActivity(Intent(this, LogsActivity::class.java))
+        })
+        settingsContainer.addView(aboutCard(), blockParams(top = 24.dp()))
     }
 
     private fun sectionTitle(text: String): TextView {
@@ -690,6 +732,102 @@ class MainActivity : Activity() {
             setTextColor(colors.primary)
             includeFontPadding = false
             setPadding(4.dp(), 24.dp(), 0, 10.dp())
+        }
+    }
+
+    private fun aboutCard(): View {
+        val colors = palette()
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(22.dp(), 24.dp(), 22.dp(), 24.dp())
+            background = rounded(colors.surfaceContainer, 30.dp(), colors.outline, 1.dp())
+
+            addView(
+                ImageView(this@MainActivity).apply {
+                    setImageResource(R.drawable.ic_live_progress)
+                    contentDescription = getString(R.string.app_name)
+                },
+                LinearLayout.LayoutParams(56.dp(), 56.dp()).apply {
+                    bottomMargin = 16.dp()
+                }
+            )
+            addView(centerText(getString(R.string.app_name), 24f, colors.textPrimary, bold = true))
+            addView(
+                centerText(
+                    getString(R.string.about_version_created_by, BuildConfig.VERSION_NAME),
+                    15f,
+                    colors.textSecondary
+                ),
+                blockParams(top = 8.dp())
+            )
+            addView(
+                centerText(getString(R.string.about_description), 15f, colors.textSecondary),
+                blockParams(top = 18.dp())
+            )
+            addView(
+                sourceCodeChip(colors),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 18.dp()
+                }
+            )
+            addView(
+                centerText(
+                    getString(R.string.about_license_title),
+                    15f,
+                    colors.textPrimary,
+                    bold = true
+                ),
+                blockParams(top = 24.dp())
+            )
+            addView(
+                centerText(getString(R.string.about_license_body), 14f, colors.textSecondary),
+                blockParams(top = 8.dp())
+            )
+        }
+    }
+
+    private fun centerText(
+        value: String,
+        size: Float,
+        color: Int,
+        bold: Boolean = false
+    ): TextView {
+        return TextView(this).apply {
+            text = value
+            textSize = size
+            setTextColor(color)
+            gravity = Gravity.CENTER_HORIZONTAL
+            setLineSpacing(2.dp().toFloat(), 1f)
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+        }
+    }
+
+    private fun sourceCodeChip(colors: UiPalette): TextView {
+        return TextView(this).apply {
+            text = getString(R.string.about_source_code)
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.onSecondaryContainer)
+            gravity = Gravity.CENTER
+            minHeight = 44.dp()
+            setPadding(18.dp(), 0, 18.dp(), 0)
+            background = pillBackground(enabled = true, colors = colors)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { openSourceCode() }
+        }
+    }
+
+    private fun openSourceCode() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_CODE_URL))
+        try {
+            startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.about_open_source_failed, Toast.LENGTH_SHORT).show()
         }
     }
 

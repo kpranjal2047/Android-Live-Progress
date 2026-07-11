@@ -57,7 +57,7 @@ object VisibilityState {
     fun setQuickSettingsExpanded(context: Context, expanded: Boolean) {
         if (quickSettingsExpanded == expanded) return
         quickSettingsExpanded = expanded
-        AppDiagnostics.note(context, "visibility", "Quick settings expanded=$expanded")
+        AppDiagnostics.verbose(context, "visibility", "Quick settings expanded=$expanded")
         notifyListeners()
     }
 
@@ -65,7 +65,7 @@ object VisibilityState {
         val normalized = packageName?.takeIf { it.isNotBlank() }
         if (foregroundPackageName == normalized) return
         foregroundPackageName = normalized
-        AppDiagnostics.note(context, "visibility", "Foreground app=${normalized ?: "unknown"}")
+        AppDiagnostics.verbose(context, "visibility", "Foreground app=${normalized ?: "unknown"}")
         notifyListeners()
     }
 
@@ -79,25 +79,11 @@ object VisibilityState {
         val changed = locked != current
         locked = current
         if (changed) {
-            AppDiagnostics.note(context, "visibility", "Locked=$current")
+            AppDiagnostics.verbose(context, "visibility", "Locked=$current")
         }
         if (changed || (forceNotifyIfUnlocked && !locked && !screenOff)) {
             notifyListeners()
         }
-    }
-
-    fun shouldShowMirror(
-        context: Context,
-        hideWhenQuickSettingsExpanded: Boolean = true,
-        sourcePackageName: String? = null
-    ): Boolean {
-        refreshLockState(context)
-        return MirrorVisibilityPolicy.shouldShow(
-            locked = locked,
-            quickSettingsExpanded = quickSettingsExpanded,
-            hideWhenQuickSettingsExpanded = hideWhenQuickSettingsExpanded,
-            sourceAppInForeground = isSourcePackageInForeground(sourcePackageName)
-        )
     }
 
     fun isSourcePackageInForeground(sourcePackageName: String?): Boolean {
@@ -133,14 +119,14 @@ object VisibilityState {
                     screenOff = true
                     locked = true
                     quickSettingsExpanded = false
-                    AppDiagnostics.note(context, "visibility", "Screen off; treating device as locked")
+                    AppDiagnostics.verbose(context, "visibility", "Screen off; treating device as locked")
                     notifyListeners()
                 }
 
                 Intent.ACTION_USER_PRESENT -> {
                     screenOff = false
                     locked = false
-                    AppDiagnostics.note(context, "visibility", "User present; unlocked")
+                    AppDiagnostics.verbose(context, "visibility", "User present; unlocked")
                     notifyListeners()
                     scheduleUnlockRefreshes(context)
                 }
@@ -151,7 +137,7 @@ object VisibilityState {
                     screenOff = false
                     refreshLockState(context)
                     if (wasScreenOff && previousLocked == locked) {
-                        AppDiagnostics.note(context, "visibility", "Screen on")
+                        AppDiagnostics.verbose(context, "visibility", "Screen on")
                         notifyListeners()
                     }
                     scheduleUnlockRefreshes(context)

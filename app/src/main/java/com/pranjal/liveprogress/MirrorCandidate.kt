@@ -10,9 +10,20 @@ data class ProgressInfo(
     val max: Int,
     val indeterminate: Boolean
 ) {
-    val percent: Int? = ProgressMath.percent(progress, max, indeterminate)
     val shortText: String = ProgressMath.shortText(progress, max, indeterminate)
 }
+
+enum class MirrorCandidateSource {
+    PROGRESS,
+    ADDITIONAL
+}
+
+data class MirrorCandidateDisplaySettings(
+    val source: MirrorCandidateSource,
+    val showOnAod: Boolean,
+    val showOnLockScreen: Boolean,
+    val hideOriginalNotification: Boolean
+)
 
 data class MirrorCandidate(
     val key: String,
@@ -34,5 +45,6 @@ data class MirrorCandidate(
     val whenMillis: Long,
     val showWhen: Boolean,
     val actions: List<Notification.Action>,
-    val progress: ProgressInfo
+    val progress: ProgressInfo,
+    val displaySettings: MirrorCandidateDisplaySettings
 )

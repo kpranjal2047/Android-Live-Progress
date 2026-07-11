@@ -8,7 +8,7 @@ import android.service.notification.NotificationListenerService
 
 class NotificationAssistantBridgeService : NotificationListenerService() {
     override fun onBind(intent: Intent): IBinder? {
-        AppDiagnostics.note(
+        AppDiagnostics.verbose(
             this,
             "suppression",
             "Notification assistant bridge bind requested; action=${intent.action.orEmpty()}"
@@ -19,17 +19,17 @@ class NotificationAssistantBridgeService : NotificationListenerService() {
     override fun onCreate() {
         super.onCreate()
         activeService = this
-        AppDiagnostics.note(this, "suppression", "Notification assistant bridge created")
+        AppDiagnostics.verbose(this, "suppression", "Notification assistant bridge created")
     }
 
     override fun onListenerConnected() {
         activeService = this
-        AppDiagnostics.note(this, "suppression", "Notification assistant bridge connected")
+        AppDiagnostics.verbose(this, "suppression", "Notification assistant bridge connected")
     }
 
     override fun onListenerDisconnected() {
         if (activeService === this) activeService = null
-        AppDiagnostics.note(this, "suppression", "Notification assistant bridge disconnected")
+        AppDiagnostics.verbose(this, "suppression", "Notification assistant bridge disconnected")
     }
 
     override fun onDestroy() {
@@ -55,6 +55,19 @@ class NotificationAssistantBridgeService : NotificationListenerService() {
             return runCatching {
                 service.getNotificationChannels(packageName, user)
                     .firstOrNull { it.id == channelId }
+            }
+        }
+
+        fun getSourceChannels(
+            packageName: String,
+            user: UserHandle
+        ): Result<List<NotificationChannel>> {
+            val service = activeService
+                ?: return Result.failure(
+                    IllegalStateException("Notification assistant bridge is not connected")
+                )
+            return runCatching {
+                service.getNotificationChannels(packageName, user).toList()
             }
         }
 

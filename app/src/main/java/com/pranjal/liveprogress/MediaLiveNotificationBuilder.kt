@@ -177,7 +177,7 @@ object MediaLiveNotificationBuilder {
     ) {
         val existing = manager.getNotificationChannel(id)
         if (existing != null) {
-            existing.setName(name)
+            existing.name = name
             existing.description = description
             existing.setSound(null, null)
             existing.enableVibration(false)

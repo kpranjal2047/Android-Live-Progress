@@ -33,6 +33,11 @@
             android:exported="false"
             android:label="@string/notification_categories_title" />
 
+        <activity
+            android:name=".LogsActivity"
+            android:exported="false"
+            android:label="@string/logs_title" />
+
         <receiver
             android:name=".BackgroundStartupReceiver"
             android:enabled="true"

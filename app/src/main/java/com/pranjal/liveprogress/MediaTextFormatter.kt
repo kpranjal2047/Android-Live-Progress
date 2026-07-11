@@ -19,9 +19,7 @@ object MediaTextFormatter {
         if (showArtist && artist.isUseful(UNKNOWN_ARTIST)) parts.add(artist.trim())
         if (showAlbum && album.isUseful(UNKNOWN_ALBUM)) parts.add(album.trim())
         val result = parts.joinToString(" - ")
-        return result.takeIf { it.isNotBlank() }?.let {
-            it.truncateWithEllipsis(MAX_DETAIL_LENGTH)
-        }
+        return result.takeIf { it.isNotBlank() }?.truncateWithEllipsis(MAX_DETAIL_LENGTH)
     }
 
     fun subText(

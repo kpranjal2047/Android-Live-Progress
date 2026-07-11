@@ -23,7 +23,7 @@ object MediaNotificationSourceFactory {
                 channelId = notification.channelId,
                 appLabel = label
             ),
-            smallIcon = notification.getSmallIcon(),
+            smallIcon = notification.smallIcon,
             contentIntent = notification.contentIntent
         )
     }

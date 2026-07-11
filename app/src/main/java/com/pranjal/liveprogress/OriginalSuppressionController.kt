@@ -43,10 +43,15 @@ object OriginalSuppressionController {
     ) {
         val channelKey = source.channelKeyOrNull()
         if (channelKey == null) {
+            AppDiagnostics.verbose(
+                context,
+                "suppression",
+                "Suppression skipped; missing channel id; source=${source.appLabel}; reason=$reason"
+            )
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Cannot suppress original for ${source.appLabel}; source channel id is unavailable"
+                "Cannot suppress original for ${source.appLabel}; source notification category id is unavailable"
             )
             return
         }
@@ -57,10 +62,15 @@ object OriginalSuppressionController {
             alreadyPending || channelKey in originalVisibilityByChannel
         }
         if (pendingOrSuppressed) {
+            AppDiagnostics.verbose(
+                context,
+                "suppression",
+                "Suppression request already pending or active; source=${source.appLabel}; channel=${channelKey.channelId}; reason=$reason"
+            )
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Original channel suppression already pending for ${source.appLabel}"
+                "Original notification category suppression already pending for ${source.appLabel}"
             )
             return
         }
@@ -69,6 +79,11 @@ object OriginalSuppressionController {
             context,
             reason
         ) { ready, message ->
+            AppDiagnostics.verbose(
+                context,
+                "suppression",
+                "Temporary assistant result for suppression; source=${source.appLabel}; ready=$ready; message=$message"
+            )
             if (!ready) {
                 synchronized(this) {
                     candidateChannels.remove(source.key)
@@ -102,10 +117,20 @@ object OriginalSuppressionController {
             candidateChannels.remove(source.key) ?: source.channelKeyOrNull()
         }
         if (channelKey == null) {
+            AppDiagnostics.verbose(
+                context,
+                "suppression",
+                "Suppression restore skipped; no channel key; source=${source.appLabel}; reason=$reason"
+            )
             releaseIfIdle(context, reason)
             return
         }
         val stillUsed = synchronized(this) { candidateChannels.containsValue(channelKey) }
+        AppDiagnostics.verbose(
+            context,
+            "suppression",
+            "Suppression source hidden; source=${source.appLabel}; channel=${channelKey.channelId}; stillUsed=$stillUsed; reason=$reason"
+        )
         if (!stillUsed) restoreChannel(context, source, channelKey, reason)
         releaseIfIdle(context, reason)
     }
@@ -119,9 +144,15 @@ object OriginalSuppressionController {
         }
 
         if (channels.isEmpty()) {
+            AppDiagnostics.verbose(context, "suppression", "No suppressed notification categories to restore; reason=$reason")
             releaseIfIdle(context, reason)
             return
         }
+        AppDiagnostics.verbose(
+            context,
+            "suppression",
+            "Restoring all suppressed notification categories; count=${channels.size}; reason=$reason"
+        )
         channels.forEach { channelKey ->
             restoreChannel(context, null, channelKey, reason)
         }
@@ -135,6 +166,11 @@ object OriginalSuppressionController {
         attempt: Int
     ) {
         val delay = if (attempt == 1) ASSISTANT_BIND_DELAY_MS else SUPPRESSION_RETRY_MS
+        AppDiagnostics.verbose(
+            context,
+            "suppression",
+            "Scheduling suppression attempt; source=${source.appLabel}; channel=${channelKey.channelId}; attempt=$attempt; delayMs=$delay"
+        )
         mainHandler.postDelayed(
             {
                 when (trySuppressChannel(context, source, channelKey, attempt)) {
@@ -165,7 +201,19 @@ object OriginalSuppressionController {
             candidateChannels[source.key] == channelKey &&
                 channelKey !in originalVisibilityByChannel
         }
-        if (!shouldContinue) return SuppressionAttempt.DONE
+        if (!shouldContinue) {
+            AppDiagnostics.verbose(
+                context,
+                "suppression",
+                "Suppression attempt stopped; source=${source.appLabel}; channel=${channelKey.channelId}; attempt=$attempt"
+            )
+            return SuppressionAttempt.DONE
+        }
+        AppDiagnostics.verbose(
+            context,
+            "suppression",
+            "Suppression attempt running; source=${source.appLabel}; channel=${channelKey.channelId}; attempt=$attempt"
+        )
 
         val channelResult = sourceChannel(source, channelKey)
         if (channelResult.isFailure) {
@@ -184,7 +232,7 @@ object OriginalSuppressionController {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Unable to inspect original channel for ${source.appLabel}; ${
+                "Unable to inspect original notification category for ${source.appLabel}; ${
                     error.describeForUser()
                 }"
             )
@@ -199,14 +247,14 @@ object OriginalSuppressionController {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Cannot suppress original for ${source.appLabel}; source channel ${channelKey.channelId} was not found"
+                "Cannot suppress original for ${source.appLabel}; source notification category ${channelKey.channelId} was not found"
             )
             return SuppressionAttempt.DONE
         }
 
         val originalVisibility = channel.lockscreenVisibility
         val result = runCatching {
-            channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET)
+            channel.lockscreenVisibility = Notification.VISIBILITY_SECRET
             NotificationAssistantBridgeService.updateSourceChannel(
                 source.packageName,
                 source.sourceUser,
@@ -224,7 +272,7 @@ object OriginalSuppressionController {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Temporarily hid original lock-screen channel for ${source.appLabel}; original visibility=${visibilityName(originalVisibility)}"
+                "Temporarily hid original lock-screen notification category for ${source.appLabel}; original visibility=${visibilityName(originalVisibility)}"
             )
         } else {
             val error = result.exceptionOrNull()
@@ -258,13 +306,25 @@ object OriginalSuppressionController {
     ) {
         val originalVisibility = synchronized(this) {
             originalVisibilityByChannel[channelKey]
-        } ?: return
+        } ?: run {
+            AppDiagnostics.verbose(
+                context,
+                "suppression",
+                "Restore skipped; original visibility not tracked; package=${channelKey.packageName}; channel=${channelKey.channelId}; reason=$reason"
+            )
+            return
+        }
+        AppDiagnostics.verbose(
+            context,
+            "suppression",
+            "Restore attempt running; package=${channelKey.packageName}; channel=${channelKey.channelId}; original=${visibilityName(originalVisibility)}; reason=$reason"
+        )
         val channelResult = sourceChannel(source, channelKey)
         if (channelResult.isFailure) {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Unable to inspect original channel for restore ${channelKey.packageName}; ${
+                "Unable to inspect original notification category for restore ${channelKey.packageName}; ${
                     channelResult.exceptionOrNull().describeForUser()
                 }"
             )
@@ -280,13 +340,13 @@ object OriginalSuppressionController {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Suppression restore skipped for ${channelKey.packageName}/${channelKey.channelId}; channel no longer exists"
+                "Suppression restore skipped for ${channelKey.packageName}/${channelKey.channelId}; notification category no longer exists"
             )
             return
         }
 
         val result = runCatching {
-            channel.setLockscreenVisibility(originalVisibility)
+            channel.lockscreenVisibility = originalVisibility
             val user = source?.sourceUser ?: channelKey.userHandle()
             NotificationAssistantBridgeService.updateSourceChannel(
                 channelKey.packageName,
@@ -303,13 +363,13 @@ object OriginalSuppressionController {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Restored original lock-screen channel for ${channelKey.packageName}; reason=$reason"
+                "Restored original lock-screen notification category for ${channelKey.packageName}; reason=$reason"
             )
         } else {
             AppDiagnostics.note(
                 context,
                 "suppression",
-                "Unable to restore original channel for ${channelKey.packageName}; ${
+                "Unable to restore original notification category for ${channelKey.packageName}; ${
                     result.exceptionOrNull().describeForUser()
                 }"
             )
@@ -333,7 +393,10 @@ object OriginalSuppressionController {
             candidateChannels.isEmpty() && originalVisibilityByChannel.isEmpty()
         }
         if (idle) {
+            AppDiagnostics.verbose(context, "suppression", "Releasing temporary assistant; reason=$reason")
             PrivilegedAccess.releaseTemporaryAssistantAsync(context, reason)
+        } else {
+            AppDiagnostics.verbose(context, "suppression", "Keeping temporary assistant active; reason=$reason")
         }
     }
 
@@ -348,6 +411,11 @@ object OriginalSuppressionController {
                 originalVisibilityByChannel.putIfAbsent(restored.first, restored.second)
             }
         }
+        AppDiagnostics.verbose(
+            context,
+            "suppression",
+            "Loaded persisted suppressions; count=${originalVisibilityByChannel.size}"
+        )
     }
 
     private fun persistSuppressions(context: Context) {

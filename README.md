@@ -1,23 +1,13 @@
-<p align="center">
-  <img src="docs/assets/live-progress-icon.svg" width="88" alt="Live Progress icon" />
-</p>
+![Live Progress icon](docs/assets/live-progress-icon.svg)
 
-<h1 align="center">Live Progress</h1>
+# Live Progress
 
-<p align="center">
-  Beautiful Android 16 live updates for progress tasks and media playback.
-</p>
+Beautiful Android 16 live notifications for progress tasks and media playback.
 
-<p align="center">
-  <img alt="Android 16+" src="https://img.shields.io/badge/Android-16%2B-3DDC84?logo=android&logoColor=white" />
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white" />
-  <img alt="Java 21" src="https://img.shields.io/badge/Java-21-f89820?logo=openjdk&logoColor=white" />
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-blue" />
-</p>
+![Android 16+](https://img.shields.io/badge/Android-16%2B-3DDC84?logo=android&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
-<p align="center">
-  <b>Status bar pills</b> • <b>Lock screen mirrors</b> • <b>AOD updates</b> • <b>Media progress</b> • <b>System colors</b>
-</p>
+**Status bar pills** • **Lock screen mirrors** • **AOD updates** • **Media progress** • **System colors**
 
 ---
 
@@ -41,30 +31,35 @@ The app keeps the original notification active so updates continue normally.
 
 ### 📊 Progress Mirrors
 
-- Shows eligible progress notifications as Android 16 live updates.
+- Shows eligible progress notifications as Android 16 live notifications.
 - Displays progress percentage in the status bar when the original notification provides real progress.
 - Keeps expanded mirror content updated in real time.
 - Supports multiple progress notifications.
 - Can optionally show progress mirrors on the lock screen and AOD.
 - Hides the mirror while the source app is open, when foreground detection is available.
 
-### 🎵 Media Live Updates
+### 🎵 Media Live Notifications
 
-- Shows media playback as a live update when enabled.
+- Shows media playback as a live notification when enabled.
 - Supports status bar text modes: **Title**, **Elapsed**, and **Remaining**.
 - Shows media progress and playback actions.
 - Can show media progress on AOD.
 - Hides the mirror while the media app is open, when foreground detection is available.
 - Automatically hides media mirrors when a progress mirror is active.
 
-### 🧩 Notification Category Picker
+### 🧩 Additional Live Notifications
 
-Some apps use useful custom notification categories without exposing real Android progress. Live Progress lets you open a dedicated **Notification categories** page from Progress settings and choose which observed categories should always mirror as live updates.
+Some apps use useful notification categories without exposing real Android progress. Live Progress lets you open **Notification categories** under **Additional Live Notifications** and choose which observed categories should mirror as live notifications.
 
 - Categories appear after Live Progress has observed notifications from those apps.
-- Selected categories mirror as indeterminate live updates when the original has no real progress.
+- Apps are grouped clearly, with notification categories listed underneath.
+- Selected categories mirror as indeterminate live notifications when the original has no real progress.
 - If a selected category later exposes real progress, the mirror shows that real progress.
-- Media notifications still use the media mirror path and are not converted into progress mirrors.
+- A Shizuku refresh option can find notification categories from installed apps.
+- System app categories are hidden by default and can be shown from the categories page.
+- Progress and media notifications keep their normal behavior when their main live notification settings are enabled.
+- Each selected category shows compact controls for AOD, lock screen visibility, and original notification hiding where supported.
+- New categories stay off by default unless automatic enabling is turned on.
 - Live Progress does not guess percentages from notification text.
 
 ### 🎨 Native Look
@@ -72,19 +67,16 @@ Some apps use useful custom notification categories without exposing real Androi
 - Uses Android’s system color palette.
 - Supports light and dark mode.
 - Uses a Material 3 Expressive-inspired settings screen.
-- Avoids custom cloned notification layouts so Android can promote mirrors properly.
 
 ---
 
 ## 👀 Where Mirrors Appear
 
-| Surface | Progress | Media |
-| :--- | :--- | :--- |
-| 🔓 Unlocked | Shows live mirror | Shows live mirror unless progress is active |
-| 📱 Source app open | Hidden when foreground detection is available | Hidden when foreground detection is available |
-| ⚙️ Quick Settings expanded | Can hide mirror | Can hide mirror |
-| 🔒 Lock screen | Optional | Optional |
-| 🌙 AOD / screen off | Optional | Optional unless progress is active |
+- 🔓 **Unlocked:** progress and media mirrors can show live status bar pills.
+- 📱 **Source app open:** mirrors can hide when foreground detection is available.
+- ⚙️ **Quick Settings expanded:** mirrors can hide when the optional setting is enabled.
+- 🔒 **Lock screen:** progress and media mirrors are optional.
+- 🌙 **AOD / screen off:** progress and media mirrors are optional, with progress taking priority.
 
 When a progress mirror is active, media mirrors are hidden everywhere so progress gets priority.
 
@@ -94,13 +86,11 @@ When a progress mirror is active, media mirrors are hidden everywhere so progres
 
 Live Progress asks for permissions only when needed.
 
-| Permission | Why |
-| :--- | :--- |
-| 🔔 Notifications | Posts mirrored live updates and test notifications. |
-| ⭐ Live notification access | Enables Android 16 promoted/live notification behavior. |
-| 👂 Notification listener | Reads eligible notifications from other apps. |
-| ⚙️ Accessibility service | Optional. Detects expanded Quick Settings and foreground apps so mirrors can hide when they should. |
-| 🧰 Shizuku | Optional. Helps hide original progress notifications on the lock screen when enabled. |
+- 🔔 **Notifications:** posts mirrored live notifications and test notifications.
+- ⭐ **Live notification access:** enables Android 16 promoted/live notification behavior.
+- 👂 **Notification listener:** reads eligible notifications from other apps.
+- ⚙️ **Accessibility service:** optional. Detects expanded Quick Settings and foreground apps so mirrors can hide when they should.
+- 🧰 **Shizuku:** optional. Helps hide original progress notifications on the lock screen when enabled.
 
 Live Progress does **not** use root.
 
@@ -111,7 +101,7 @@ Live Progress does **not** use root.
 1. Install and open **Live Progress**.
 2. Follow the startup permission pages.
 3. Enable the features you want from the main settings screen.
-4. Use **Post live notification test** to confirm live updates are working.
+4. Use **Post live notification test** to confirm live notifications are working.
 
 Optional setup pages can be skipped. Skipping an optional permission turns off the feature that needs it.
 
@@ -126,19 +116,35 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 
 ### Progress
 
-- Enable progress live updates
-- Notification categories
-- Show progress mirror on AOD
-- Show progress mirror on lock screen
+- Enable progress live notifications
+- Show live notifications on AOD
+- Show live notifications on lock screen
 - Hide original notification on lock screen, when supported
 
 ### Media
 
-- Enable media live updates
-- Show media mirror on AOD
-- Show media mirror on lock screen
+- Enable media live notifications
+- Show live notifications on AOD
+- Show live notifications on lock screen
 - Status bar text mode
 - Scroll title in status bar
+
+### Additional Live Notifications
+
+- Notification categories
+- Enable new notification categories automatically
+- Per-category AOD, lock screen, and original notification controls
+
+### Developer
+
+- Logging level
+- Verbose logging for detailed troubleshooting traces
+- Clear logs timing
+- Logs page with file export using the system file picker
+
+### About
+
+- Inline app card with version, license, attribution note, and source-code link
 
 ---
 
@@ -150,43 +156,6 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 - Original notification hiding is best-effort and may not work for every app or device.
 - Custom notification layouts are not copied exactly.
 - User-selected notification categories mirror as indeterminate updates unless the original notification exposes real progress.
-
----
-
-## 🛠️ Build From Source
-
-Requirements:
-
-- Android Studio
-- Android SDK 36
-- Java 21
-- Android 16 / API 36 device or emulator for runtime testing
-
-Commands:
-
-```bash
-./gradlew assembleDebug
-```
-
-```bash
-./gradlew testDebugUnitTest lintDebug
-```
-
-```bash
-./gradlew assembleDebug testDebugUnitTest lintDebug
-```
-
-Debug APK output:
-
-```text
-app/build/outputs/apk/debug/
-```
-
----
-
-## 📝 Documentation Rule
-
-When behavior, supported apps, settings, permissions, build steps, or limitations change, update this README or the relevant docs in the same change.
 
 ---
 

@@ -14,6 +14,7 @@ class MediaLiveController(
     private val notificationManager: NotificationManager
 ) {
     private val preferences = MediaPreferences(service)
+    private val categoryPreferences = NotificationCategoryPreferences(service)
     private val visibilityPreferences = VisibilityPreferences(service)
     private val mediaSessionManager = service.getSystemService(MediaSessionManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -39,9 +40,15 @@ class MediaLiveController(
     private var activeSessionsListenerRegistered = false
     private val observedAppLabels = mutableMapOf<String, String>()
     private val preferenceListener = { onPreferencesChanged() }
+    private val additionalPreferenceListener = { onPreferencesChanged() }
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
             cachedControllers = controllers.orEmpty()
+            AppDiagnostics.verbose(
+                service,
+                "media",
+                "Active media sessions changed; count=${cachedControllers.size}"
+            )
             selectController(activeSource?.original?.packageName)
             updateFromController()
         }
@@ -56,31 +63,31 @@ class MediaLiveController(
         }
     }
 
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            updateFromController()
-        }
-    }
+    private val updateRunnable = Runnable { updateFromController() }
 
     fun initialize() {
         MediaLiveNotificationBuilder.ensureChannel(service)
         MediaPreferenceEvents.addListener(preferenceListener)
+        AdditionalNotificationPreferenceEvents.addListener(additionalPreferenceListener)
         registerActiveSessionsListener()
         refreshController(
             explicitRefresh = true,
             reason = "media controller initialized"
         )
+        AppDiagnostics.verbose(service, "media", "Media live controller initialized")
     }
 
     fun destroy() {
         mainHandler.removeCallbacks(updateRunnable)
         MediaPreferenceEvents.removeListener(preferenceListener)
+        AdditionalNotificationPreferenceEvents.removeListener(additionalPreferenceListener)
         unregisterActiveSessionsListener()
         activeController?.unregisterCallback(mediaCallback)
         activeController = null
         buildCoalescer.cancelQueued()
         releaseSuppressedSource("media controller destroyed")
         buildExecutor.shutdownNow()
+        AppDiagnostics.verbose(service, "media", "Media live controller destroyed")
     }
 
     fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -126,11 +133,17 @@ class MediaLiveController(
     fun onProgressMirrorActivityChanged(active: Boolean) {
         if (progressMirrorActive == active) return
         progressMirrorActive = active
+        AppDiagnostics.verbose(service, "media", "Progress mirror activity changed for media; active=$active")
         updateFromController()
     }
 
     fun onPreferencesChanged() {
         notificationDismissed = false
+        AppDiagnostics.verbose(
+            service,
+            "media",
+            "Media preferences changed; enabled=${preferences.enabled}; aod=${preferences.showOnAod}; lock=${preferences.showOnLockScreen}; pill=${preferences.pillMode}; scroll=${preferences.scrollTitle}"
+        )
         updateFromController()
     }
 
@@ -148,6 +161,11 @@ class MediaLiveController(
             currentControllerInvalid = currentControllerInvalid,
             explicitRefresh = explicitRefresh
         )
+        AppDiagnostics.verbose(
+            service,
+            "media",
+            "Media session refresh decision; reason=$reason; shouldQuery=$shouldQuery; cached=${cachedControllers.size}; activeController=${activeController?.packageName.orEmpty()}; preferred=${preferredPackage.orEmpty()}; sourceChanged=$sourcePackageChanged; invalid=$currentControllerInvalid; explicit=$explicitRefresh"
+        )
         if (shouldQuery) {
             cachedControllers = queryActiveSessions(reason)
         }
@@ -158,6 +176,12 @@ class MediaLiveController(
         BatteryDiagnostics.increment(BatteryDiagnostics.Counter.MEDIA_SESSION_SCANS)
         return runCatching {
             mediaSessionManager.getActiveSessions(mediaComponent)
+        }.onSuccess {
+            AppDiagnostics.verbose(
+                service,
+                "media",
+                "Queried active media sessions; reason=$reason; count=${it.size}"
+            )
         }.onFailure {
             AppDiagnostics.note(
                 service,
@@ -182,6 +206,11 @@ class MediaLiveController(
             activeController?.unregisterCallback(mediaCallback)
             activeController = newController
             activeController?.registerCallback(mediaCallback)
+            AppDiagnostics.verbose(
+                service,
+                "media",
+                "Active media controller changed; package=${newController?.packageName.orEmpty()}; preferred=${preferredPackage.orEmpty()}"
+            )
         }
     }
 
@@ -207,6 +236,7 @@ class MediaLiveController(
 
         if (state == null) {
             activeState = null
+            AppDiagnostics.verbose(service, "media", "No valid media state after controller refresh")
             cancelMedia("no active media")
             return
         }
@@ -215,11 +245,17 @@ class MediaLiveController(
             notificationDismissed = false
         }
         if (notificationDismissed) {
+            AppDiagnostics.verbose(service, "media", "Media update ignored because mirrored notification was dismissed")
             cancelMedia("media live notification dismissed")
             return
         }
 
         if (state.packageName != activeSource?.original?.packageName) {
+            AppDiagnostics.verbose(
+                service,
+                "media",
+                "Media source package changed; state=${state.packageName}; source=${activeSource?.original?.packageName.orEmpty()}"
+            )
             releaseSuppressedSource("media source package changed")
             activeSource = null
         }
@@ -227,6 +263,7 @@ class MediaLiveController(
         if (state.title != lastTitle) {
             lastTitle = state.title
             titleStartTime = System.currentTimeMillis()
+            AppDiagnostics.verbose(service, "media", "Media title changed; title=${state.title}; package=${state.packageName}")
         }
 
         activeState = state
@@ -235,8 +272,25 @@ class MediaLiveController(
 
     private fun applyVisibility(state: MediaState) {
         VisibilityState.refreshLockState(service)
+        val additionalSettings = activeSource?.original?.let { source ->
+            categoryPreferences.settingsFor(
+                packageName = source.packageName,
+                uid = source.sourceUid,
+                channelId = source.channelId
+            )
+        } ?: NotificationCategorySettings()
+        val additionalForced = !preferences.enabled && additionalSettings.enabled
+        val showOnAod = if (additionalForced) additionalSettings.showOnAod else preferences.showOnAod
+        val showOnLockScreen = if (additionalForced) {
+            additionalSettings.showOnLockScreen
+        } else {
+            preferences.showOnLockScreen
+        }
+        val hideOriginal = additionalForced &&
+            additionalSettings.hideOriginalNotification &&
+            PrivilegedAccess.canUseOriginalNotificationSuppression(service)
         val decision = MediaVisibilityPolicy.decide(
-            mediaEnabled = preferences.enabled,
+            mediaEnabled = preferences.enabled || additionalForced,
             hasActiveMedia = true,
             locked = VisibilityState.locked,
             screenOff = VisibilityState.screenOff,
@@ -244,8 +298,14 @@ class MediaLiveController(
             hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
             sourceAppInForeground = VisibilityState.isSourcePackageInForeground(state.packageName),
             progressMirrorActive = progressMirrorActive,
-            showOnAod = preferences.showOnAod,
-            showOnLockScreen = preferences.showOnLockScreen
+            showOnAod = showOnAod,
+            showOnLockScreen = showOnLockScreen,
+            hideOriginalNotification = hideOriginal
+        )
+        AppDiagnostics.verbose(
+            service,
+            "media",
+            "Media visibility evaluated; package=${state.packageName}; enabled=${preferences.enabled}; additionalForced=$additionalForced; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; sourceForeground=${VisibilityState.isSourcePackageInForeground(state.packageName)}; progressActive=$progressMirrorActive; showAod=$showOnAod; showLock=$showOnLockScreen; hideOriginal=$hideOriginal; showMirror=${decision.showMirror}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; suppress=${decision.suppressOriginal}; reason=${decision.reason}"
         )
 
         if (!decision.showMirror) {
@@ -273,6 +333,11 @@ class MediaLiveController(
         updateOriginalSuppression(decision, source, state)
         if (snapshot == lastPostedSnapshot || snapshot == pendingSnapshot) {
             BatteryDiagnostics.increment(BatteryDiagnostics.Counter.MEDIA_SKIPPED_REPOSTS)
+            AppDiagnostics.verbose(
+                service,
+                "media",
+                "Media repost skipped; unchanged snapshot; title=${state.title}; position=${state.positionMs}; duration=${state.durationMs}; reason=${decision.reason}"
+            )
             scheduleNext(state, decision)
             return
         }
@@ -290,6 +355,11 @@ class MediaLiveController(
             appLabel = appLabel,
             reason = decision.reason,
             priorityMode = priorityMode
+        )
+        AppDiagnostics.verbose(
+            service,
+            "media",
+            "Media build queued; version=$version; title=${state.title}; package=${state.packageName}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; priority=$priorityMode; reason=${decision.reason}"
         )
         buildCoalescer.submit(request, ::startMediaBuild)
 
@@ -316,6 +386,11 @@ class MediaLiveController(
                     .onSuccess { notification ->
                         if (request.version != buildVersion) {
                             if (pendingSnapshot == request.snapshot) pendingSnapshot = null
+                            AppDiagnostics.verbose(
+                                service,
+                                "media",
+                                "Media build discarded as stale; request=${request.version}; current=$buildVersion; title=${request.state.title}"
+                            )
                         } else {
                             val posted = runCatching {
                                 notificationManager.notify(
@@ -334,6 +409,11 @@ class MediaLiveController(
                                     service,
                                     "media",
                                     "Media mirror shown for ${request.state.title}; ${request.reason}. $promotedStatus"
+                                )
+                                AppDiagnostics.verbose(
+                                    service,
+                                    "media",
+                                    "Media notification posted; title=${request.state.title}; package=${request.state.packageName}; position=${request.state.positionMs}; duration=${request.state.durationMs}; aod=${request.aodVisible}; critical=${request.showShortCriticalText}; priority=${request.priorityMode}"
                                 )
                             } else {
                                 if (pendingSnapshot == request.snapshot) pendingSnapshot = null
@@ -370,6 +450,7 @@ class MediaLiveController(
             )
         }.isSuccess
         activeSessionsListenerRegistered = registered
+        AppDiagnostics.verbose(service, "media", "Active media session listener registered=$registered")
         if (!registered) {
             AppDiagnostics.note(
                 service,
@@ -385,6 +466,7 @@ class MediaLiveController(
             mediaSessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener)
         }
         activeSessionsListenerRegistered = false
+        AppDiagnostics.verbose(service, "media", "Active media session listener unregistered")
     }
 
     private fun Throwable.shortMessage(): String {
@@ -433,6 +515,11 @@ class MediaLiveController(
                 }
             }
         } else {
+            AppDiagnostics.verbose(
+                service,
+                "media",
+                "Media original suppression not needed; reason=${decision.reason}; suppress=${decision.suppressOriginal}"
+            )
             releaseSuppressedSource("media original should remain visible")
         }
     }
@@ -466,6 +553,11 @@ class MediaLiveController(
             showShortCriticalText = decision.showShortCriticalText,
             expandedTimelineVisible = state.durationMs > 0L
         )
+        AppDiagnostics.verbose(
+            service,
+            "media",
+            "Media next update delay=${delay?.toString() ?: "none"}; title=${state.title}; playing=${state.isPlaying}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; pill=${preferences.pillMode}; scroll=${preferences.scrollTitle}; expandedTimeline=${state.durationMs > 0L}"
+        )
         if (delay != null) {
             mainHandler.postDelayed(updateRunnable, delay)
         }
@@ -482,7 +574,10 @@ class MediaLiveController(
         pendingSnapshot = null
         lastPostedSnapshot = null
         releaseSuppressedSource("media hidden: $reason")
-        if (alreadyHiddenForReason) return
+        if (alreadyHiddenForReason) {
+            AppDiagnostics.verbose(service, "media", "Media mirror already hidden; reason=$reason")
+            return
+        }
         if (mediaMirrorPosted) {
             notificationManager.cancel(MediaLiveNotificationBuilder.NOTIFICATION_ID)
         }

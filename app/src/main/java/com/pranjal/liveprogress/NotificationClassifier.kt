@@ -17,27 +17,68 @@ object NotificationClassifier {
     fun toCandidate(
         context: Context,
         sbn: StatusBarNotification,
-        selectedCategory: (packageName: String, uid: Int, channelId: String?) -> Boolean = { _, _, _ -> false }
+        progressEnabled: Boolean,
+        progressDisplaySettings: MirrorCandidateDisplaySettings,
+        additionalCategorySettings: (
+            packageName: String,
+            uid: Int,
+            channelId: String?
+        ) -> NotificationCategorySettings = { _, _, _ -> NotificationCategorySettings() },
+        debug: ((String) -> Unit)? = null
     ): MirrorCandidate? {
-        if (sbn.packageName == context.packageName) return null
+        if (sbn.packageName == context.packageName) {
+            debug?.invoke("ignored=self_notification")
+            return null
+        }
 
-        val notification = sbn.notification ?: return null
+        val notification = sbn.notification ?: run {
+            debug?.invoke("ignored=no_notification_payload")
+            return null
+        }
         val extras = notification.extras ?: Bundle.EMPTY
-        if (notification.isAlreadyLiveProgress()) return null
-        if (isMediaLike(notification)) return null
+        if (notification.isAlreadyLiveProgress()) {
+            debug?.invoke("ignored=already_live_progress")
+            return null
+        }
+        if (isMediaLike(notification)) {
+            debug?.invoke("ignored=media_notification")
+            return null
+        }
 
-        val forceSelectedCategory = selectedCategory(
+        val standardProgressInfo = progressInfoFromValues(
+            indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false),
+            max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0),
+            progress = extras.getInt(Notification.EXTRA_PROGRESS, 0),
+            forceIndeterminate = false
+        )
+        val additionalSettings = additionalCategorySettings(
             sbn.packageName,
             sbn.uid,
             notification.channelId
         )
-        val progressInfo = progressInfoFromValues(
-            indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false),
-            max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0),
-            progress = extras.getInt(Notification.EXTRA_PROGRESS, 0),
-            forceIndeterminate = forceSelectedCategory
-        )
-            ?: return null
+        val displaySettings = when {
+            standardProgressInfo != null && progressEnabled -> progressDisplaySettings
+            additionalSettings.enabled -> MirrorCandidateDisplaySettings(
+                source = MirrorCandidateSource.ADDITIONAL,
+                showOnAod = additionalSettings.showOnAod,
+                showOnLockScreen = additionalSettings.showOnLockScreen,
+                hideOriginalNotification = additionalSettings.hideOriginalNotification
+            )
+            else -> {
+                val reason = if (standardProgressInfo != null) {
+                    "ignored=progress_disabled"
+                } else {
+                    "ignored=no_progress_or_additional_category"
+                }
+                debug?.invoke(
+                    "$reason; channel=${notification.channelId.orEmpty()}; " +
+                        "additionalEnabled=${additionalSettings.enabled}"
+                )
+                return null
+            }
+        }
+        val progressInfo = standardProgressInfo
+            ?: ProgressInfo(progress = 0, max = 0, indeterminate = true)
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)
             ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG)
@@ -45,7 +86,7 @@ object NotificationClassifier {
             ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)
         val appLabel = AppLabelResolver.label(context, sbn.packageName, notification)
         val actions = notification.actions
-            ?.filter { it.actionIntent != null && it.getRemoteInputs().isNullOrEmpty() && !it.isAuthenticationRequired }
+            ?.filter { it.actionIntent != null && it.remoteInputs.isNullOrEmpty() && !it.isAuthenticationRequired }
             ?.take(MAX_ACTIONS)
             ?: emptyList()
 
@@ -63,14 +104,21 @@ object NotificationClassifier {
             text = text,
             subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT),
             contentIntent = notification.contentIntent,
-            smallIcon = notification.getSmallIcon(),
+            smallIcon = notification.smallIcon,
             largeIcon = notification.getLargeIcon(),
             color = notification.color,
             whenMillis = notification.`when`,
             showWhen = extras.getBoolean(Notification.EXTRA_SHOW_WHEN, notification.`when` > 0L),
             actions = actions,
-            progress = progressInfo
-        )
+            progress = progressInfo,
+            displaySettings = displaySettings
+        ).also {
+            debug?.invoke(
+                "accepted=${displaySettings.source}; channel=${notification.channelId.orEmpty()}; " +
+                    "progress=${progressInfo.progress}; max=${progressInfo.max}; " +
+                    "indeterminate=${progressInfo.indeterminate}; actions=${actions.size}"
+            )
+        }
     }
 
     internal fun progressInfoFromValues(

@@ -19,9 +19,10 @@ object MediaVisibilityPolicy {
         sourceAppInForeground: Boolean = false,
         progressMirrorActive: Boolean,
         showOnAod: Boolean,
-        showOnLockScreen: Boolean
+        showOnLockScreen: Boolean,
+        hideOriginalNotification: Boolean = false
     ): MediaVisibilityDecision {
-        if (!mediaEnabled) return hidden("media live updates disabled")
+        if (!mediaEnabled) return hidden("media live notifications disabled")
         if (!hasActiveMedia) return hidden("no active media")
         if (progressMirrorActive) return hidden("progress mirror active")
 
@@ -32,7 +33,7 @@ object MediaVisibilityPolicy {
         if (screenOff) {
             return MediaVisibilityDecision(
                 showMirror = true,
-                suppressOriginal = false,
+                suppressOriginal = hideOriginalNotification,
                 aodVisible = true,
                 showShortCriticalText = true,
                 reason = "screen off; mirror required"
@@ -54,7 +55,7 @@ object MediaVisibilityPolicy {
         if (locked) {
             return MediaVisibilityDecision(
                 showMirror = true,
-                suppressOriginal = false,
+                suppressOriginal = hideOriginalNotification,
                 aodVisible = false,
                 showShortCriticalText = true,
                 reason = "lock screen mirror selected"

@@ -30,7 +30,6 @@ object MirrorNotificationBuilder {
     fun build(
         context: Context,
         candidate: MirrorCandidate,
-        aodVisible: Boolean = false,
         useSourceSmallIcon: Boolean = true,
         priorityMode: MirrorPriorityMode = MirrorPriorityMode.DEFAULT
     ): Notification {
@@ -122,7 +121,7 @@ object MirrorNotificationBuilder {
     ) {
         val existing = manager.getNotificationChannel(id)
         if (existing != null) {
-            existing.setName(name)
+            existing.name = name
             existing.description = description
             existing.setSound(null, null)
             existing.enableVibration(false)

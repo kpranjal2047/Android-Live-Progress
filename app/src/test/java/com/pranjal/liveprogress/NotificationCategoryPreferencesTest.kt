@@ -32,10 +32,28 @@ class NotificationCategoryPreferencesTest {
             ),
             appLabel = "Example",
             channelName = "Delivery status",
-            lastSeenMillis = 123456789L
+            lastSeenMillis = 123456789L,
+            isSystemApp = true
         )
 
         assertEquals(category, ObservedNotificationCategory.parse(category.encode()))
+    }
+
+    @Test
+    fun observedCategoryReadsOldRecordsAsUserApps() {
+        val legacy = listOf(
+            "com.example.source",
+            "12345",
+            "delivery_status",
+            "Example",
+            "Delivery status",
+            "123456789"
+        ).joinToString("\u001F")
+
+        assertEquals(
+            false,
+            ObservedNotificationCategory.parse(legacy)?.isSystemApp
+        )
     }
 
     @Test
@@ -52,5 +70,35 @@ class NotificationCategoryPreferencesTest {
         )
 
         assertEquals("delivery_status", category.displayName)
+    }
+
+    @Test
+    fun categorySettingsDefaultsKeepAdditionalCategoriesConservative() {
+        val settings = NotificationCategorySettings()
+
+        assertEquals(false, settings.enabled)
+        assertEquals(true, settings.showOnAod)
+        assertEquals(false, settings.showOnLockScreen)
+        assertEquals(false, settings.hideOriginalNotification)
+    }
+
+    @Test
+    fun categorySettingsRoundTripsWithKey() {
+        val key = NotificationCategoryKey(
+            packageName = "com.example.source",
+            uid = 12345,
+            channelId = "delivery_status"
+        )
+        val settings = NotificationCategorySettings(
+            enabled = true,
+            showOnAod = false,
+            showOnLockScreen = true,
+            hideOriginalNotification = true
+        )
+
+        assertEquals(
+            key to settings,
+            NotificationCategorySettings.parse(settings.encode(key))
+        )
     }
 }

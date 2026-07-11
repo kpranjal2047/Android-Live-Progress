@@ -75,6 +75,24 @@ class MediaVisibilityPolicyTest {
     }
 
     @Test
+    fun lockScreenCanSuppressOriginalWhenRequested() {
+        val decision = MediaVisibilityPolicy.decide(
+            mediaEnabled = true,
+            hasActiveMedia = true,
+            locked = true,
+            screenOff = false,
+            quickSettingsExpanded = false,
+            progressMirrorActive = false,
+            showOnAod = true,
+            showOnLockScreen = true,
+            hideOriginalNotification = true
+        )
+        assertTrue(decision.showMirror)
+        assertTrue(decision.suppressOriginal)
+        assertFalse(decision.aodVisible)
+    }
+
+    @Test
     fun screenOffShowsMirrorWithoutSuppressingOriginalByDefault() {
         val decision = MediaVisibilityPolicy.decide(
             mediaEnabled = true,
@@ -90,6 +108,24 @@ class MediaVisibilityPolicyTest {
         assertFalse(decision.suppressOriginal)
         assertTrue(decision.aodVisible)
         assertTrue(decision.showShortCriticalText)
+    }
+
+    @Test
+    fun screenOffCanSuppressOriginalWhenRequested() {
+        val decision = MediaVisibilityPolicy.decide(
+            mediaEnabled = true,
+            hasActiveMedia = true,
+            locked = true,
+            screenOff = true,
+            quickSettingsExpanded = false,
+            progressMirrorActive = false,
+            showOnAod = true,
+            showOnLockScreen = false,
+            hideOriginalNotification = true
+        )
+        assertTrue(decision.showMirror)
+        assertTrue(decision.suppressOriginal)
+        assertTrue(decision.aodVisible)
     }
 
     @Test
