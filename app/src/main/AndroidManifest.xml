@@ -53,6 +53,11 @@
             android:enabled="true"
             android:exported="false" />
 
+        <receiver
+            android:name=".MirrorDismissReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
         <service
             android:name=".NotificationMirrorService"
             android:exported="true"

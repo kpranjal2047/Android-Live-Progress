@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">اسے صرف تب چالو کریں جب آپ Quick Settings کھلنے پر مرر نوٹیفکیشنز چھپانا چاہتے ہوں۔ چھوڑنے سے یہ سیٹنگ بند ہو جائے گی۔</string>
     <string name="setup_accessibility_action">Accessibility سیٹنگز کھولیں</string>
     <string name="setup_shizuku_title">Shizuku اجازت دیں</string>
-    <string name="setup_shizuku_reason">اسے صرف تب دیں جب آپ لاک اسکرین پر اصل پروگریس نوٹیفکیشنز چھپانا چاہتے ہوں۔ چھوڑنے سے یہ سیٹنگ بند ہو جائے گی۔</string>
+    <string name="setup_shizuku_reason">اسے صرف تب دیں جب آپ لاک اسکرین اور AOD پر اصل پروگریس نوٹیفکیشنز چھپانا چاہتے ہوں۔ چھوڑنے سے یہ سیٹنگ بند ہو جائے گی۔</string>
     <string name="setup_shizuku_action">Shizuku اجازت دیں</string>
     <string name="setup_skip_action">چھوڑیں</string>
     <string name="post_live_test_notification">لائیو نوٹیفکیشن ٹیسٹ بھیجیں</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku ریفریش ناکام: %1$s</string>
     <string name="setting_show_category_aod">AOD پر دکھائیں</string>
     <string name="setting_show_category_lock_screen">لاک اسکرین پر دکھائیں</string>
-    <string name="setting_hide_category_original">اصل نوٹیفکیشن چھپائیں</string>
+    <string name="setting_hide_category_original">لاک اسکرین اور AOD پر اصل نوٹیفکیشن چھپائیں</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">لاک</string>
     <string name="setting_category_hide_original_short">اصل چھپائیں</string>
+    <string name="setting_keep_category_after_dismiss">اصل نوٹیفکیشن ہٹنے کے بعد بھی لائیو نوٹیفکیشن رکھیں</string>
+    <string name="setting_category_keep_after_dismiss_short">ہٹانے کے بعد رکھیں</string>
     <string name="setting_logging_level">لاگنگ سطح</string>
     <string name="setting_clear_logs">لاگز صاف کریں</string>
     <string name="logging_level_off">بند</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d از %2$d کیٹیگریز آن</string>
     <string name="setting_show_progress_aod">AOD پر لائیو نوٹیفکیشنز دکھائیں</string>
     <string name="setting_show_progress_lock_screen">لاک اسکرین پر لائیو نوٹیفکیشنز دکھائیں</string>
-    <string name="setting_hide_original_lock_screen">لاک اسکرین پر اصل نوٹیفکیشن چھپائیں</string>
+    <string name="setting_hide_original_lock_screen">لاک اسکرین اور AOD پر اصل نوٹیفکیشن چھپائیں</string>
     <string name="setting_enable_media_live_updates">میڈیا لائیو نوٹیفکیشنز آن کریں</string>
     <string name="setting_show_media_aod">AOD پر لائیو نوٹیفکیشنز دکھائیں</string>
     <string name="setting_show_media_lock_screen">لاک اسکرین پر لائیو نوٹیفکیشنز دکھائیں</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">چلائیں</string>
     <string name="media_action_pause">روکیں</string>
     <string name="media_action_next">اگلا</string>
+    <string name="mirror_action_dismiss">چھپائیں</string>
     <string name="diagnostic_main_activity_started">مرکزی screen شروع ہوئی</string>
     <string name="diagnostic_skipped_accessibility_setup">Accessibility setup چھوڑا گیا؛ Quick Settings میں مرر چھپانا بند</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku اجازت تیاری چھوڑی گئی</string>

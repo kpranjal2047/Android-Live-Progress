@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">빠른 설정이 펼쳐졌을 때 복제 알림을 숨기려는 경우에만 켜세요. 건너뛰면 이 설정이 꺼집니다.</string>
     <string name="setup_accessibility_action">접근성 설정 열기</string>
     <string name="setup_shizuku_title">Shizuku 권한 부여</string>
-    <string name="setup_shizuku_reason">잠금 화면에서 원본 진행 알림을 숨기려는 경우에만 부여하세요. 건너뛰면 이 설정이 꺼집니다.</string>
+    <string name="setup_shizuku_reason">잠금 화면과 AOD에서 원본 진행 알림을 숨기려는 경우에만 부여하세요. 건너뛰면 이 설정이 꺼집니다.</string>
     <string name="setup_shizuku_action">Shizuku 권한 부여</string>
     <string name="setup_skip_action">건너뛰기</string>
     <string name="post_live_test_notification">실시간 알림 시험 보내기</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku 새로고침 실패: %1$s</string>
     <string name="setting_show_category_aod">AOD에 표시</string>
     <string name="setting_show_category_lock_screen">잠금 화면에 표시</string>
-    <string name="setting_hide_category_original">원본 알림 숨기기</string>
+    <string name="setting_hide_category_original">잠금 화면과 AOD에서 원본 알림 숨기기</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">잠금</string>
     <string name="setting_category_hide_original_short">원본 숨김</string>
+    <string name="setting_keep_category_after_dismiss">원본 알림을 닫은 후에도 실시간 알림 유지</string>
+    <string name="setting_category_keep_after_dismiss_short">닫은 후 유지</string>
     <string name="setting_logging_level">로그 수준</string>
     <string name="setting_clear_logs">로그 지우기</string>
     <string name="logging_level_off">끄기</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d/%2$d 카테고리 켜짐</string>
     <string name="setting_show_progress_aod">AOD에 실시간 알림 표시</string>
     <string name="setting_show_progress_lock_screen">잠금 화면에 실시간 알림 표시</string>
-    <string name="setting_hide_original_lock_screen">잠금 화면에서 원본 알림 숨기기</string>
+    <string name="setting_hide_original_lock_screen">잠금 화면과 AOD에서 원본 알림 숨기기</string>
     <string name="setting_enable_media_live_updates">미디어 실시간 알림 켜기</string>
     <string name="setting_show_media_aod">AOD에 실시간 알림 표시</string>
     <string name="setting_show_media_lock_screen">잠금 화면에 실시간 알림 표시</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">재생</string>
     <string name="media_action_pause">일시정지</string>
     <string name="media_action_next">다음</string>
+    <string name="mirror_action_dismiss">숨기기</string>
     <string name="diagnostic_main_activity_started">메인 활동 시작됨</string>
     <string name="diagnostic_skipped_accessibility_setup">접근성 설정을 건너뜀; 빠른 설정 복제 숨김 꺼짐</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku 권한 설정을 건너뜀</string>

@@ -73,12 +73,14 @@ object MirrorNotificationBuilder {
             .setShowWhen(candidate.showWhen)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .setDeleteIntent(MirrorDismissReceiver.progressDeleteIntent(context, candidate))
             .setLocalOnly(true)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setColor(color)
             .setStyle(style)
             .apply {
+                addAction(MirrorDismissReceiver.progressAction(context, candidate))
                 if (candidate.progress.indeterminate) {
                     setProgress(0, 0, true)
                 } else if (candidate.progress.max > 0) {

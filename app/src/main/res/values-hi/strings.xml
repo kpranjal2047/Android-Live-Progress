@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">इसे केवल तब चालू करें जब आप Quick Settings खुली होने पर मिरर नोटिफिकेशन छिपाना चाहते हैं। छोड़ने से यह सेटिंग बंद हो जाएगी।</string>
     <string name="setup_accessibility_action">Accessibility सेटिंग खोलें</string>
     <string name="setup_shizuku_title">Shizuku अनुमति दें</string>
-    <string name="setup_shizuku_reason">इसे केवल तब दें जब आप लॉक स्क्रीन पर मूल प्रोग्रेस सूचनाएं छिपाना चाहते हैं। छोड़ने से यह सेटिंग बंद हो जाएगी।</string>
+    <string name="setup_shizuku_reason">इसे केवल तब दें जब आप लॉक स्क्रीन और AOD पर मूल प्रोग्रेस सूचनाएं छिपाना चाहते हैं। छोड़ने से यह सेटिंग बंद हो जाएगी।</string>
     <string name="setup_shizuku_action">Shizuku अनुमति दें</string>
     <string name="setup_skip_action">छोड़ें</string>
     <string name="post_live_test_notification">लाइव नोटिफिकेशन टेस्ट भेजें</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku रीफ्रेश विफल: %1$s</string>
     <string name="setting_show_category_aod">AOD पर दिखाएं</string>
     <string name="setting_show_category_lock_screen">लॉक स्क्रीन पर दिखाएं</string>
-    <string name="setting_hide_category_original">मूल नोटिफिकेशन छिपाएं</string>
+    <string name="setting_hide_category_original">लॉक स्क्रीन और AOD पर मूल नोटिफिकेशन छिपाएं</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">लॉक स्क्रीन</string>
     <string name="setting_category_hide_original_short">मूल छिपाएं</string>
+    <string name="setting_keep_category_after_dismiss">मूल नोटिफिकेशन हटने के बाद भी लाइव नोटिफिकेशन रखें</string>
+    <string name="setting_category_keep_after_dismiss_short">हटने के बाद रखें</string>
     <string name="setting_logging_level">लॉगिंग स्तर</string>
     <string name="setting_clear_logs">लॉग साफ करें</string>
     <string name="logging_level_off">बंद</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d में से %2$d श्रेणियां चालू</string>
     <string name="setting_show_progress_aod">AOD पर लाइव नोटिफिकेशन दिखाएं</string>
     <string name="setting_show_progress_lock_screen">लॉक स्क्रीन पर लाइव नोटिफिकेशन दिखाएं</string>
-    <string name="setting_hide_original_lock_screen">लॉक स्क्रीन पर मूल सूचना छिपाएं</string>
+    <string name="setting_hide_original_lock_screen">लॉक स्क्रीन और AOD पर मूल सूचना छिपाएं</string>
     <string name="setting_enable_media_live_updates">मीडिया लाइव नोटिफिकेशन चालू करें</string>
     <string name="setting_show_media_aod">AOD पर लाइव नोटिफिकेशन दिखाएं</string>
     <string name="setting_show_media_lock_screen">लॉक स्क्रीन पर लाइव नोटिफिकेशन दिखाएं</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">चलाएं</string>
     <string name="media_action_pause">रोकें</string>
     <string name="media_action_next">अगला</string>
+    <string name="mirror_action_dismiss">हटाएं</string>
     <string name="diagnostic_main_activity_started">मुख्य गतिविधि शुरू हुई</string>
     <string name="diagnostic_skipped_accessibility_setup">Accessibility सेटअप छोड़ा गया; Quick Settings में मिरर छिपाना बंद</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku अनुमति तैयारी छोड़ी गई</string>

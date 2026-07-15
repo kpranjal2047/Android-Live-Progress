@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Bunu yalnızca Hızlı Ayarlar genişletildiğinde Live Progress’in yansıtılmış bildirimleri gizlemesini istiyorsanız etkinleştirin. Atla bu ayarı kapatır.</string>
     <string name="setup_accessibility_action">Erişilebilirlik ayarlarını aç</string>
     <string name="setup_shizuku_title">Shizuku izni ver</string>
-    <string name="setup_shizuku_reason">Bunu yalnızca Live Progress’in kilit ekranında asıl ilerleme bildirimlerini gizlemesini istiyorsanız verin. Atla bu ayarı kapatır.</string>
+    <string name="setup_shizuku_reason">Bunu yalnızca Live Progress’in kilit ekranında ve AOD’de asıl ilerleme bildirimlerini gizlemesini istiyorsanız verin. Atla bu ayarı kapatır.</string>
     <string name="setup_shizuku_action">Shizuku izni ver</string>
     <string name="setup_skip_action">Atla</string>
     <string name="post_live_test_notification">Canlı bildirim testi gönder</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku yenilemesi başarısız: %1$s</string>
     <string name="setting_show_category_aod">AOD’de göster</string>
     <string name="setting_show_category_lock_screen">Kilit ekranında göster</string>
-    <string name="setting_hide_category_original">Orijinal bildirimi gizle</string>
+    <string name="setting_hide_category_original">Kilit ekranında ve AOD’de orijinal bildirimi gizle</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Kilit</string>
     <string name="setting_category_hide_original_short">Orijinali gizle</string>
+    <string name="setting_keep_category_after_dismiss">Orijinal kapatıldıktan sonra canlı bildirimi tut</string>
+    <string name="setting_category_keep_after_dismiss_short">Kapatınca tut</string>
     <string name="setting_logging_level">Günlük düzeyi</string>
     <string name="setting_clear_logs">Günlükleri temizle</string>
     <string name="logging_level_off">Kapalı</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d / %2$d kategori açık</string>
     <string name="setting_show_progress_aod">AOD üzerinde canlı bildirimleri göster</string>
     <string name="setting_show_progress_lock_screen">Kilit ekranında canlı bildirimleri göster</string>
-    <string name="setting_hide_original_lock_screen">Kilit ekranında asıl bildirimi gizle</string>
+    <string name="setting_hide_original_lock_screen">Kilit ekranında ve AOD’de asıl bildirimi gizle</string>
     <string name="setting_enable_media_live_updates">Canlı medya bildirimlerini etkinleştir</string>
     <string name="setting_show_media_aod">AOD üzerinde canlı bildirimleri göster</string>
     <string name="setting_show_media_lock_screen">Kilit ekranında canlı bildirimleri göster</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Oynat</string>
     <string name="media_action_pause">Duraklat</string>
     <string name="media_action_next">Sonraki</string>
+    <string name="mirror_action_dismiss">Gizle</string>
     <string name="diagnostic_main_activity_started">Ana etkinlik başlatıldı</string>
     <string name="diagnostic_skipped_accessibility_setup">Erişilebilirlik kurulumu atlandı; Hızlı Ayarlar ayna gizleme devre dışı</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku izin kurulumu atlandı</string>

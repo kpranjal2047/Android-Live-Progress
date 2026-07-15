@@ -28,6 +28,7 @@ class MediaLiveController(
     private var activeSource: MediaNotificationSource? = null
     private var suppressedSource: OriginalNotificationSource? = null
     private var notificationDismissed = false
+    private var programmaticCancelPending = false
     private var progressMirrorActive = false
     private var titleStartTime = 0L
     private var lastTitle: String? = null
@@ -93,6 +94,9 @@ class MediaLiveController(
     fun onNotificationPosted(sbn: StatusBarNotification) {
         val source = MediaNotificationSourceFactory.from(service, sbn) ?: return
         val sourcePackageChanged = activeSource?.original?.packageName != source.original.packageName
+        if (sourcePackageChanged) {
+            notificationDismissed = false
+        }
         activeSource = source
         observedAppLabels[source.original.packageName] = source.original.appLabel
         AppDiagnostics.note(service, "media", "Media notification detected from ${source.original.appLabel}")
@@ -106,6 +110,10 @@ class MediaLiveController(
 
     fun onNotificationRemoved(sbn: StatusBarNotification, reason: Int) {
         if (sbn.packageName == service.packageName && sbn.id == MediaLiveNotificationBuilder.NOTIFICATION_ID) {
+            if (programmaticCancelPending) {
+                programmaticCancelPending = false
+                return
+            }
             if (reason == REASON_CANCEL || reason == REASON_CANCEL_ALL) {
                 notificationDismissed = true
                 AppDiagnostics.note(service, "media", "Media live notification dismissed by user")
@@ -117,6 +125,7 @@ class MediaLiveController(
         if (activeSource?.original?.key == sbn.key) {
             releaseSuppressedSource("source media notification removed")
             activeSource = null
+            notificationDismissed = false
             refreshController(
                 preferredPackage = null,
                 currentControllerInvalid = true,
@@ -145,6 +154,12 @@ class MediaLiveController(
             "Media preferences changed; enabled=${preferences.enabled}; aod=${preferences.showOnAod}; lock=${preferences.showOnLockScreen}; pill=${preferences.pillMode}; scroll=${preferences.scrollTitle}"
         )
         updateFromController()
+    }
+
+    fun dismissByUser() {
+        notificationDismissed = true
+        AppDiagnostics.note(service, "media", "Media live notification dismissed by user")
+        cancelMedia("media live notification dismissed by user")
     }
 
     private fun refreshController(
@@ -241,15 +256,6 @@ class MediaLiveController(
             return
         }
 
-        if (state.isPlaying) {
-            notificationDismissed = false
-        }
-        if (notificationDismissed) {
-            AppDiagnostics.verbose(service, "media", "Media update ignored because mirrored notification was dismissed")
-            cancelMedia("media live notification dismissed")
-            return
-        }
-
         if (state.packageName != activeSource?.original?.packageName) {
             AppDiagnostics.verbose(
                 service,
@@ -258,12 +264,20 @@ class MediaLiveController(
             )
             releaseSuppressedSource("media source package changed")
             activeSource = null
+            notificationDismissed = false
         }
 
         if (state.title != lastTitle) {
             lastTitle = state.title
             titleStartTime = System.currentTimeMillis()
+            notificationDismissed = false
             AppDiagnostics.verbose(service, "media", "Media title changed; title=${state.title}; package=${state.packageName}")
+        }
+
+        if (notificationDismissed) {
+            AppDiagnostics.verbose(service, "media", "Media update ignored because mirrored notification was dismissed")
+            cancelMedia("media live notification dismissed")
+            return
         }
 
         activeState = state
@@ -399,6 +413,7 @@ class MediaLiveController(
                                 )
                             }
                             if (posted.isSuccess) {
+                                programmaticCancelPending = false
                                 pendingSnapshot = null
                                 lastPostedSnapshot = request.snapshot
                                 mediaMirrorPosted = true
@@ -579,6 +594,7 @@ class MediaLiveController(
             return
         }
         if (mediaMirrorPosted) {
+            programmaticCancelPending = true
             notificationManager.cancel(MediaLiveNotificationBuilder.NOTIFICATION_ID)
         }
         mediaMirrorPosted = false

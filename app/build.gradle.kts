@@ -1,8 +1,30 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
 }
+
+val privateSigningPropertiesFile = rootProject.file("keystore.properties")
+val privateSigningProperties = Properties().apply {
+    if (privateSigningPropertiesFile.isFile) {
+        privateSigningPropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun privateSigningProperty(name: String): String? =
+    privateSigningProperties.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }
+
+val privateSigningStoreFile = privateSigningProperty("storeFile")?.let(rootProject::file)
+val privateSigningConfigured =
+    privateSigningStoreFile?.isFile == true &&
+        privateSigningProperty("storePassword") != null &&
+        privateSigningProperty("keyAlias") != null &&
+        privateSigningProperty("keyPassword") != null
+
+val signDebugWithPrivateKey =
+    privateSigningProperty("signDebugWithPrivateKey")?.toBooleanStrictOrNull()
+        ?: privateSigningConfigured
 
 android {
     namespace = "com.pranjal.liveprogress"
@@ -25,6 +47,32 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        if (privateSigningConfigured) {
+            create("private") {
+                storeFile = privateSigningStoreFile
+                storePassword = privateSigningProperty("storePassword")
+                keyAlias = privateSigningProperty("keyAlias")
+                keyPassword = privateSigningProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        val privateSigningConfig = signingConfigs.findByName("private")
+
+        debug {
+            if (privateSigningConfig != null && signDebugWithPrivateKey) {
+                signingConfig = privateSigningConfig
+            }
+        }
+
+        release {
+            if (privateSigningConfig != null) {
+                signingConfig = privateSigningConfig
+            }
+        }
+    }
 }
 
 kotlin {

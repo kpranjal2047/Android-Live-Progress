@@ -8,6 +8,8 @@ import android.service.notification.StatusBarNotification
 
 class NotificationMirrorService : NotificationListenerService() {
     private val candidates = linkedMapOf<String, MirrorCandidate>()
+    private val dismissedProgressKeys = mutableSetOf<String>()
+    private val retainedAfterSourceRemovedKeys = mutableSetOf<String>()
     private val mirrorVisibilityByKey = mutableMapOf<String, String>()
     private val progressSnapshotsByKey = mutableMapOf<String, ProgressMirrorSnapshot>()
     private val progressUseSourceIconByKey = mutableMapOf<String, Boolean>()
@@ -44,6 +46,33 @@ class NotificationMirrorService : NotificationListenerService() {
                 return
             }
             service.refreshActiveNotifications(reason)
+        }
+
+        fun dismissProgressMirror(
+            context: Context,
+            key: String,
+            notificationId: Int
+        ) {
+            val service = activeService
+            if (service != null) {
+                service.dismissProgressMirror(key, notificationId)
+                return
+            }
+
+            context.getSystemService(NotificationManager::class.java).cancel(notificationId)
+            AppDiagnostics.note(context, "mirror", "Progress mirror dismissed by user")
+        }
+
+        fun dismissMediaMirror(context: Context) {
+            val service = activeService
+            if (service != null) {
+                service.mediaLiveController.dismissByUser()
+                return
+            }
+
+            context.getSystemService(NotificationManager::class.java)
+                .cancel(MediaLiveNotificationBuilder.NOTIFICATION_ID)
+            AppDiagnostics.note(context, "media", "Media live notification dismissed by user")
         }
     }
 
@@ -135,20 +164,36 @@ class NotificationMirrorService : NotificationListenerService() {
         active.forEach { sbn ->
             observeNotificationCategory(sbn, rankingMap)
             mediaLiveController.onNotificationPosted(sbn)
-            classifyCandidate(sbn)?.let { refreshed[it.key] = it }
+            classifyCandidate(sbn)
+                ?.takeUnless { it.key in dismissedProgressKeys }
+                ?.let { candidate ->
+                    removeRetainedMirrorsForReplacement(candidate)
+                    retainedAfterSourceRemovedKeys.remove(candidate.key)
+                    refreshed[candidate.key] = candidate
+                }
         }
         previous.values
             .filter { it.key !in refreshed }
             .forEach { removed ->
-                OriginalSuppressionController.onMirrorHidden(this, removed, "source notification no longer eligible")
-                notificationManager.cancel(removed.notificationId)
-                mirrorVisibilityByKey.remove(removed.key)
-                clearProgressSnapshot(removed.key)
-                AppDiagnostics.verbose(
-                    this,
-                    "mirror",
-                    "Progress mirror removed during refresh; app=${removed.appLabel}; reason=source notification no longer eligible"
+                val retained = retainMirrorAfterSourceRemoved(
+                    candidate = removed,
+                    reason = "source notification no longer eligible",
+                    allowNewRetention = false
                 )
+                if (retained != null) {
+                    refreshed[retained.key] = retained
+                } else {
+                    OriginalSuppressionController.onMirrorHidden(this, removed, "source notification no longer eligible")
+                    notificationManager.cancel(removed.notificationId)
+                    retainedAfterSourceRemovedKeys.remove(removed.key)
+                    mirrorVisibilityByKey.remove(removed.key)
+                    clearProgressSnapshot(removed.key)
+                    AppDiagnostics.verbose(
+                        this,
+                        "mirror",
+                        "Progress mirror removed during refresh; app=${removed.appLabel}; reason=source notification no longer eligible"
+                    )
+                }
             }
         candidates.clear()
         candidates.putAll(refreshed)
@@ -175,7 +220,13 @@ class NotificationMirrorService : NotificationListenerService() {
             removeMirrorFor(sbn)
             return
         }
+        if (candidate.key in dismissedProgressKeys) {
+            removeVisibleMirrorForDismissedCandidate(candidate)
+            return
+        }
 
+        removeRetainedMirrorsForReplacement(candidate)
+        retainedAfterSourceRemovedKeys.remove(candidate.key)
         val isNewCandidate = candidate.key !in candidates
         candidates[candidate.key] = candidate
         if (isNewCandidate) {
@@ -190,9 +241,25 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     private fun removeMirrorFor(sbn: StatusBarNotification) {
-        val removed = candidates.remove(sbn.key) ?: return
+        dismissedProgressKeys.remove(sbn.key)
+        val removed = candidates[sbn.key] ?: return
+        val retained = retainMirrorAfterSourceRemoved(
+            candidate = removed,
+            reason = "source notification removed",
+            allowNewRetention = true
+        )
+        if (retained != null) {
+            candidates[sbn.key] = retained
+            AppDiagnostics.note(this, "mirror", "Retained mirror for ${retained.appLabel} after original notification was dismissed")
+            publishProgressMirrorActivity()
+            applyVisibility(retained)
+            return
+        }
+
+        candidates.remove(sbn.key)
         OriginalSuppressionController.onMirrorHidden(this, removed, "source notification removed")
         notificationManager.cancel(removed.notificationId)
+        retainedAfterSourceRemovedKeys.remove(removed.key)
         mirrorVisibilityByKey.remove(removed.key)
         clearProgressSnapshot(removed.key)
         AppDiagnostics.note(this, "mirror", "Removed mirror for ${removed.appLabel}")
@@ -210,26 +277,149 @@ class NotificationMirrorService : NotificationListenerService() {
         while (iterator.hasNext()) {
             val entry = iterator.next()
             if (entry.key !in activeKeys) {
-                OriginalSuppressionController.onMirrorHidden(
-                    this,
-                    entry.value,
-                    "source notification no longer active"
+                val retained = retainMirrorAfterSourceRemoved(
+                    candidate = entry.value,
+                    reason = "source notification no longer active",
+                    allowNewRetention = true
                 )
-                notificationManager.cancel(entry.value.notificationId)
-                mirrorVisibilityByKey.remove(entry.key)
-                clearProgressSnapshot(entry.key)
-                AppDiagnostics.verbose(
-                    this,
-                    "mirror",
-                    "Progress mirror removed during visibility reconcile; app=${entry.value.appLabel}; reason=source notification no longer active"
-                )
-                iterator.remove()
+                if (retained != null) {
+                    entry.setValue(retained)
+                    applyVisibility(retained)
+                } else {
+                    OriginalSuppressionController.onMirrorHidden(
+                        this,
+                        entry.value,
+                        "source notification no longer active"
+                    )
+                    notificationManager.cancel(entry.value.notificationId)
+                    retainedAfterSourceRemovedKeys.remove(entry.key)
+                    mirrorVisibilityByKey.remove(entry.key)
+                    clearProgressSnapshot(entry.key)
+                    AppDiagnostics.verbose(
+                        this,
+                        "mirror",
+                        "Progress mirror removed during visibility reconcile; app=${entry.value.appLabel}; reason=source notification no longer active"
+                    )
+                    iterator.remove()
+                }
             } else {
                 applyVisibility(entry.value)
             }
         }
         publishProgressMirrorActivity()
         mediaLiveController.onVisibilityChanged()
+    }
+
+    private fun dismissProgressMirror(
+        key: String,
+        notificationId: Int
+    ) {
+        dismissedProgressKeys.add(key)
+        retainedAfterSourceRemovedKeys.remove(key)
+        val removed = candidates.remove(key)
+        if (removed != null) {
+            OriginalSuppressionController.onMirrorHidden(this, removed, "progress mirror dismissed by user")
+            notificationManager.cancel(removed.notificationId)
+            mirrorVisibilityByKey.remove(key)
+            clearProgressSnapshot(key)
+        } else {
+            OriginalSuppressionController.restoreAll(this, "progress mirror dismissed by user")
+            notificationManager.cancel(notificationId)
+        }
+        AppDiagnostics.note(this, "mirror", "Progress mirror dismissed by user")
+        publishProgressMirrorActivity()
+        mediaLiveController.onVisibilityChanged()
+    }
+
+    private fun removeVisibleMirrorForDismissedCandidate(candidate: MirrorCandidate) {
+        val removed = candidates.remove(candidate.key)
+        OriginalSuppressionController.onMirrorHidden(
+            this,
+            removed ?: candidate,
+            "progress mirror dismissed by user"
+        )
+        notificationManager.cancel(candidate.notificationId)
+        retainedAfterSourceRemovedKeys.remove(candidate.key)
+        mirrorVisibilityByKey.remove(candidate.key)
+        clearProgressSnapshot(candidate.key)
+        publishProgressMirrorActivity()
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Progress mirror remains dismissed; app=${candidate.appLabel}"
+        )
+    }
+
+    private fun retainMirrorAfterSourceRemoved(
+        candidate: MirrorCandidate,
+        reason: String,
+        allowNewRetention: Boolean
+    ): MirrorCandidate? {
+        if (!allowNewRetention && candidate.key !in retainedAfterSourceRemovedKeys) return null
+        val retained = retainedCandidateOrNull(candidate) ?: run {
+            retainedAfterSourceRemovedKeys.remove(candidate.key)
+            return null
+        }
+        val wasRetained = retained.key in retainedAfterSourceRemovedKeys
+        val settingsChanged = retained.displaySettings != candidate.displaySettings
+        retainedAfterSourceRemovedKeys.add(retained.key)
+        if (!wasRetained || settingsChanged) {
+            OriginalSuppressionController.onMirrorHidden(this, retained, "$reason; retaining mirror")
+            clearProgressSnapshot(retained.key)
+            AppDiagnostics.verbose(
+                this,
+                "mirror",
+                "Progress mirror retained after source removal; app=${retained.appLabel}; reason=$reason"
+            )
+        }
+        return retained
+    }
+
+    private fun retainedCandidateOrNull(candidate: MirrorCandidate): MirrorCandidate? {
+        if (candidate.displaySettings.source != MirrorCandidateSource.ADDITIONAL) return null
+        val settings = additionalCategorySettings(
+            packageName = candidate.packageName,
+            uid = candidate.sourceUid,
+            channelId = candidate.channelId
+        )
+        if (!settings.enabled || !settings.keepAfterOriginalDismissed) return null
+        return candidate.copy(
+            displaySettings = MirrorCandidateDisplaySettings(
+                source = MirrorCandidateSource.ADDITIONAL,
+                showOnAod = settings.showOnAod,
+                showOnLockScreen = settings.showOnLockScreen,
+                hideOriginalNotification = settings.hideOriginalNotification,
+                keepAfterOriginalDismissed = settings.keepAfterOriginalDismissed
+            )
+        )
+    }
+
+    private fun removeRetainedMirrorsForReplacement(candidate: MirrorCandidate) {
+        val removedKeys = candidates
+            .filter { (key, retained) ->
+                key in retainedAfterSourceRemovedKeys &&
+                    key != candidate.key &&
+                    retained.sameSourceCategory(candidate)
+            }
+            .keys
+            .toList()
+        removedKeys.forEach { key ->
+            val removed = candidates.remove(key) ?: return@forEach
+            retainedAfterSourceRemovedKeys.remove(key)
+            OriginalSuppressionController.onMirrorHidden(
+                this,
+                removed,
+                "new notification replaced retained mirror"
+            )
+            notificationManager.cancel(removed.notificationId)
+            mirrorVisibilityByKey.remove(key)
+            clearProgressSnapshot(key)
+            AppDiagnostics.verbose(
+                this,
+                "mirror",
+                "Retained mirror replaced; old=${removed.appLabel}; new=${candidate.appLabel}"
+            )
+        }
     }
 
     private fun publishProgressMirrorActivity() {
@@ -242,6 +432,7 @@ class NotificationMirrorService : NotificationListenerService() {
 
     private fun onProgressPreferencesChanged() {
         progressPreferences = ProgressPreferences(this)
+        dismissedProgressKeys.clear()
         progressSnapshotsByKey.clear()
         progressUseSourceIconByKey.clear()
         AppDiagnostics.verbose(
@@ -254,6 +445,7 @@ class NotificationMirrorService : NotificationListenerService() {
 
     private fun onAdditionalPreferencesChanged() {
         categoryPreferences = NotificationCategoryPreferences(this)
+        dismissedProgressKeys.clear()
         progressSnapshotsByKey.clear()
         progressUseSourceIconByKey.clear()
         AppDiagnostics.verbose(this, "mirror", "Additional notification preferences reloaded")
@@ -274,11 +466,12 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun applyVisibility(candidate: MirrorCandidate) {
         VisibilityState.refreshLockState(this)
         val displaySettings = candidate.displaySettings
+        val retainedAfterSourceRemoval = candidate.key in retainedAfterSourceRemovedKeys
         val sourceAppInForeground = VisibilityState.isSourcePackageInForeground(candidate.packageName)
         AppDiagnostics.verbose(
             this,
             "mirror",
-            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnAod}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}"
+            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; retained=$retainedAfterSourceRemoval; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnAod}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}; keepAfterDismiss=${displaySettings.keepAfterOriginalDismissed}"
         )
         if (!MirrorVisibilityPolicy.shouldShow(
                 locked = VisibilityState.locked,
@@ -341,7 +534,10 @@ class NotificationMirrorService : NotificationListenerService() {
         }
 
         val shouldSuppressOriginal = VisibilityState.locked &&
-            displaySettings.hideOriginalNotification &&
+            MirrorRetentionPolicy.shouldUseOriginalSuppression(
+                candidate = candidate,
+                retainedAfterSourceRemoval = retainedAfterSourceRemoval
+            ) &&
             PrivilegedAccess.canUseOriginalNotificationSuppression(this)
         val priorityMode = MirrorPriorityPolicy.forSurface(
             locked = VisibilityState.locked,
@@ -357,7 +553,7 @@ class NotificationMirrorService : NotificationListenerService() {
         } else {
             "Unchanged; repost skipped."
         }
-        val shownState = "shown:${VisibilityState.locked}:${VisibilityState.screenOff}:$shouldSuppressOriginal"
+        val shownState = "shown:${VisibilityState.locked}:${VisibilityState.screenOff}:$shouldSuppressOriginal:$retainedAfterSourceRemoval"
         val visibilityChanged = noteMirrorVisibility(
             candidate,
             shownState,
@@ -620,6 +816,12 @@ class NotificationMirrorService : NotificationListenerService() {
             MirrorCandidateSource.PROGRESS -> "progress"
             MirrorCandidateSource.ADDITIONAL -> "additional notification"
         }
+    }
+
+    private fun MirrorCandidate.sameSourceCategory(other: MirrorCandidate): Boolean {
+        return packageName == other.packageName &&
+            sourceUid == other.sourceUid &&
+            channelId == other.channelId
     }
 
     private fun StatusBarNotification.debugIdentity(): String {

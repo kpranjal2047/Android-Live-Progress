@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Включайте это только если хотите скрывать зеркальные уведомления при раскрытых быстрых настройках. Пропуск отключит эту настройку.</string>
     <string name="setup_accessibility_action">Открыть настройки специальных возможностей</string>
     <string name="setup_shizuku_title">Предоставьте разрешение Shizuku</string>
-    <string name="setup_shizuku_reason">Предоставьте его только если хотите скрывать исходные уведомления прогресса на экране блокировки. Пропуск отключит эту настройку.</string>
+    <string name="setup_shizuku_reason">Предоставьте его только если хотите скрывать исходные уведомления прогресса на экране блокировки и AOD. Пропуск отключит эту настройку.</string>
     <string name="setup_shizuku_action">Предоставить разрешение Shizuku</string>
     <string name="setup_skip_action">Пропустить</string>
     <string name="post_live_test_notification">Опубликовать тест живого уведомления</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Сбой обновления Shizuku: %1$s</string>
     <string name="setting_show_category_aod">Показывать на AOD</string>
     <string name="setting_show_category_lock_screen">Показывать на экране блокировки</string>
-    <string name="setting_hide_category_original">Скрывать исходное уведомление</string>
+    <string name="setting_hide_category_original">Скрывать исходное уведомление на экране блокировки и AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Блокировка</string>
     <string name="setting_category_hide_original_short">Скрыть исходное</string>
+    <string name="setting_keep_category_after_dismiss">Оставлять живое уведомление после закрытия исходного</string>
+    <string name="setting_category_keep_after_dismiss_short">Оставлять после закрытия</string>
     <string name="setting_logging_level">Уровень журнала</string>
     <string name="setting_clear_logs">Очистка журналов</string>
     <string name="logging_level_off">Выкл.</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d из %2$d категорий включено</string>
     <string name="setting_show_progress_aod">Показывать живые уведомления на AOD</string>
     <string name="setting_show_progress_lock_screen">Показывать живые уведомления на экране блокировки</string>
-    <string name="setting_hide_original_lock_screen">Скрывать исходное уведомление на экране блокировки</string>
+    <string name="setting_hide_original_lock_screen">Скрывать исходное уведомление на экране блокировки и AOD</string>
     <string name="setting_enable_media_live_updates">Включить живые медиауведомления</string>
     <string name="setting_show_media_aod">Показывать живые уведомления на AOD</string>
     <string name="setting_show_media_lock_screen">Показывать живые уведомления на экране блокировки</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Воспроизвести</string>
     <string name="media_action_pause">Пауза</string>
     <string name="media_action_next">Далее</string>
+    <string name="mirror_action_dismiss">Скрыть</string>
     <string name="diagnostic_main_activity_started">Главный экран запущен</string>
     <string name="diagnostic_skipped_accessibility_setup">Настройка специальных возможностей пропущена; скрытие в быстрых настройках отключено</string>
     <string name="diagnostic_skipped_shizuku_setup">Настройка разрешения Shizuku пропущена</string>

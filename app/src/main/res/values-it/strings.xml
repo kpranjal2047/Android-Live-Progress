@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Attivalo solo se vuoi che Live Progress nasconda le notifiche replicate quando le impostazioni rapide sono espanse. Salta disattiva questa opzione.</string>
     <string name="setup_accessibility_action">Apri impostazioni accessibilità</string>
     <string name="setup_shizuku_title">Concedi permesso Shizuku</string>
-    <string name="setup_shizuku_reason">Concedilo solo se vuoi che Live Progress nasconda le notifiche originali di avanzamento nella schermata di blocco. Salta disattiva questa opzione.</string>
+    <string name="setup_shizuku_reason">Concedilo solo se vuoi che Live Progress nasconda le notifiche originali di avanzamento nella schermata di blocco e su AOD. Salta disattiva questa opzione.</string>
     <string name="setup_shizuku_action">Concedi permesso Shizuku</string>
     <string name="setup_skip_action">Salta</string>
     <string name="post_live_test_notification">Pubblica prova notifica in tempo reale</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Aggiornamento Shizuku non riuscito: %1$s</string>
     <string name="setting_show_category_aod">Mostra su AOD</string>
     <string name="setting_show_category_lock_screen">Mostra nella schermata di blocco</string>
-    <string name="setting_hide_category_original">Nascondi notifica originale</string>
+    <string name="setting_hide_category_original">Nascondi notifica originale nella schermata di blocco e su AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Blocco</string>
     <string name="setting_category_hide_original_short">Nascondi originale</string>
+    <string name="setting_keep_category_after_dismiss">Mantieni la notifica live dopo la chiusura dell’originale</string>
+    <string name="setting_category_keep_after_dismiss_short">Mantieni dopo chiusura</string>
     <string name="setting_logging_level">Livello log</string>
     <string name="setting_clear_logs">Cancella log</string>
     <string name="logging_level_off">Disattivato</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d di %2$d categorie attive</string>
     <string name="setting_show_progress_aod">Mostra notifiche in tempo reale su AOD</string>
     <string name="setting_show_progress_lock_screen">Mostra notifiche in tempo reale nella schermata di blocco</string>
-    <string name="setting_hide_original_lock_screen">Nascondi notifica originale nella schermata di blocco</string>
+    <string name="setting_hide_original_lock_screen">Nascondi notifica originale nella schermata di blocco e su AOD</string>
     <string name="setting_enable_media_live_updates">Attiva notifiche multimediali in tempo reale</string>
     <string name="setting_show_media_aod">Mostra notifiche in tempo reale su AOD</string>
     <string name="setting_show_media_lock_screen">Mostra notifiche in tempo reale nella schermata di blocco</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Riproduci</string>
     <string name="media_action_pause">Pausa</string>
     <string name="media_action_next">Successivo</string>
+    <string name="mirror_action_dismiss">Nascondi</string>
     <string name="diagnostic_main_activity_started">Attività principale avviata</string>
     <string name="diagnostic_skipped_accessibility_setup">Configurazione accessibilità saltata; occultamento nelle impostazioni rapide disattivato</string>
     <string name="diagnostic_skipped_shizuku_setup">Configurazione permesso Shizuku saltata</string>

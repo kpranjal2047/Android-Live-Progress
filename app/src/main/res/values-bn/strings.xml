@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Quick Settings খোলা থাকলে মিরর নোটিফিকেশন লুকাতে চাইলে শুধু এটি চালু করুন। এড়ালে সেটিংটি বন্ধ হবে।</string>
     <string name="setup_accessibility_action">Accessibility সেটিং খুলুন</string>
     <string name="setup_shizuku_title">Shizuku অনুমতি দিন</string>
-    <string name="setup_shizuku_reason">লক স্ক্রিনে আসল প্রগ্রেস নোটিফিকেশন লুকাতে চাইলে শুধু এটি দিন। এড়ালে সেটিংটি বন্ধ হবে।</string>
+    <string name="setup_shizuku_reason">লক স্ক্রিন এবং AOD-তে আসল প্রগ্রেস নোটিফিকেশন লুকাতে চাইলে শুধু এটি দিন। এড়ালে সেটিংটি বন্ধ হবে।</string>
     <string name="setup_shizuku_action">Shizuku অনুমতি দিন</string>
     <string name="setup_skip_action">এড়িয়ে যান</string>
     <string name="post_live_test_notification">লাইভ নোটিফিকেশন টেস্ট পাঠান</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku রিফ্রেশ ব্যর্থ: %1$s</string>
     <string name="setting_show_category_aod">AOD-তে দেখান</string>
     <string name="setting_show_category_lock_screen">লক স্ক্রিনে দেখান</string>
-    <string name="setting_hide_category_original">মূল নোটিফিকেশন লুকান</string>
+    <string name="setting_hide_category_original">লক স্ক্রিন এবং AOD-তে মূল নোটিফিকেশন লুকান</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">লক</string>
     <string name="setting_category_hide_original_short">মূল লুকান</string>
+    <string name="setting_keep_category_after_dismiss">মূল নোটিফিকেশন সরানোর পরও লাইভ নোটিফিকেশন রাখুন</string>
+    <string name="setting_category_keep_after_dismiss_short">সরানোর পর রাখুন</string>
     <string name="setting_logging_level">লগিং স্তর</string>
     <string name="setting_clear_logs">লগ মুছুন</string>
     <string name="logging_level_off">বন্ধ</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d / %2$d শ্রেণি চালু</string>
     <string name="setting_show_progress_aod">AOD-তে লাইভ নোটিফিকেশন দেখান</string>
     <string name="setting_show_progress_lock_screen">লক স্ক্রিনে লাইভ নোটিফিকেশন দেখান</string>
-    <string name="setting_hide_original_lock_screen">লক স্ক্রিনে আসল নোটিফিকেশন লুকান</string>
+    <string name="setting_hide_original_lock_screen">লক স্ক্রিন এবং AOD-তে আসল নোটিফিকেশন লুকান</string>
     <string name="setting_enable_media_live_updates">মিডিয়া লাইভ নোটিফিকেশন চালু করুন</string>
     <string name="setting_show_media_aod">AOD-তে লাইভ নোটিফিকেশন দেখান</string>
     <string name="setting_show_media_lock_screen">লক স্ক্রিনে লাইভ নোটিফিকেশন দেখান</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">চালান</string>
     <string name="media_action_pause">বিরতি</string>
     <string name="media_action_next">পরেরটি</string>
+    <string name="mirror_action_dismiss">সরান</string>
     <string name="diagnostic_main_activity_started">প্রধান পর্দা শুরু হয়েছে</string>
     <string name="diagnostic_skipped_accessibility_setup">Accessibility সেটআপ এড়ানো হয়েছে; Quick Settings-এ মিরর লুকানো বন্ধ</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku অনুমতি প্রস্তুতি এড়ানো হয়েছে</string>

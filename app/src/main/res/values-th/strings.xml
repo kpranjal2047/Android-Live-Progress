@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">เปิดเฉพาะเมื่อคุณต้องการซ่อนการแจ้งเตือนที่สะท้อนเมื่อการตั้งค่าด่วนถูกขยาย การข้ามจะปิดการตั้งค่านี้</string>
     <string name="setup_accessibility_action">เปิดการตั้งค่าการช่วยเหลือพิเศษ</string>
     <string name="setup_shizuku_title">ให้สิทธิ์ Shizuku</string>
-    <string name="setup_shizuku_reason">ให้สิทธิ์นี้เฉพาะเมื่อคุณต้องการให้ Live Progress ซ่อนการแจ้งเตือนความคืบหน้าต้นฉบับบนหน้าจอล็อก ข้ามจะปิดการตั้งค่านี้</string>
+    <string name="setup_shizuku_reason">ให้สิทธิ์นี้เฉพาะเมื่อคุณต้องการให้ Live Progress ซ่อนการแจ้งเตือนความคืบหน้าต้นฉบับบนหน้าจอล็อกและ AOD ข้ามจะปิดการตั้งค่านี้</string>
     <string name="setup_shizuku_action">ให้สิทธิ์ Shizuku</string>
     <string name="setup_skip_action">ข้าม</string>
     <string name="post_live_test_notification">ส่งการแจ้งเตือนทดสอบแบบสด</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">รีเฟรช Shizuku ไม่สำเร็จ: %1$s</string>
     <string name="setting_show_category_aod">แสดงบน AOD</string>
     <string name="setting_show_category_lock_screen">แสดงบนหน้าจอล็อก</string>
-    <string name="setting_hide_category_original">ซ่อนการแจ้งเตือนเดิม</string>
+    <string name="setting_hide_category_original">ซ่อนการแจ้งเตือนเดิมบนหน้าจอล็อกและ AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">ล็อก</string>
     <string name="setting_category_hide_original_short">ซ่อนต้นฉบับ</string>
+    <string name="setting_keep_category_after_dismiss">คงการแจ้งเตือนสดไว้หลังปิดการแจ้งเตือนต้นฉบับ</string>
+    <string name="setting_category_keep_after_dismiss_short">คงไว้หลังปิด</string>
     <string name="setting_logging_level">ระดับบันทึก</string>
     <string name="setting_clear_logs">ล้างบันทึก</string>
     <string name="logging_level_off">ปิด</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">เปิด %1$d จาก %2$d หมวดหมู่</string>
     <string name="setting_show_progress_aod">แสดงการแจ้งเตือนแบบสดบน AOD</string>
     <string name="setting_show_progress_lock_screen">แสดงการแจ้งเตือนแบบสดบนหน้าจอล็อก</string>
-    <string name="setting_hide_original_lock_screen">ซ่อนการแจ้งเตือนต้นฉบับบนหน้าจอล็อก</string>
+    <string name="setting_hide_original_lock_screen">ซ่อนการแจ้งเตือนต้นฉบับบนหน้าจอล็อกและ AOD</string>
     <string name="setting_enable_media_live_updates">เปิดการแจ้งเตือนสื่อแบบสด</string>
     <string name="setting_show_media_aod">แสดงการแจ้งเตือนแบบสดบน AOD</string>
     <string name="setting_show_media_lock_screen">แสดงการแจ้งเตือนแบบสดบนหน้าจอล็อก</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">เล่น</string>
     <string name="media_action_pause">หยุดชั่วคราว</string>
     <string name="media_action_next">ถัดไป</string>
+    <string name="mirror_action_dismiss">ซ่อน</string>
     <string name="diagnostic_main_activity_started">เริ่มกิจกรรมหลักแล้ว</string>
     <string name="diagnostic_skipped_accessibility_setup">ข้ามการตั้งค่าการช่วยเหลือพิเศษแล้ว; ปิดการซ่อนการสะท้อนเมื่อใช้การตั้งค่าด่วน</string>
     <string name="diagnostic_skipped_shizuku_setup">ข้ามการตั้งค่าสิทธิ์ Shizuku</string>

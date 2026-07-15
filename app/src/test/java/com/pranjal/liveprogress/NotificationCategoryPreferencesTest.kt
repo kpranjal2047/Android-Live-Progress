@@ -80,6 +80,7 @@ class NotificationCategoryPreferencesTest {
         assertEquals(true, settings.showOnAod)
         assertEquals(false, settings.showOnLockScreen)
         assertEquals(false, settings.hideOriginalNotification)
+        assertEquals(false, settings.keepAfterOriginalDismissed)
     }
 
     @Test
@@ -93,12 +94,49 @@ class NotificationCategoryPreferencesTest {
             enabled = true,
             showOnAod = false,
             showOnLockScreen = true,
-            hideOriginalNotification = true
+            hideOriginalNotification = true,
+            keepAfterOriginalDismissed = true
         )
 
         assertEquals(
             key to settings,
             NotificationCategorySettings.parse(settings.encode(key))
         )
+    }
+
+    @Test
+    fun categorySettingsReadsOldRecordsWithKeepAfterDismissDisabled() {
+        val encoded = listOf(
+            "com.example.source",
+            "12345",
+            "delivery_status",
+            "true",
+            "false",
+            "true",
+            "true"
+        ).joinToString("\u001F")
+
+        val settings = NotificationCategorySettings.parse(encoded)?.second
+
+        assertEquals(true, settings?.enabled)
+        assertEquals(false, settings?.showOnAod)
+        assertEquals(true, settings?.showOnLockScreen)
+        assertEquals(true, settings?.hideOriginalNotification)
+        assertEquals(false, settings?.keepAfterOriginalDismissed)
+    }
+
+    @Test
+    fun enabledCategorySettingsCopyProgressDefaults() {
+        val settings = NotificationCategorySettings.enabledWithProgressDefaults(
+            showOnAod = false,
+            showOnLockScreen = true,
+            hideOriginalNotification = true
+        )
+
+        assertEquals(true, settings.enabled)
+        assertEquals(false, settings.showOnAod)
+        assertEquals(true, settings.showOnLockScreen)
+        assertEquals(true, settings.hideOriginalNotification)
+        assertEquals(false, settings.keepAfterOriginalDismissed)
     }
 }

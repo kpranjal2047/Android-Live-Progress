@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Enable this only if you want Live Progress to hide mirrored notifications when Quick Settings is expanded and when the source app is open. Skip turns Quick Settings hiding off.</string>
     <string name="setup_accessibility_action">Open accessibility settings</string>
     <string name="setup_shizuku_title">Grant Shizuku permission</string>
-    <string name="setup_shizuku_reason">Grant this only if you want Live Progress to hide original progress notifications on the lock screen. Skip turns that setting off.</string>
+    <string name="setup_shizuku_reason">Grant this only if you want Live Progress to hide original progress notifications on the lock screen and AOD. Skip turns that setting off.</string>
     <string name="setup_shizuku_action">Grant Shizuku permission</string>
     <string name="setup_skip_action">Skip</string>
     <string name="post_live_test_notification">Post live notification test</string>
@@ -55,10 +55,12 @@
     <string name="additional_app_selected_count">Enabled categories: %1$d/%2$d</string>
     <string name="setting_show_category_aod">Show on AOD</string>
     <string name="setting_show_category_lock_screen">Show on lock screen</string>
-    <string name="setting_hide_category_original">Hide original notification</string>
+    <string name="setting_hide_category_original">Hide original notification on lock screen and AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Lock screen</string>
     <string name="setting_category_hide_original_short">Hide original</string>
+    <string name="setting_keep_category_after_dismiss">Keep live notification after original is dismissed</string>
+    <string name="setting_category_keep_after_dismiss_short">Keep after dismiss</string>
     <string name="setting_logging_level">Logging level</string>
     <string name="setting_clear_logs">Clear logs</string>
     <string name="logging_level_off">Off</string>
@@ -82,7 +84,7 @@
     <string name="about_open_source_failed">Unable to open source code link</string>
     <string name="setting_show_progress_aod">Show live notifications on AOD</string>
     <string name="setting_show_progress_lock_screen">Show live notifications on lock screen</string>
-    <string name="setting_hide_original_lock_screen">Hide original notification on lock screen</string>
+    <string name="setting_hide_original_lock_screen">Hide original notification on lock screen and AOD</string>
     <string name="setting_enable_media_live_updates">Enable media live notifications</string>
     <string name="setting_show_media_aod">Show live notifications on AOD</string>
     <string name="setting_show_media_lock_screen">Show live notifications on lock screen</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Play</string>
     <string name="media_action_pause">Pause</string>
     <string name="media_action_next">Next</string>
+    <string name="mirror_action_dismiss">Dismiss</string>
     <string name="diagnostic_main_activity_started">Main activity started</string>
     <string name="diagnostic_skipped_accessibility_setup">Skipped accessibility setup; QS mirror hiding disabled</string>
     <string name="diagnostic_skipped_shizuku_setup">Skipped Shizuku permission setup</string>

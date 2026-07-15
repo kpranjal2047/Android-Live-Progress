@@ -62,7 +62,8 @@ object NotificationClassifier {
                 source = MirrorCandidateSource.ADDITIONAL,
                 showOnAod = additionalSettings.showOnAod,
                 showOnLockScreen = additionalSettings.showOnLockScreen,
-                hideOriginalNotification = additionalSettings.hideOriginalNotification
+                hideOriginalNotification = additionalSettings.hideOriginalNotification,
+                keepAfterOriginalDismissed = additionalSettings.keepAfterOriginalDismissed
             )
             else -> {
                 val reason = if (standardProgressInfo != null) {

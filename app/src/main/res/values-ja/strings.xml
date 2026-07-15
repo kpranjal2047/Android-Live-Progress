@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">クイック設定が開いたときに複製通知を隠したい場合だけ有効にしてください。スキップするとこの設定はオフになります。</string>
     <string name="setup_accessibility_action">ユーザー補助設定を開く</string>
     <string name="setup_shizuku_title">Shizuku 権限を付与する</string>
-    <string name="setup_shizuku_reason">ロック画面で元の進行状況通知を隠したい場合だけ付与してください。スキップするとこの設定はオフになります。</string>
+    <string name="setup_shizuku_reason">ロック画面とAODで元の進行状況通知を隠したい場合だけ付与してください。スキップするとこの設定はオフになります。</string>
     <string name="setup_shizuku_action">Shizuku 権限を付与する</string>
     <string name="setup_skip_action">スキップ</string>
     <string name="post_live_test_notification">リアルタイム通知テストを送信</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku更新に失敗しました: %1$s</string>
     <string name="setting_show_category_aod">AOD に表示</string>
     <string name="setting_show_category_lock_screen">ロック画面に表示</string>
-    <string name="setting_hide_category_original">元の通知を非表示</string>
+    <string name="setting_hide_category_original">ロック画面とAODで元の通知を非表示</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">ロック画面</string>
     <string name="setting_category_hide_original_short">元を非表示</string>
+    <string name="setting_keep_category_after_dismiss">元の通知を閉じた後もライブ通知を残す</string>
+    <string name="setting_category_keep_after_dismiss_short">閉じた後も残す</string>
     <string name="setting_logging_level">ログレベル</string>
     <string name="setting_clear_logs">ログを消去</string>
     <string name="logging_level_off">オフ</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d / %2$d カテゴリ有効</string>
     <string name="setting_show_progress_aod">AOD にライブ通知を表示</string>
     <string name="setting_show_progress_lock_screen">ロック画面にライブ通知を表示</string>
-    <string name="setting_hide_original_lock_screen">ロック画面で元の通知を非表示にする</string>
+    <string name="setting_hide_original_lock_screen">ロック画面とAODで元の通知を非表示にする</string>
     <string name="setting_enable_media_live_updates">メディアライブ通知を有効にする</string>
     <string name="setting_show_media_aod">AOD にライブ通知を表示</string>
     <string name="setting_show_media_lock_screen">ロック画面にライブ通知を表示</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">再生</string>
     <string name="media_action_pause">一時停止</string>
     <string name="media_action_next">次へ</string>
+    <string name="mirror_action_dismiss">非表示</string>
     <string name="diagnostic_main_activity_started">メイン画面を開始しました</string>
     <string name="diagnostic_skipped_accessibility_setup">ユーザー補助設定をスキップしました。クイック設定での複製非表示は無効です</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku 権限設定をスキップしました</string>

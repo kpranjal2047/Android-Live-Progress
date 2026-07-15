@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">فعّل هذا فقط إذا كنت تريد إخفاء الإشعارات المعكوسة عند توسيع الإعدادات السريعة. التخطي يوقف هذا الخيار.</string>
     <string name="setup_accessibility_action">فتح إعدادات تسهيلات الاستخدام</string>
     <string name="setup_shizuku_title">منح إذن Shizuku</string>
-    <string name="setup_shizuku_reason">امنح هذا فقط إذا كنت تريد إخفاء إشعارات التقدم الأصلية على شاشة القفل. التخطي يوقف هذا الخيار.</string>
+    <string name="setup_shizuku_reason">امنح هذا فقط إذا كنت تريد إخفاء إشعارات التقدم الأصلية على شاشة القفل وAOD. التخطي يوقف هذا الخيار.</string>
     <string name="setup_shizuku_action">منح إذن Shizuku</string>
     <string name="setup_skip_action">تخطي</string>
     <string name="post_live_test_notification">نشر اختبار إشعار مباشر</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">فشل تحديث Shizuku: %1$s</string>
     <string name="setting_show_category_aod">إظهار على AOD</string>
     <string name="setting_show_category_lock_screen">إظهار على شاشة القفل</string>
-    <string name="setting_hide_category_original">إخفاء الإشعار الأصلي</string>
+    <string name="setting_hide_category_original">إخفاء الإشعار الأصلي على شاشة القفل وAOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">القفل</string>
     <string name="setting_category_hide_original_short">إخفاء الأصل</string>
+    <string name="setting_keep_category_after_dismiss">إبقاء الإشعار المباشر بعد رفض الإشعار الأصلي</string>
+    <string name="setting_category_keep_after_dismiss_short">إبقاء بعد الرفض</string>
     <string name="setting_logging_level">مستوى السجل</string>
     <string name="setting_clear_logs">مسح السجلات</string>
     <string name="logging_level_off">إيقاف</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d من %2$d فئات مفعلة</string>
     <string name="setting_show_progress_aod">إظهار الإشعارات المباشرة على AOD</string>
     <string name="setting_show_progress_lock_screen">إظهار الإشعارات المباشرة على شاشة القفل</string>
-    <string name="setting_hide_original_lock_screen">إخفاء الإشعار الأصلي على شاشة القفل</string>
+    <string name="setting_hide_original_lock_screen">إخفاء الإشعار الأصلي على شاشة القفل وAOD</string>
     <string name="setting_enable_media_live_updates">تفعيل إشعارات الوسائط المباشرة</string>
     <string name="setting_show_media_aod">إظهار الإشعارات المباشرة على AOD</string>
     <string name="setting_show_media_lock_screen">إظهار الإشعارات المباشرة على شاشة القفل</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">تشغيل</string>
     <string name="media_action_pause">إيقاف مؤقت</string>
     <string name="media_action_next">التالي</string>
+    <string name="mirror_action_dismiss">إخفاء</string>
     <string name="diagnostic_main_activity_started">تم بدء النشاط الرئيسي</string>
     <string name="diagnostic_skipped_accessibility_setup">تم تخطي إعداد تسهيلات الاستخدام؛ تم تعطيل الإخفاء في الإعدادات السريعة</string>
     <string name="diagnostic_skipped_shizuku_setup">تم تخطي إعداد إذن Shizuku</string>

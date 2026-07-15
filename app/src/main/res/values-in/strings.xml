@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Aktifkan hanya jika Anda ingin Live Progress menyembunyikan notifikasi tercermin saat Setelan Cepat diperluas. Lewati akan mematikan setelan itu.</string>
     <string name="setup_accessibility_action">Buka setelan aksesibilitas</string>
     <string name="setup_shizuku_title">Berikan izin Shizuku</string>
-    <string name="setup_shizuku_reason">Berikan ini hanya jika Anda ingin Live Progress menyembunyikan notifikasi progres asli di layar kunci. Lewati akan mematikan setelan ini.</string>
+    <string name="setup_shizuku_reason">Berikan ini hanya jika Anda ingin Live Progress menyembunyikan notifikasi progres asli di layar kunci dan AOD. Lewati akan mematikan setelan ini.</string>
     <string name="setup_shizuku_action">Berikan izin Shizuku</string>
     <string name="setup_skip_action">Lewati</string>
     <string name="post_live_test_notification">Kirim percobaan notifikasi langsung</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Penyegaran Shizuku gagal: %1$s</string>
     <string name="setting_show_category_aod">Tampilkan di AOD</string>
     <string name="setting_show_category_lock_screen">Tampilkan di layar kunci</string>
-    <string name="setting_hide_category_original">Sembunyikan notifikasi asli</string>
+    <string name="setting_hide_category_original">Sembunyikan notifikasi asli di layar kunci dan AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Kunci</string>
     <string name="setting_category_hide_original_short">Sembunyikan asli</string>
+    <string name="setting_keep_category_after_dismiss">Tetap tampilkan notifikasi langsung setelah notifikasi asli ditutup</string>
+    <string name="setting_category_keep_after_dismiss_short">Tetap setelah ditutup</string>
     <string name="setting_logging_level">Tingkat log</string>
     <string name="setting_clear_logs">Hapus log</string>
     <string name="logging_level_off">Nonaktif</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d dari %2$d kategori aktif</string>
     <string name="setting_show_progress_aod">Tampilkan notifikasi langsung di AOD</string>
     <string name="setting_show_progress_lock_screen">Tampilkan notifikasi langsung di layar kunci</string>
-    <string name="setting_hide_original_lock_screen">Sembunyikan notifikasi asli di layar kunci</string>
+    <string name="setting_hide_original_lock_screen">Sembunyikan notifikasi asli di layar kunci dan AOD</string>
     <string name="setting_enable_media_live_updates">Aktifkan notifikasi media langsung</string>
     <string name="setting_show_media_aod">Tampilkan notifikasi langsung di AOD</string>
     <string name="setting_show_media_lock_screen">Tampilkan notifikasi langsung di layar kunci</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Putar</string>
     <string name="media_action_pause">Jeda</string>
     <string name="media_action_next">Berikutnya</string>
+    <string name="mirror_action_dismiss">Sembunyikan</string>
     <string name="diagnostic_main_activity_started">Aktivitas utama dimulai</string>
     <string name="diagnostic_skipped_accessibility_setup">Penyiapan aksesibilitas dilewati; penyembunyian di Setelan Cepat dinonaktifkan</string>
     <string name="diagnostic_skipped_shizuku_setup">Penyiapan izin Shizuku dilewati</string>

@@ -71,7 +71,8 @@ data class NotificationCategorySettings(
     val enabled: Boolean = false,
     val showOnAod: Boolean = true,
     val showOnLockScreen: Boolean = false,
-    val hideOriginalNotification: Boolean = false
+    val hideOriginalNotification: Boolean = false,
+    val keepAfterOriginalDismissed: Boolean = false
 ) {
     fun encode(key: NotificationCategoryKey): String {
         return listOf(
@@ -81,14 +82,15 @@ data class NotificationCategorySettings(
             enabled.toString(),
             showOnAod.toString(),
             showOnLockScreen.toString(),
-            hideOriginalNotification.toString()
+            hideOriginalNotification.toString(),
+            keepAfterOriginalDismissed.toString()
         ).joinToString(FIELD_SEPARATOR)
     }
 
     companion object {
         fun parse(value: String): Pair<NotificationCategoryKey, NotificationCategorySettings>? {
             val parts = value.split(FIELD_SEPARATOR)
-            if (parts.size != 7) return null
+            if (parts.size != 7 && parts.size != 8) return null
             val key = NotificationCategoryKey(
                 packageName = parts[0],
                 uid = parts[1].toIntOrNull() ?: return null,
@@ -98,14 +100,30 @@ data class NotificationCategorySettings(
                 enabled = parts[3].toBooleanStrictOrNull() ?: return null,
                 showOnAod = parts[4].toBooleanStrictOrNull() ?: return null,
                 showOnLockScreen = parts[5].toBooleanStrictOrNull() ?: return null,
-                hideOriginalNotification = parts[6].toBooleanStrictOrNull() ?: return null
+                hideOriginalNotification = parts[6].toBooleanStrictOrNull() ?: return null,
+                keepAfterOriginalDismissed = parts.getOrNull(7)?.toBooleanStrictOrNull() ?: false
+            )
+        }
+
+        fun enabledWithProgressDefaults(
+            showOnAod: Boolean,
+            showOnLockScreen: Boolean,
+            hideOriginalNotification: Boolean
+        ): NotificationCategorySettings {
+            return NotificationCategorySettings(
+                enabled = true,
+                showOnAod = showOnAod,
+                showOnLockScreen = showOnLockScreen,
+                hideOriginalNotification = hideOriginalNotification,
+                keepAfterOriginalDismissed = false
             )
         }
     }
 }
 
 class NotificationCategoryPreferences(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     var autoEnableNewCategories: Boolean
         get() = prefs.getBoolean(KEY_AUTO_ENABLE_NEW_CATEGORIES, false)
@@ -160,7 +178,7 @@ class NotificationCategoryPreferences(context: Context) {
         if (firstObservation && autoEnableNewCategories && key !in existingSettings) {
             editor.putStringSet(
                 KEY_CATEGORY_SETTINGS,
-                (existingSettings + (key to NotificationCategorySettings(enabled = true)))
+                (existingSettings + (key to progressDefaultEnabledSettings()))
                     .map { (settingsKey, settings) -> settings.encode(settingsKey) }
                     .toSet()
             )
@@ -187,7 +205,7 @@ class NotificationCategoryPreferences(context: Context) {
     }
 
     fun setSelected(key: NotificationCategoryKey, selected: Boolean) {
-        updateSettings(key) { it.copy(enabled = selected) }
+        setEnabled(listOf(key), selected)
     }
 
     fun updateSettings(
@@ -225,7 +243,12 @@ class NotificationCategoryPreferences(context: Context) {
     ) {
         val next = settingsByKey().toMutableMap()
         keys.forEach { key ->
-            next[key] = settingsFor(key).copy(enabled = enabled)
+            val current = settingsFor(key)
+            next[key] = if (enabled && !current.enabled) {
+                progressDefaultEnabledSettings()
+            } else {
+                current.copy(enabled = enabled)
+            }
         }
         saveSettings(next)
     }
@@ -245,17 +268,26 @@ class NotificationCategoryPreferences(context: Context) {
             .toMutableMap()
         selectedKeys().forEach { selected ->
             val key = NotificationCategoryKey.parse(selected) ?: return@forEach
-            if (key !in stored) stored[key] = NotificationCategorySettings(enabled = true)
+            if (key !in stored) stored[key] = progressDefaultEnabledSettings()
         }
         return stored
     }
 
     private fun migratedSelectedSettings(key: NotificationCategoryKey): NotificationCategorySettings {
         return if (key.encode() in selectedKeys()) {
-            NotificationCategorySettings(enabled = true)
+            progressDefaultEnabledSettings()
         } else {
             NotificationCategorySettings()
         }
+    }
+
+    private fun progressDefaultEnabledSettings(): NotificationCategorySettings {
+        val progressPreferences = ProgressPreferences(appContext)
+        return NotificationCategorySettings.enabledWithProgressDefaults(
+            showOnAod = progressPreferences.showOnAod,
+            showOnLockScreen = progressPreferences.showOnLockScreen,
+            hideOriginalNotification = progressPreferences.suppressOriginalNotification
+        )
     }
 
     private fun saveSettings(settings: Map<NotificationCategoryKey, NotificationCategorySettings>) {

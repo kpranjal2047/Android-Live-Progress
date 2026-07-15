@@ -30,7 +30,10 @@ externalNativeBuild/
 # Local release/signing material
 *.jks
 *.keystore
+*.p12
+*.pfx
 keystore.properties
+**/keystore.properties
 
 # Logs, heap dumps, and OS metadata
 *.log

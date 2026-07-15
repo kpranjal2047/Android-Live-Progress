@@ -304,27 +304,16 @@ class NotificationChannelSelectionActivity : Activity() {
         categoryPreferences: NotificationCategoryPreferences
     ): View {
         val colors = palette()
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
             background = rounded(colors.surface, 20.dp(), colors.outline, 1.dp())
         }
-        row.addView(
-            compactToggle(
-                label = getString(R.string.setting_category_aod_short),
-                contentDescription = getString(R.string.setting_show_category_aod),
-                checked = settings.showOnAod,
-                enabled = true
-            ) { selected ->
-                categoryPreferences.updateSettings(category.key) {
-                    it.copy(showOnAod = selected)
-                }
-                onCategoryPreferenceChanged()
-            },
-            compactToggleParams()
-        )
-        row.addView(
+        val firstRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        firstRow.addView(
             compactToggle(
                 label = getString(R.string.setting_category_lock_short),
                 contentDescription = getString(R.string.setting_show_category_lock_screen),
@@ -336,9 +325,27 @@ class NotificationChannelSelectionActivity : Activity() {
                 }
                 onCategoryPreferenceChanged()
             },
+            compactToggleParams()
+        )
+        firstRow.addView(
+            compactToggle(
+                label = getString(R.string.setting_category_aod_short),
+                contentDescription = getString(R.string.setting_show_category_aod),
+                checked = settings.showOnAod,
+                enabled = true
+            ) { selected ->
+                categoryPreferences.updateSettings(category.key) {
+                    it.copy(showOnAod = selected)
+                }
+                onCategoryPreferenceChanged()
+            },
             compactToggleParams(start = 6.dp())
         )
-        row.addView(
+        val secondRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        secondRow.addView(
             compactToggle(
                 label = getString(R.string.setting_category_hide_original_short),
                 contentDescription = getString(R.string.setting_hide_category_original),
@@ -350,9 +357,39 @@ class NotificationChannelSelectionActivity : Activity() {
                 }
                 onCategoryPreferenceChanged()
             },
+            compactToggleParams()
+        )
+        secondRow.addView(
+            compactToggle(
+                label = getString(R.string.setting_category_keep_after_dismiss_short),
+                contentDescription = getString(R.string.setting_keep_category_after_dismiss),
+                checked = settings.keepAfterOriginalDismissed,
+                enabled = true
+            ) { selected ->
+                categoryPreferences.updateSettings(category.key) {
+                    it.copy(keepAfterOriginalDismissed = selected)
+                }
+                onCategoryPreferenceChanged()
+            },
             compactToggleParams(start = 6.dp())
         )
-        return listItemContainer(row, bottom = 10.dp(), start = 34.dp())
+        column.addView(
+            firstRow,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+        column.addView(
+            secondRow,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 6.dp()
+            }
+        )
+        return listItemContainer(column, bottom = 10.dp(), start = 34.dp())
     }
 
     private fun appGroupToggle(
@@ -880,7 +917,7 @@ class NotificationChannelSelectionActivity : Activity() {
     }
 
     private fun compactToggleParams(start: Int = 0): LinearLayout.LayoutParams {
-        return LinearLayout.LayoutParams(0, 40.dp(), 1f).apply {
+        return LinearLayout.LayoutParams(0, 48.dp(), 1f).apply {
             marginStart = start
         }
     }
@@ -966,11 +1003,12 @@ class NotificationChannelSelectionActivity : Activity() {
             textSize = 12f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
-            maxLines = 1
+            maxLines = 2
             ellipsize = TextUtils.TruncateAt.END
             includeFontPadding = false
             setTextColor(textColor)
-            setPadding(6.dp(), 0, 6.dp(), 0)
+            setLineSpacing(0f, 1f)
+            setPadding(8.dp(), 0, 8.dp(), 0)
             isEnabled = enabled
             isClickable = enabled
             isFocusable = enabled

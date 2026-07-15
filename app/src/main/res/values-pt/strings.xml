@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Ative apenas se quiser ocultar notificações espelhadas quando as configurações rápidas estiverem expandidas. Pular desativa essa opção.</string>
     <string name="setup_accessibility_action">Abrir configurações de acessibilidade</string>
     <string name="setup_shizuku_title">Conceder permissão do Shizuku</string>
-    <string name="setup_shizuku_reason">Conceda apenas se quiser ocultar notificações originais de progresso na tela de bloqueio. Pular desativa essa opção.</string>
+    <string name="setup_shizuku_reason">Conceda apenas se quiser ocultar notificações originais de progresso na tela de bloqueio e no AOD. Pular desativa essa opção.</string>
     <string name="setup_shizuku_action">Conceder permissão do Shizuku</string>
     <string name="setup_skip_action">Pular</string>
     <string name="post_live_test_notification">Publicar teste de notificação ao vivo</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Falha na atualização com Shizuku: %1$s</string>
     <string name="setting_show_category_aod">Mostrar no AOD</string>
     <string name="setting_show_category_lock_screen">Mostrar na tela de bloqueio</string>
-    <string name="setting_hide_category_original">Ocultar notificação original</string>
+    <string name="setting_hide_category_original">Ocultar notificação original na tela de bloqueio e no AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Bloqueio</string>
     <string name="setting_category_hide_original_short">Ocultar original</string>
+    <string name="setting_keep_category_after_dismiss">Manter notificação ao vivo após dispensar a original</string>
+    <string name="setting_category_keep_after_dismiss_short">Manter após dispensar</string>
     <string name="setting_logging_level">Nível de registro</string>
     <string name="setting_clear_logs">Limpar registros</string>
     <string name="logging_level_off">Desativado</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d de %2$d categorias ativadas</string>
     <string name="setting_show_progress_aod">Mostrar notificações ao vivo no AOD</string>
     <string name="setting_show_progress_lock_screen">Mostrar notificações ao vivo na tela de bloqueio</string>
-    <string name="setting_hide_original_lock_screen">Ocultar notificação original na tela de bloqueio</string>
+    <string name="setting_hide_original_lock_screen">Ocultar notificação original na tela de bloqueio e no AOD</string>
     <string name="setting_enable_media_live_updates">Ativar notificações de mídia ao vivo</string>
     <string name="setting_show_media_aod">Mostrar notificações ao vivo no AOD</string>
     <string name="setting_show_media_lock_screen">Mostrar notificações ao vivo na tela de bloqueio</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Reproduzir</string>
     <string name="media_action_pause">Pausar</string>
     <string name="media_action_next">Próxima</string>
+    <string name="mirror_action_dismiss">Dispensar</string>
     <string name="diagnostic_main_activity_started">Atividade principal iniciada</string>
     <string name="diagnostic_skipped_accessibility_setup">Configuração de acessibilidade ignorada; ocultação nas configurações rápidas desativada</string>
     <string name="diagnostic_skipped_shizuku_setup">Configuração de permissão do Shizuku pulada</string>

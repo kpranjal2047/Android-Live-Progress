@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Quick Settings விரிந்திருக்கும்போது மிரர் அறிவிப்புகளை மறைக்க வேண்டும் என்றால் மட்டும் இதை இயக்கு. தவிர்த்தால் இந்த setting அணைக்கப்படும்.</string>
     <string name="setup_accessibility_action">Accessibility அமைப்புகளைத் திற</string>
     <string name="setup_shizuku_title">Shizuku அனுமதி கொடு</string>
-    <string name="setup_shizuku_reason">லாக் ஸ்கிரீனில் அசல் progress அறிவிப்புகளை மறைக்க வேண்டும் என்றால் மட்டும் இதை கொடு. தவிர்த்தால் இந்த setting அணைக்கப்படும்.</string>
+    <string name="setup_shizuku_reason">லாக் ஸ்கிரீன் மற்றும் AOD-இல் அசல் progress அறிவிப்புகளை மறைக்க வேண்டும் என்றால் மட்டும் இதை கொடு. தவிர்த்தால் இந்த setting அணைக்கப்படும்.</string>
     <string name="setup_shizuku_action">Shizuku அனுமதி கொடு</string>
     <string name="setup_skip_action">தவிர்</string>
     <string name="post_live_test_notification">லைவ் notification சோதனையை வெளியிடு</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku புதுப்பிப்பு தோல்வியடைந்தது: %1$s</string>
     <string name="setting_show_category_aod">AOD-இல் காட்டு</string>
     <string name="setting_show_category_lock_screen">Lock screen-இல் காட்டு</string>
-    <string name="setting_hide_category_original">அசல் அறிவிப்பை மறை</string>
+    <string name="setting_hide_category_original">லாக் ஸ்கிரீன் மற்றும் AOD-இல் அசல் அறிவிப்பை மறை</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">பூட்டு</string>
     <string name="setting_category_hide_original_short">அசலை மறை</string>
+    <string name="setting_keep_category_after_dismiss">அசல் அறிவிப்பு நீக்கப்பட்ட பிறகும் நேரடி அறிவிப்பை வைத்திரு</string>
+    <string name="setting_category_keep_after_dismiss_short">நீக்கிய பின் வை</string>
     <string name="setting_logging_level">பதிவு நிலை</string>
     <string name="setting_clear_logs">பதிவுகளை அழி</string>
     <string name="logging_level_off">அணை</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d / %2$d வகைகள் இயக்கு</string>
     <string name="setting_show_progress_aod">AOD-இல் நேரடி அறிவிப்புகளை காட்டு</string>
     <string name="setting_show_progress_lock_screen">லாக் ஸ்கிரீனில் நேரடி அறிவிப்புகளை காட்டு</string>
-    <string name="setting_hide_original_lock_screen">பூட்டு திரையில் அசல் அறிவிப்பை மறை</string>
+    <string name="setting_hide_original_lock_screen">லாக் ஸ்கிரீன் மற்றும் AOD-இல் அசல் அறிவிப்பை மறை</string>
     <string name="setting_enable_media_live_updates">மீடியா நேரடி அறிவிப்புகளை இயக்கு</string>
     <string name="setting_show_media_aod">AOD-இல் நேரடி அறிவிப்புகளை காட்டு</string>
     <string name="setting_show_media_lock_screen">லாக் ஸ்கிரீனில் நேரடி அறிவிப்புகளை காட்டு</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">இயக்கு</string>
     <string name="media_action_pause">இடைநிறுத்து</string>
     <string name="media_action_next">அடுத்தது</string>
+    <string name="mirror_action_dismiss">மறை</string>
     <string name="diagnostic_main_activity_started">முக்கிய திரை தொடங்கியது</string>
     <string name="diagnostic_skipped_accessibility_setup">Accessibility setup தவிர்க்கப்பட்டது; Quick Settings மிரர் மறைப்பு அணைக்கப்பட்டது</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku அனுமதி அமைப்பு தவிர்க்கப்பட்டது</string>

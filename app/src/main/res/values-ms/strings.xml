@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Dayakan ini hanya jika anda mahu Live Progress menyembunyikan pemberitahuan cermin apabila Tetapan Pantas dikembangkan. Langkau akan mematikan tetapan ini.</string>
     <string name="setup_accessibility_action">Buka tetapan kebolehcapaian</string>
     <string name="setup_shizuku_title">Berikan kebenaran Shizuku</string>
-    <string name="setup_shizuku_reason">Berikan ini hanya jika anda mahu Live Progress menyembunyikan pemberitahuan kemajuan asal pada skrin kunci. Langkau akan mematikan tetapan ini.</string>
+    <string name="setup_shizuku_reason">Berikan ini hanya jika anda mahu Live Progress menyembunyikan pemberitahuan kemajuan asal pada skrin kunci dan AOD. Langkau akan mematikan tetapan ini.</string>
     <string name="setup_shizuku_action">Berikan kebenaran Shizuku</string>
     <string name="setup_skip_action">Langkau</string>
     <string name="post_live_test_notification">Siarkan ujian pemberitahuan langsung</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Segar semula Shizuku gagal: %1$s</string>
     <string name="setting_show_category_aod">Tunjukkan pada AOD</string>
     <string name="setting_show_category_lock_screen">Tunjukkan pada skrin kunci</string>
-    <string name="setting_hide_category_original">Sembunyikan pemberitahuan asal</string>
+    <string name="setting_hide_category_original">Sembunyikan pemberitahuan asal pada skrin kunci dan AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Kunci</string>
     <string name="setting_category_hide_original_short">Sembunyi asal</string>
+    <string name="setting_keep_category_after_dismiss">Kekalkan pemberitahuan langsung selepas pemberitahuan asal ditutup</string>
+    <string name="setting_category_keep_after_dismiss_short">Kekal selepas ditutup</string>
     <string name="setting_logging_level">Tahap log</string>
     <string name="setting_clear_logs">Kosongkan log</string>
     <string name="logging_level_off">Mati</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d daripada %2$d kategori hidup</string>
     <string name="setting_show_progress_aod">Tunjukkan pemberitahuan langsung pada AOD</string>
     <string name="setting_show_progress_lock_screen">Tunjukkan pemberitahuan langsung pada skrin kunci</string>
-    <string name="setting_hide_original_lock_screen">Sembunyikan pemberitahuan asal pada skrin kunci</string>
+    <string name="setting_hide_original_lock_screen">Sembunyikan pemberitahuan asal pada skrin kunci dan AOD</string>
     <string name="setting_enable_media_live_updates">Hidupkan pemberitahuan media langsung</string>
     <string name="setting_show_media_aod">Tunjukkan pemberitahuan langsung pada AOD</string>
     <string name="setting_show_media_lock_screen">Tunjukkan pemberitahuan langsung pada skrin kunci</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Main</string>
     <string name="media_action_pause">Jeda</string>
     <string name="media_action_next">Seterusnya</string>
+    <string name="mirror_action_dismiss">Sembunyikan</string>
     <string name="diagnostic_main_activity_started">Aktiviti utama dimulakan</string>
     <string name="diagnostic_skipped_accessibility_setup">Persediaan kebolehcapaian dilangkau; penyembunyian dalam Tetapan Pantas dilumpuhkan</string>
     <string name="diagnostic_skipped_shizuku_setup">Persediaan kebenaran Shizuku dilangkau</string>

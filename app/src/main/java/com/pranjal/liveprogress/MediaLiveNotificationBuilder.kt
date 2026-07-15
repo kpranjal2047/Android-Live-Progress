@@ -113,6 +113,7 @@ object MediaLiveNotificationBuilder {
             .setShowWhen(false)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .setDeleteIntent(MirrorDismissReceiver.mediaDeleteIntent(context))
             .setLocalOnly(true)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
@@ -129,6 +130,7 @@ object MediaLiveNotificationBuilder {
         }
         builder.setProgress(progress.max, progress.progress, progress.indeterminate)
         builder
+            .addAction(MirrorDismissReceiver.mediaAction(context))
             .addAction(
                 mediaAction(
                     context,

@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Aktiviere dies nur, wenn Live Progress gespiegelte Benachrichtigungen bei erweiterten Schnelleinstellungen ausblenden soll. Überspringen schaltet diese Einstellung aus.</string>
     <string name="setup_accessibility_action">Bedienungshilfen öffnen</string>
     <string name="setup_shizuku_title">Shizuku-Berechtigung erteilen</string>
-    <string name="setup_shizuku_reason">Erteile dies nur, wenn Live Progress ursprüngliche Fortschrittsbenachrichtigungen auf dem Sperrbildschirm ausblenden soll. Überspringen schaltet diese Einstellung aus.</string>
+    <string name="setup_shizuku_reason">Erteile dies nur, wenn Live Progress ursprüngliche Fortschrittsbenachrichtigungen auf dem Sperrbildschirm und AOD ausblenden soll. Überspringen schaltet diese Einstellung aus.</string>
     <string name="setup_shizuku_action">Shizuku-Berechtigung erteilen</string>
     <string name="setup_skip_action">Überspringen</string>
     <string name="post_live_test_notification">Echtzeit-Testbenachrichtigung senden</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Shizuku-Aktualisierung fehlgeschlagen: %1$s</string>
     <string name="setting_show_category_aod">Auf AOD anzeigen</string>
     <string name="setting_show_category_lock_screen">Auf Sperrbildschirm anzeigen</string>
-    <string name="setting_hide_category_original">Originalbenachrichtigung ausblenden</string>
+    <string name="setting_hide_category_original">Originalbenachrichtigung auf Sperrbildschirm und AOD ausblenden</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Sperre</string>
     <string name="setting_category_hide_original_short">Original ausbl.</string>
+    <string name="setting_keep_category_after_dismiss">Live-Benachrichtigung behalten, nachdem das Original verworfen wurde</string>
+    <string name="setting_category_keep_after_dismiss_short">Nach Schließen behalten</string>
     <string name="setting_logging_level">Protokollstufe</string>
     <string name="setting_clear_logs">Protokolle löschen</string>
     <string name="logging_level_off">Aus</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d von %2$d Kategorien aktiv</string>
     <string name="setting_show_progress_aod">Live-Benachrichtigungen auf AOD anzeigen</string>
     <string name="setting_show_progress_lock_screen">Live-Benachrichtigungen auf Sperrbildschirm anzeigen</string>
-    <string name="setting_hide_original_lock_screen">Ursprüngliche Benachrichtigung auf Sperrbildschirm ausblenden</string>
+    <string name="setting_hide_original_lock_screen">Ursprüngliche Benachrichtigung auf Sperrbildschirm und AOD ausblenden</string>
     <string name="setting_enable_media_live_updates">Medien-Live-Benachrichtigungen aktivieren</string>
     <string name="setting_show_media_aod">Live-Benachrichtigungen auf AOD anzeigen</string>
     <string name="setting_show_media_lock_screen">Live-Benachrichtigungen auf Sperrbildschirm anzeigen</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Wiedergabe</string>
     <string name="media_action_pause">Pause</string>
     <string name="media_action_next">Weiter</string>
+    <string name="mirror_action_dismiss">Ausblenden</string>
     <string name="diagnostic_main_activity_started">Hauptaktivität gestartet</string>
     <string name="diagnostic_skipped_accessibility_setup">Einrichtung der Bedienungshilfen übersprungen; Ausblenden bei Schnelleinstellungen deaktiviert</string>
     <string name="diagnostic_skipped_shizuku_setup">Shizuku-Berechtigungseinrichtung übersprungen</string>

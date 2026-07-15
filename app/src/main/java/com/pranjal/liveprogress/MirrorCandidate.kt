@@ -22,7 +22,8 @@ data class MirrorCandidateDisplaySettings(
     val source: MirrorCandidateSource,
     val showOnAod: Boolean,
     val showOnLockScreen: Boolean,
-    val hideOriginalNotification: Boolean
+    val hideOriginalNotification: Boolean,
+    val keepAfterOriginalDismissed: Boolean = false
 )
 
 data class MirrorCandidate(

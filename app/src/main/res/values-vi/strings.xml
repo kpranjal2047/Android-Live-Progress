@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">Chỉ bật nếu bạn muốn Live Progress ẩn thông báo phản chiếu khi Cài đặt nhanh được mở rộng. Bỏ qua sẽ tắt cài đặt đó.</string>
     <string name="setup_accessibility_action">Mở cài đặt trợ năng</string>
     <string name="setup_shizuku_title">Cấp quyền Shizuku</string>
-    <string name="setup_shizuku_reason">Chỉ cấp nếu bạn muốn Live Progress ẩn thông báo tiến trình gốc trên màn hình khóa. Bỏ qua sẽ tắt cài đặt đó.</string>
+    <string name="setup_shizuku_reason">Chỉ cấp nếu bạn muốn Live Progress ẩn thông báo tiến trình gốc trên màn hình khóa và AOD. Bỏ qua sẽ tắt cài đặt đó.</string>
     <string name="setup_shizuku_action">Cấp quyền Shizuku</string>
     <string name="setup_skip_action">Bỏ qua</string>
     <string name="post_live_test_notification">Đăng thông báo trực tiếp thử nghiệm</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">Làm mới Shizuku thất bại: %1$s</string>
     <string name="setting_show_category_aod">Hiển thị trên AOD</string>
     <string name="setting_show_category_lock_screen">Hiển thị trên màn hình khóa</string>
-    <string name="setting_hide_category_original">Ẩn thông báo gốc</string>
+    <string name="setting_hide_category_original">Ẩn thông báo gốc trên màn hình khóa và AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">Khóa</string>
     <string name="setting_category_hide_original_short">Ẩn gốc</string>
+    <string name="setting_keep_category_after_dismiss">Giữ thông báo trực tiếp sau khi thông báo gốc bị đóng</string>
+    <string name="setting_category_keep_after_dismiss_short">Giữ sau khi tắt</string>
     <string name="setting_logging_level">Mức ghi nhật ký</string>
     <string name="setting_clear_logs">Xóa nhật ký</string>
     <string name="logging_level_off">Tắt</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">Đã bật %1$d/%2$d danh mục</string>
     <string name="setting_show_progress_aod">Hiển thị thông báo trực tiếp trên AOD</string>
     <string name="setting_show_progress_lock_screen">Hiển thị thông báo trực tiếp trên màn hình khóa</string>
-    <string name="setting_hide_original_lock_screen">Ẩn thông báo gốc trên màn hình khóa</string>
+    <string name="setting_hide_original_lock_screen">Ẩn thông báo gốc trên màn hình khóa và AOD</string>
     <string name="setting_enable_media_live_updates">Bật thông báo phương tiện trực tiếp</string>
     <string name="setting_show_media_aod">Hiển thị thông báo trực tiếp trên AOD</string>
     <string name="setting_show_media_lock_screen">Hiển thị thông báo trực tiếp trên màn hình khóa</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">Phát</string>
     <string name="media_action_pause">Tạm dừng</string>
     <string name="media_action_next">Tiếp</string>
+    <string name="mirror_action_dismiss">Ẩn</string>
     <string name="diagnostic_main_activity_started">Hoạt động chính đã bắt đầu</string>
     <string name="diagnostic_skipped_accessibility_setup">Đã bỏ qua thiết lập trợ năng; ẩn trong Cài đặt nhanh đã tắt</string>
     <string name="diagnostic_skipped_shizuku_setup">Đã bỏ qua thiết lập quyền Shizuku</string>

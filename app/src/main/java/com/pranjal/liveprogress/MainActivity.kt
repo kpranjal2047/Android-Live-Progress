@@ -605,21 +605,21 @@ class MainActivity : Activity() {
             progressChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = getString(R.string.setting_show_progress_aod),
-            checked = progressPreferences.showOnAod,
-            enabled = progressPreferences.enabled
-        ) {
-            progressPreferences.showOnAod = it
-            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_aod_changed))
-            progressChanged()
-        })
-        settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_show_progress_lock_screen),
             checked = progressPreferences.showOnLockScreen,
             enabled = progressPreferences.enabled
         ) {
             progressPreferences.showOnLockScreen = it
             AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_lock_changed))
+            progressChanged()
+        })
+        settingsContainer.addView(settingToggle(
+            label = getString(R.string.setting_show_progress_aod),
+            checked = progressPreferences.showOnAod,
+            enabled = progressPreferences.enabled
+        ) {
+            progressPreferences.showOnAod = it
+            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_aod_changed))
             progressChanged()
         })
         settingsContainer.addView(settingToggle(
@@ -643,19 +643,19 @@ class MainActivity : Activity() {
             mediaChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = getString(R.string.setting_show_media_aod),
-            checked = mediaPreferences.showOnAod,
-            enabled = mediaPreferences.enabled
-        ) {
-            mediaPreferences.showOnAod = it
-            mediaChanged()
-        })
-        settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_show_media_lock_screen),
             checked = mediaPreferences.showOnLockScreen,
             enabled = mediaPreferences.enabled
         ) {
             mediaPreferences.showOnLockScreen = it
+            mediaChanged()
+        })
+        settingsContainer.addView(settingToggle(
+            label = getString(R.string.setting_show_media_aod),
+            checked = mediaPreferences.showOnAod,
+            enabled = mediaPreferences.enabled
+        ) {
+            mediaPreferences.showOnAod = it
             mediaChanged()
         })
         settingsContainer.addView(dropdown(
@@ -1111,12 +1111,18 @@ class MainActivity : Activity() {
             .setShowWhen(true)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .setDeleteIntent(
+                MirrorDismissReceiver.notificationDeleteIntent(this, TEST_LIVE_NOTIFICATION_ID)
+            )
             .setLocalOnly(true)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setColor(SystemColorPalette.primary(this))
             .setShortCriticalText("42%")
             .setStyle(style)
+            .addAction(
+                MirrorDismissReceiver.notificationAction(this, TEST_LIVE_NOTIFICATION_ID)
+            )
 
         val notification = PromotedOngoingCompat.request(builder).build()
         val manager = getSystemService(NotificationManager::class.java)

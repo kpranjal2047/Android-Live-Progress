@@ -21,7 +21,7 @@
     <string name="setup_accessibility_reason">فقط اگر می‌خواهید هنگام باز بودن تنظیمات سریع، اعلان‌های بازتابی پنهان شوند این را فعال کنید. رد کردن، این تنظیم را خاموش می‌کند.</string>
     <string name="setup_accessibility_action">تنظیمات دسترس‌پذیری را باز کنید</string>
     <string name="setup_shizuku_title">اعطای مجوز Shizuku</string>
-    <string name="setup_shizuku_reason">فقط اگر می‌خواهید اعلان‌های اصلی پیشرفت روی صفحه قفل پنهان شوند این اجازه را بدهید. رد کردن، این تنظیم را خاموش می‌کند.</string>
+    <string name="setup_shizuku_reason">فقط اگر می‌خواهید اعلان‌های اصلی پیشرفت روی صفحه قفل و AOD پنهان شوند این اجازه را بدهید. رد کردن، این تنظیم را خاموش می‌کند.</string>
     <string name="setup_shizuku_action">اعطای مجوز Shizuku</string>
     <string name="setup_skip_action">رد کردن</string>
     <string name="post_live_test_notification">آزمون اعلان زنده را بفرست</string>
@@ -52,10 +52,12 @@
     <string name="category_refresh_failed">نوسازی Shizuku ناموفق بود: %1$s</string>
     <string name="setting_show_category_aod">نمایش در AOD</string>
     <string name="setting_show_category_lock_screen">نمایش در صفحه قفل</string>
-    <string name="setting_hide_category_original">پنهان کردن اعلان اصلی</string>
+    <string name="setting_hide_category_original">پنهان کردن اعلان اصلی روی صفحه قفل و AOD</string>
     <string name="setting_category_aod_short">AOD</string>
     <string name="setting_category_lock_short">قفل</string>
     <string name="setting_category_hide_original_short">پنهان‌کردن اصلی</string>
+    <string name="setting_keep_category_after_dismiss">نگه داشتن اعلان زنده پس از رد شدن اعلان اصلی</string>
+    <string name="setting_category_keep_after_dismiss_short">پس از رد نگه‌دار</string>
     <string name="setting_logging_level">سطح گزارش</string>
     <string name="setting_clear_logs">پاک کردن گزارش‌ها</string>
     <string name="logging_level_off">خاموش</string>
@@ -82,7 +84,7 @@
     <string name="additional_app_selected_count">%1$d از %2$d دسته فعال</string>
     <string name="setting_show_progress_aod">اعلان‌های زنده را روی AOD نشان بده</string>
     <string name="setting_show_progress_lock_screen">اعلان‌های زنده را روی صفحه قفل نشان بده</string>
-    <string name="setting_hide_original_lock_screen">اعلان اصلی را روی صفحه قفل پنهان کن</string>
+    <string name="setting_hide_original_lock_screen">اعلان اصلی را روی صفحه قفل و AOD پنهان کن</string>
     <string name="setting_enable_media_live_updates">فعال کردن اعلان‌های زنده رسانه</string>
     <string name="setting_show_media_aod">اعلان‌های زنده را روی AOD نشان بده</string>
     <string name="setting_show_media_lock_screen">اعلان‌های زنده را روی صفحه قفل نشان بده</string>
@@ -95,6 +97,7 @@
     <string name="media_action_play">پخش</string>
     <string name="media_action_pause">مکث</string>
     <string name="media_action_next">بعدی</string>
+    <string name="mirror_action_dismiss">پنهان کردن</string>
     <string name="diagnostic_main_activity_started">فعالیت اصلی شروع شد</string>
     <string name="diagnostic_skipped_accessibility_setup">راه‌اندازی دسترس‌پذیری رد شد؛ پنهان‌سازی بازتاب در تنظیمات سریع خاموش شد</string>
     <string name="diagnostic_skipped_shizuku_setup">راه‌اندازی مجوز Shizuku رد شد</string>

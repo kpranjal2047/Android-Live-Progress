@@ -1,6 +1,7 @@
 package com.pranjal.liveprogress
 
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
@@ -9,9 +10,11 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
+import android.widget.BaseAdapter
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.ScrollView
+import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import java.time.Instant
@@ -81,7 +84,7 @@ class LogsActivity : ComponentActivity() {
     }
 
     private fun renderContent() {
-        setContentView(scrollContent(content()))
+        setContentView(content())
     }
 
     private fun content(): LinearLayout {
@@ -91,7 +94,7 @@ class LogsActivity : ComponentActivity() {
             setBackgroundColor(colors.background)
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
             applySystemBarPadding(this)
         }
@@ -111,24 +114,55 @@ class LogsActivity : ComponentActivity() {
             exportButton(entries),
             blockParams(bottom = 14.dp())
         )
-        val lines = entries.map(DiagnosticLogStore::format)
-        if (lines.isEmpty()) {
-            root.addView(
-                TextView(this).apply {
-                    text = getString(R.string.logs_empty)
-                    textSize = 15f
-                    setTextColor(colors.textSecondary)
-                    setLineSpacing(2.dp().toFloat(), 1f)
-                    setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
-                    background = rounded(colors.surfaceContainer, 24.dp())
-                }
-            )
-        } else {
-            lines.forEach { line ->
-                root.addView(logLine(line), blockParams(bottom = 8.dp()))
+        root.addView(logContent(entries, colors), weightedParams())
+        return root
+    }
+
+    private fun logContent(
+        entries: List<DiagnosticLogEntry>,
+        colors: UiPalette
+    ): View {
+        return FrameLayout(this).apply {
+            if (entries.isEmpty()) {
+                addView(
+                    emptyState(colors),
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                )
+            } else {
+                addView(
+                    ListView(this@LogsActivity).apply {
+                        adapter = LogLineAdapter(
+                            lines = entries.map(DiagnosticLogStore::format),
+                            colors = colors
+                        )
+                        divider = ColorDrawable(colors.background)
+                        dividerHeight = 8.dp()
+                        cacheColorHint = colors.background
+                        setBackgroundColor(colors.background)
+                        clipToPadding = false
+                        setPadding(0, 0, 0, 0)
+                    },
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
             }
         }
-        return root
+    }
+
+    private fun emptyState(colors: UiPalette): TextView {
+        return TextView(this).apply {
+            text = getString(R.string.logs_empty)
+            textSize = 15f
+            setTextColor(colors.textSecondary)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            setPadding(16.dp(), 16.dp(), 16.dp(), 16.dp())
+            background = rounded(colors.surfaceContainer, 24.dp())
+        }
     }
 
     private fun exportButton(entries: List<DiagnosticLogEntry>): Button {
@@ -191,20 +225,6 @@ class LogsActivity : ComponentActivity() {
         return "live-progress-logs-$timestamp.txt"
     }
 
-    private fun logLine(line: String): TextView {
-        val colors = palette()
-        return TextView(this).apply {
-            text = line
-            textSize = 13f
-            typeface = Typeface.MONOSPACE
-            setTextColor(colors.textSecondary)
-            setLineSpacing(2.dp().toFloat(), 1f)
-            setPadding(14.dp(), 12.dp(), 14.dp(), 12.dp())
-            ellipsize = TextUtils.TruncateAt.END
-            background = rounded(colors.surfaceContainer, 18.dp())
-        }
-    }
-
     private fun applySystemBarPadding(view: View) {
         val contentPadding = CONTENT_PADDING_DP.dp()
         view.setPadding(
@@ -225,20 +245,6 @@ class LogsActivity : ComponentActivity() {
         }
     }
 
-    private fun scrollContent(root: LinearLayout): ScrollView {
-        return ScrollView(this).apply {
-            setBackgroundColor(palette().background)
-            clipToPadding = false
-            addView(
-                root,
-                ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-    }
-
     private fun blockParams(
         top: Int = 0,
         bottom: Int = 0
@@ -248,6 +254,48 @@ class LogsActivity : ComponentActivity() {
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply {
             setMargins(0, top, 0, bottom)
+        }
+    }
+
+    private fun weightedParams(): LinearLayout.LayoutParams {
+        return LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+    }
+
+    private inner class LogLineAdapter(
+        private val lines: List<String>,
+        private val colors: UiPalette
+    ) : BaseAdapter() {
+        override fun getCount(): Int = lines.size
+
+        override fun getItem(position: Int): String = lines[position]
+
+        override fun getItemId(position: Int): Long = position.toLong()
+
+        override fun getView(
+            position: Int,
+            convertView: View?,
+            parent: ViewGroup
+        ): View {
+            val textView = convertView as? TextView ?: createLogLineView(colors)
+            textView.text = getItem(position)
+            return textView
+        }
+    }
+
+    private fun createLogLineView(colors: UiPalette): TextView {
+        return TextView(this).apply {
+            textSize = 13f
+            typeface = Typeface.MONOSPACE
+            setTextColor(colors.textSecondary)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            setPadding(14.dp(), 12.dp(), 14.dp(), 12.dp())
+            ellipsize = TextUtils.TruncateAt.END
+            maxLines = 1
+            background = rounded(colors.surfaceContainer, 18.dp())
         }
     }
 

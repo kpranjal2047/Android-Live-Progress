@@ -36,6 +36,7 @@ The app keeps the original notification active so updates continue normally.
 - Keeps expanded mirror content updated in real time.
 - Supports multiple progress notifications.
 - Can optionally show progress mirrors on the lock screen and AOD.
+- Includes a Dismiss action for live mirrors that cannot be swiped away on the lock screen.
 - Hides the mirror while the source app is open, when foreground detection is available.
 
 ### 🎵 Media Live Notifications
@@ -44,6 +45,7 @@ The app keeps the original notification active so updates continue normally.
 - Supports status bar text modes: **Title**, **Elapsed**, and **Remaining**.
 - Shows media progress and playback actions.
 - Can show media progress on AOD.
+- Includes a Dismiss action for the mirrored media notification.
 - Hides the mirror while the media app is open, when foreground detection is available.
 - Automatically hides media mirrors when a progress mirror is active.
 
@@ -58,7 +60,7 @@ Some apps use useful notification categories without exposing real Android progr
 - A Shizuku refresh option can find notification categories from installed apps.
 - System app categories are hidden by default and can be shown from the categories page.
 - Progress and media notifications keep their normal behavior when their main live notification settings are enabled.
-- Each selected category shows compact controls for AOD, lock screen visibility, and original notification hiding where supported.
+- Each selected category shows compact controls for lock screen visibility, AOD, original notification hiding where supported, and keeping the live mirror after the original is dismissed.
 - New categories stay off by default unless automatic enabling is turned on.
 - Live Progress does not guess percentages from notification text.
 
@@ -90,7 +92,7 @@ Live Progress asks for permissions only when needed.
 - ⭐ **Live notification access:** enables Android 16 promoted/live notification behavior.
 - 👂 **Notification listener:** reads eligible notifications from other apps.
 - ⚙️ **Accessibility service:** optional. Detects expanded Quick Settings and foreground apps so mirrors can hide when they should.
-- 🧰 **Shizuku:** optional. Helps hide original progress notifications on the lock screen when enabled.
+- 🧰 **Shizuku:** optional. Helps hide original progress notifications on the lock screen and AOD when enabled.
 
 Live Progress does **not** use root.
 
@@ -117,15 +119,15 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 ### Progress
 
 - Enable progress live notifications
-- Show live notifications on AOD
 - Show live notifications on lock screen
-- Hide original notification on lock screen, when supported
+- Show live notifications on AOD
+- Hide original notification on lock screen and AOD, when supported
 
 ### Media
 
 - Enable media live notifications
-- Show live notifications on AOD
 - Show live notifications on lock screen
+- Show live notifications on AOD
 - Status bar text mode
 - Scroll title in status bar
 
@@ -133,14 +135,14 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 
 - Notification categories
 - Enable new notification categories automatically
-- Per-category AOD, lock screen, and original notification controls
+- Per-category lock screen, AOD, original notification, and keep-after-dismiss controls
 
 ### Developer
 
 - Logging level
 - Verbose logging for detailed troubleshooting traces
 - Clear logs timing
-- Logs page with file export using the system file picker
+- Logs page with smooth long-log scrolling and file export using the system file picker
 
 ### About
 
@@ -156,6 +158,14 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 - Original notification hiding is best-effort and may not work for every app or device.
 - Custom notification layouts are not copied exactly.
 - User-selected notification categories mirror as indeterminate updates unless the original notification exposes real progress.
+
+---
+
+## 🔏 Private Local Builds
+
+Maintainer builds can use a private signing key by copying `keystore.properties.example` to `keystore.properties` and filling in local key details. The real `keystore.properties` file and key files are ignored by Git.
+
+Only builds signed with the same private key can upgrade an existing installed copy, so public builds from this repository cannot replace the maintainer-signed app.
 
 ---
 
