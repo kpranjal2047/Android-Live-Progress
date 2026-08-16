@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">การแจ้งเตือนสื่อแบบสด</string>
     <string name="setting_language">ภาษา</string>
     <string name="setting_hide_mirrors_qs">ซ่อนการแจ้งเตือนที่สะท้อนเมื่อการตั้งค่าด่วนถูกขยาย</string>
+    <string name="setting_hide_status_pill_source_foreground">ซ่อนแคปซูลแถบสถานะเมื่อเปิดแอปต้นทาง</string>
     <string name="setting_enable_progress_live_updates">เปิดการแจ้งเตือนความคืบหน้าแบบสด</string>
     <string name="setting_notification_categories">หมวดหมู่การแจ้งเตือน</string>
     <string name="notification_categories_title">การแจ้งเตือนแบบสดเพิ่มเติม</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">ข้ามการตั้งค่าสิทธิ์ Shizuku</string>
     <string name="diagnostic_canceled_live_test">ยกเลิกการทดสอบการแจ้งเตือนแบบสดแล้ว</string>
     <string name="diagnostic_qs_setting_changed">เปลี่ยนการตั้งค่าซ่อนการสะท้อนเมื่อใช้การตั้งค่าด่วนแล้ว</string>
+    <string name="diagnostic_foreground_pill_setting_changed">เปลี่ยนการตั้งค่าแคปซูลแถบสถานะเบื้องหน้าแล้ว</string>
     <string name="diagnostic_progress_enabled_changed">เปลี่ยนการตั้งค่าการแจ้งเตือนความคืบหน้าแบบสดแล้ว</string>
     <string name="diagnostic_progress_aod_changed">เปลี่ยนการตั้งค่า AOD ความคืบหน้าแล้ว</string>
     <string name="diagnostic_progress_lock_changed">เปลี่ยนการตั้งค่าหน้าจอล็อกความคืบหน้าแล้ว</string>

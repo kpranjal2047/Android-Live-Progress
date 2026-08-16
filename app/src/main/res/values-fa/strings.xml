@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">اعلان‌های زنده رسانه</string>
     <string name="setting_language">زبان</string>
     <string name="setting_hide_mirrors_qs">هنگام باز بودن تنظیمات سریع، اعلان‌های بازتابی را پنهان کن</string>
+    <string name="setting_hide_status_pill_source_foreground">هنگام باز بودن برنامه مبدأ، نشان نوار وضعیت را پنهان کن</string>
     <string name="setting_enable_progress_live_updates">فعال کردن اعلان‌های زنده پیشرفت</string>
     <string name="setting_notification_categories">دسته‌های اعلان</string>
     <string name="notification_categories_title">اعلان‌های زنده بیشتر</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">راه‌اندازی مجوز Shizuku رد شد</string>
     <string name="diagnostic_canceled_live_test">آزمون اعلان زنده لغو شد.</string>
     <string name="diagnostic_qs_setting_changed">تنظیم پنهان‌سازی بازتاب در تنظیمات سریع تغییر کرد</string>
+    <string name="diagnostic_foreground_pill_setting_changed">تنظیم نشان نوار وضعیت در پیش‌زمینه تغییر کرد</string>
     <string name="diagnostic_progress_enabled_changed">تنظیم اعلان‌های زنده پیشرفت تغییر کرد</string>
     <string name="diagnostic_progress_aod_changed">تنظیم AOD پیشرفت تغییر کرد</string>
     <string name="diagnostic_progress_lock_changed">تنظیم صفحه قفل پیشرفت تغییر کرد</string>

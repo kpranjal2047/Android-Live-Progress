@@ -20,6 +20,7 @@ object SetupFlowPolicy {
         notificationListenerReady: Boolean,
         progressEnabled: Boolean,
         hideWhenQuickSettingsExpanded: Boolean,
+        hideWhenSourceAppInForeground: Boolean,
         accessibilityEnabled: Boolean,
         suppressOriginalNotification: Boolean,
         shizukuAvailable: Boolean,
@@ -28,7 +29,7 @@ object SetupFlowPolicy {
         if (!notificationsReady) return SetupRequirementKind.NOTIFICATIONS
         if (!promotedNotificationsReady) return SetupRequirementKind.PROMOTED_NOTIFICATIONS
         if (!notificationListenerReady) return SetupRequirementKind.NOTIFICATION_LISTENER
-        if (hideWhenQuickSettingsExpanded && !accessibilityEnabled) {
+        if ((hideWhenQuickSettingsExpanded || hideWhenSourceAppInForeground) && !accessibilityEnabled) {
             return SetupRequirementKind.ACCESSIBILITY
         }
         if (

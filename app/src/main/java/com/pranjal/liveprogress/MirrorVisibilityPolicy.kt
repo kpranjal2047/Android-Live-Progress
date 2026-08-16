@@ -5,9 +5,10 @@ object MirrorVisibilityPolicy {
         locked: Boolean,
         quickSettingsExpanded: Boolean,
         hideWhenQuickSettingsExpanded: Boolean,
+        hideWhenSourceAppInForeground: Boolean = true,
         sourceAppInForeground: Boolean = false
     ): Boolean {
-        return locked || (!sourceAppInForeground &&
+        return locked || ((!hideWhenSourceAppInForeground || !sourceAppInForeground) &&
             (!hideWhenQuickSettingsExpanded || !quickSettingsExpanded))
     }
 }

@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Thông báo phương tiện trực tiếp</string>
     <string name="setting_language">Ngôn ngữ</string>
     <string name="setting_hide_mirrors_qs">Ẩn thông báo phản chiếu khi Cài đặt nhanh được mở rộng</string>
+    <string name="setting_hide_status_pill_source_foreground">Ẩn viên trên thanh trạng thái khi mở ứng dụng nguồn</string>
     <string name="setting_enable_progress_live_updates">Bật thông báo tiến trình trực tiếp</string>
     <string name="setting_notification_categories">Danh mục thông báo</string>
     <string name="notification_categories_title">Thông báo trực tiếp bổ sung</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Đã bỏ qua thiết lập quyền Shizuku</string>
     <string name="diagnostic_canceled_live_test">Đã hủy thông báo trực tiếp thử nghiệm.</string>
     <string name="diagnostic_qs_setting_changed">Cài đặt ẩn trong Cài đặt nhanh đã thay đổi</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Cài đặt viên thanh trạng thái nền trước đã thay đổi</string>
     <string name="diagnostic_progress_enabled_changed">Đã đổi cài đặt thông báo tiến trình trực tiếp</string>
     <string name="diagnostic_progress_aod_changed">Cài đặt AOD tiến trình đã thay đổi</string>
     <string name="diagnostic_progress_lock_changed">Cài đặt màn hình khóa tiến trình đã thay đổi</string>

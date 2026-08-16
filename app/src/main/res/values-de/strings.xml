@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Medien-Live-Benachrichtigungen</string>
     <string name="setting_language">Sprache</string>
     <string name="setting_hide_mirrors_qs">Gespiegelte Benachrichtigungen ausblenden, wenn Schnelleinstellungen erweitert sind</string>
+    <string name="setting_hide_status_pill_source_foreground">Statusleisten-Pille ausblenden, wenn die Quell-App geöffnet ist</string>
     <string name="setting_enable_progress_live_updates">Fortschritts-Live-Benachrichtigungen aktivieren</string>
     <string name="setting_notification_categories">Benachrichtigungskategorien</string>
     <string name="notification_categories_title">Zusätzliche Live-Benachrichtigungen</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Shizuku-Berechtigungseinrichtung übersprungen</string>
     <string name="diagnostic_canceled_live_test">Echtzeit-Testbenachrichtigung abgebrochen.</string>
     <string name="diagnostic_qs_setting_changed">Ausblenden bei Schnelleinstellungen geändert</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Einstellung für Vordergrund-Statuspille geändert</string>
     <string name="diagnostic_progress_enabled_changed">Einstellung für Fortschritts-Live-Benachrichtigungen geändert</string>
     <string name="diagnostic_progress_aod_changed">Fortschritt-AOD-Einstellung geändert</string>
     <string name="diagnostic_progress_lock_changed">Fortschritt-Sperrbildschirm-Einstellung geändert</string>

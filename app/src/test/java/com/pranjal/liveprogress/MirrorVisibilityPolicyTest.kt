@@ -51,6 +51,19 @@ class MirrorVisibilityPolicyTest {
     }
 
     @Test
+    fun showsUnlockedMirrorWhenSourceAppIsForegroundAndSettingOff() {
+        assertTrue(
+            MirrorVisibilityPolicy.shouldShow(
+                locked = false,
+                quickSettingsExpanded = false,
+                hideWhenQuickSettingsExpanded = false,
+                hideWhenSourceAppInForeground = false,
+                sourceAppInForeground = true
+            )
+        )
+    }
+
+    @Test
     fun showsLockedMirrorEvenWhenSourceAppIsForeground() {
         assertTrue(
             MirrorVisibilityPolicy.shouldShow(

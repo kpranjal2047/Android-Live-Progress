@@ -19,6 +19,7 @@ object NotificationClassifier {
         sbn: StatusBarNotification,
         progressEnabled: Boolean,
         progressDisplaySettings: MirrorCandidateDisplaySettings,
+        allowStandardProgress: Boolean = true,
         additionalCategorySettings: (
             packageName: String,
             uid: Int,
@@ -40,17 +41,12 @@ object NotificationClassifier {
             debug?.invoke("ignored=already_live_progress")
             return null
         }
-        if (isMediaLike(notification)) {
+        if (isMediaLike(notification) && !UberNotificationSupport.isUber(sbn)) {
             debug?.invoke("ignored=media_notification")
             return null
         }
 
-        val standardProgressInfo = progressInfoFromValues(
-            indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false),
-            max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0),
-            progress = extras.getInt(Notification.EXTRA_PROGRESS, 0),
-            forceIndeterminate = false
-        )
+        val standardProgressInfo = if (allowStandardProgress) standardProgressInfo(notification) else null
         val additionalSettings = additionalCategorySettings(
             sbn.packageName,
             sbn.uid,
@@ -122,6 +118,45 @@ object NotificationClassifier {
         }
     }
 
+    fun toUberCandidate(
+        context: Context,
+        sbn: StatusBarNotification,
+        data: UberNotificationData,
+        progressDisplaySettings: MirrorCandidateDisplaySettings
+    ): MirrorCandidate? {
+        val notification = sbn.notification ?: return null
+        val extras = notification.extras ?: Bundle.EMPTY
+        if (notification.isAlreadyLiveProgress()) return null
+        val actions = notification.actions
+            ?.filter { it.actionIntent != null && it.remoteInputs.isNullOrEmpty() && !it.isAuthenticationRequired }
+            ?.take(MAX_ACTIONS)
+            ?: emptyList()
+        return MirrorCandidate(
+            key = sbn.key,
+            packageName = sbn.packageName,
+            sourceId = sbn.id,
+            sourceTag = sbn.tag,
+            sourceUid = sbn.uid,
+            sourceUser = sbn.user,
+            channelId = notification.channelId,
+            notificationId = mirrorIdFor(sbn.key),
+            appLabel = AppLabelResolver.label(context, sbn.packageName, notification),
+            title = data.title,
+            text = data.text,
+            subText = AppLabelResolver.label(context, sbn.packageName, notification),
+            contentIntent = notification.contentIntent,
+            smallIcon = notification.smallIcon,
+            largeIcon = data.largeIcon,
+            color = notification.color,
+            whenMillis = notification.`when`,
+            showWhen = extras.getBoolean(Notification.EXTRA_SHOW_WHEN, notification.`when` > 0L),
+            actions = actions,
+            progress = data.progress,
+            visualPayloadKey = data.visualPayloadKey,
+            displaySettings = progressDisplaySettings
+        )
+    }
+
     internal fun progressInfoFromValues(
         indeterminate: Boolean,
         max: Int,
@@ -139,6 +174,16 @@ object NotificationClassifier {
             progress = progress.coerceAtLeast(0),
             max = max.coerceAtLeast(0),
             indeterminate = indeterminate
+        )
+    }
+
+    internal fun standardProgressInfo(notification: Notification): ProgressInfo? {
+        val extras = notification.extras ?: Bundle.EMPTY
+        return progressInfoFromValues(
+            indeterminate = extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false),
+            max = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0),
+            progress = extras.getInt(Notification.EXTRA_PROGRESS, 0),
+            forceIndeterminate = false
         )
     }
 

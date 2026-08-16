@@ -29,15 +29,18 @@ The app keeps the original notification active so updates continue normally.
 
 ## 🚀 Highlights
 
+- Uses an adaptive launcher icon that supports Android themed icons.
+
 ### 📊 Progress Mirrors
 
 - Shows eligible progress notifications as Android 16 live notifications.
+- Supports eligible Uber trip notifications with live trip progress and driver/car artwork.
 - Displays progress percentage in the status bar when the original notification provides real progress.
 - Keeps expanded mirror content updated in real time.
 - Supports multiple progress notifications.
 - Can optionally show progress mirrors on the lock screen and AOD.
 - Includes a Dismiss action for live mirrors that cannot be swiped away on the lock screen.
-- Hides the mirror while the source app is open, when foreground detection is available.
+- Lets you choose whether the status bar pill hides while the source app is open.
 
 ### 🎵 Media Live Notifications
 
@@ -46,7 +49,7 @@ The app keeps the original notification active so updates continue normally.
 - Shows media progress and playback actions.
 - Can show media progress on AOD.
 - Includes a Dismiss action for the mirrored media notification.
-- Hides the mirror while the media app is open, when foreground detection is available.
+- Uses the same source-app status bar pill setting as progress mirrors.
 - Automatically hides media mirrors when a progress mirror is active.
 
 ### 🧩 Additional Live Notifications
@@ -107,6 +110,8 @@ Live Progress does **not** use root.
 
 Optional setup pages can be skipped. Skipping an optional permission turns off the feature that needs it.
 
+Your Live Progress settings and selected notification categories can be restored with Google Backup or a device transfer. Permissions, temporary notification-hiding state, and developer logs are not restored.
+
 ---
 
 ## 🎛️ Main Settings
@@ -115,6 +120,7 @@ Optional setup pages can be skipped. Skipping an optional permission turns off t
 
 - Language
 - Hide mirrored notifications when Quick Settings is expanded
+- Hide the status bar pill while the source app is open
 
 ### Progress
 

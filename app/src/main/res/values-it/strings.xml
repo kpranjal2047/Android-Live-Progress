@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Notifiche multimediali in tempo reale</string>
     <string name="setting_language">Lingua</string>
     <string name="setting_hide_mirrors_qs">Nascondi notifiche replicate quando le impostazioni rapide sono espanse</string>
+    <string name="setting_hide_status_pill_source_foreground">Nascondi la pillola della barra di stato quando l’app sorgente è aperta</string>
     <string name="setting_enable_progress_live_updates">Attiva notifiche di avanzamento in tempo reale</string>
     <string name="setting_notification_categories">Categorie di notifica</string>
     <string name="notification_categories_title">Notifiche in tempo reale aggiuntive</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Configurazione permesso Shizuku saltata</string>
     <string name="diagnostic_canceled_live_test">Prova notifica in tempo reale annullata.</string>
     <string name="diagnostic_qs_setting_changed">Impostazione occultamento nelle impostazioni rapide modificata</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Impostazione pillola in primo piano modificata</string>
     <string name="diagnostic_progress_enabled_changed">Impostazione notifiche di avanzamento in tempo reale modificata</string>
     <string name="diagnostic_progress_aod_changed">Impostazione AOD avanzamento modificata</string>
     <string name="diagnostic_progress_lock_changed">Impostazione schermata di blocco avanzamento modificata</string>

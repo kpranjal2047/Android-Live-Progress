@@ -2,9 +2,12 @@ package com.pranjal.liveprogress
 
 import android.app.NotificationManager
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import java.util.concurrent.Executors
 
 class NotificationMirrorService : NotificationListenerService() {
     private val candidates = linkedMapOf<String, MirrorCandidate>()
@@ -13,6 +16,9 @@ class NotificationMirrorService : NotificationListenerService() {
     private val mirrorVisibilityByKey = mutableMapOf<String, String>()
     private val progressSnapshotsByKey = mutableMapOf<String, ProgressMirrorSnapshot>()
     private val progressUseSourceIconByKey = mutableMapOf<String, Boolean>()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val uberExtractionExecutor = Executors.newSingleThreadExecutor()
+    private val uberExtractionVersions = mutableMapOf<String, Int>()
     private val visibilityListener = { reconcileVisibility() }
     private lateinit var notificationManager: NotificationManager
     private lateinit var mediaLiveController: MediaLiveController
@@ -21,6 +27,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private lateinit var visibilityPreferences: VisibilityPreferences
     private var progressMirrorActive = false
     private var lastRefreshUptimeMs = 0L
+    private var nextUberExtractionVersion = 0
     private val progressPreferenceListener = { onProgressPreferencesChanged() }
     private val additionalPreferenceListener = { onAdditionalPreferencesChanged() }
     private val visibilityPreferenceListener = { onVisibilityPreferencesChanged() }
@@ -96,6 +103,9 @@ class NotificationMirrorService : NotificationListenerService() {
     override fun onDestroy() {
         if (activeService === this) activeService = null
         mediaLiveController.destroy()
+        uberExtractionVersions.clear()
+        mainHandler.removeCallbacksAndMessages(null)
+        uberExtractionExecutor.shutdownNow()
         ProgressPreferenceEvents.removeListener(progressPreferenceListener)
         AdditionalNotificationPreferenceEvents.removeListener(additionalPreferenceListener)
         VisibilityPreferenceEvents.removeListener(visibilityPreferenceListener)
@@ -163,14 +173,19 @@ class NotificationMirrorService : NotificationListenerService() {
         val refreshed = linkedMapOf<String, MirrorCandidate>()
         active.forEach { sbn ->
             observeNotificationCategory(sbn, rankingMap)
-            mediaLiveController.onNotificationPosted(sbn)
-            classifyCandidate(sbn)
-                ?.takeUnless { it.key in dismissedProgressKeys }
-                ?.let { candidate ->
-                    removeRetainedMirrorsForReplacement(candidate)
-                    retainedAfterSourceRemovedKeys.remove(candidate.key)
-                    refreshed[candidate.key] = candidate
-                }
+            if (shouldExtractUber(sbn)) {
+                previous[sbn.key]?.let { refreshed[sbn.key] = it }
+                scheduleUberExtraction(sbn, "active notification refresh")
+            } else {
+                mediaLiveController.onNotificationPosted(sbn)
+                classifyCandidate(sbn)
+                    ?.takeUnless { it.key in dismissedProgressKeys }
+                    ?.let { candidate ->
+                        removeRetainedMirrorsForReplacement(candidate)
+                        retainedAfterSourceRemovedKeys.remove(candidate.key)
+                        refreshed[candidate.key] = candidate
+                    }
+            }
         }
         previous.values
             .filter { it.key !in refreshed }
@@ -214,8 +229,18 @@ class NotificationMirrorService : NotificationListenerService() {
         rankingMap: RankingMap?
     ) {
         observeNotificationCategory(sbn, rankingMap)
+        if (shouldExtractUber(sbn)) {
+            scheduleUberExtraction(sbn, "notification posted")
+            return
+        }
         mediaLiveController.onNotificationPosted(sbn)
-        val candidate = classifyCandidate(sbn)
+        applyClassifiedCandidate(sbn, classifyCandidate(sbn))
+    }
+
+    private fun applyClassifiedCandidate(
+        sbn: StatusBarNotification,
+        candidate: MirrorCandidate?
+    ) {
         if (candidate == null) {
             removeMirrorFor(sbn)
             return
@@ -241,6 +266,7 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     private fun removeMirrorFor(sbn: StatusBarNotification) {
+        uberExtractionVersions.remove(sbn.key)
         dismissedProgressKeys.remove(sbn.key)
         val removed = candidates[sbn.key] ?: return
         val retained = retainMirrorAfterSourceRemoved(
@@ -458,7 +484,7 @@ class NotificationMirrorService : NotificationListenerService() {
         AppDiagnostics.verbose(
             this,
             "visibility",
-            "Visibility preferences reloaded; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}"
+            "Visibility preferences reloaded; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.hideStatusBarPillWhenSourceAppForeground}"
         )
         reconcileVisibility()
     }
@@ -471,17 +497,20 @@ class NotificationMirrorService : NotificationListenerService() {
         AppDiagnostics.verbose(
             this,
             "mirror",
-            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; retained=$retainedAfterSourceRemoval; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnAod}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}; keepAfterDismiss=${displaySettings.keepAfterOriginalDismissed}"
+            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; retained=$retainedAfterSourceRemoval; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.hideStatusBarPillWhenSourceAppForeground}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnAod}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}; keepAfterDismiss=${displaySettings.keepAfterOriginalDismissed}"
         )
         if (!MirrorVisibilityPolicy.shouldShow(
                 locked = VisibilityState.locked,
                 quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
                 hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
+                hideWhenSourceAppInForeground = visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
                 sourceAppInForeground = sourceAppInForeground
             )
         ) {
-            val hiddenState = if (sourceAppInForeground) "hidden:foreground" else "hidden:qs"
-            val hiddenReason = if (sourceAppInForeground) {
+            val hiddenForForeground = sourceAppInForeground &&
+                visibilityPreferences.hideStatusBarPillWhenSourceAppForeground
+            val hiddenState = if (hiddenForForeground) "hidden:foreground" else "hidden:qs"
+            val hiddenReason = if (hiddenForForeground) {
                 "source app is foreground"
             } else {
                 "quick settings is expanded"
@@ -671,6 +700,87 @@ class NotificationMirrorService : NotificationListenerService() {
         progressUseSourceIconByKey.remove(key)
     }
 
+    private fun shouldExtractUber(sbn: StatusBarNotification): Boolean {
+        return progressPreferences.enabled && UberNotificationSupport.isUber(sbn)
+    }
+
+    private fun scheduleUberExtraction(
+        sbn: StatusBarNotification,
+        reason: String
+    ) {
+        val version = ++nextUberExtractionVersion
+        uberExtractionVersions[sbn.key] = version
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Uber extraction queued; ${sbn.debugIdentity()}; version=$version; reason=$reason"
+        )
+        uberExtractionExecutor.execute {
+            val result = UberNotificationSupport.extract(this, sbn)
+            mainHandler.post {
+                handleUberExtractionResult(sbn, version, result)
+            }
+        }
+    }
+
+    private fun handleUberExtractionResult(
+        source: StatusBarNotification,
+        version: Int,
+        extraction: UberExtractionResult
+    ) {
+        if (uberExtractionVersions[source.key] != version) return
+        val active = activeNotificationsSnapshot("Uber extraction result")
+            .firstOrNull { it.key == source.key }
+            ?: run {
+                uberExtractionVersions.remove(source.key)
+                return
+            }
+        if (!progressPreferences.enabled || !UberNotificationSupport.isUber(active)) {
+            uberExtractionVersions.remove(source.key)
+            return
+        }
+        uberExtractionVersions.remove(source.key)
+        val additionalSettings = additionalCategorySettings(
+            packageName = active.packageName,
+            uid = active.uid,
+            channelId = active.notification.channelId
+        )
+        val route = UberNotificationRouting.decide(
+            progressEnabled = progressPreferences.enabled,
+            hasCustomCandidate = extraction is UberExtractionResult.Extracted,
+            allowNativeProgress = extraction is UberExtractionResult.NotUberRichNotification,
+            hasNativeProgress = NotificationClassifier.standardProgressInfo(active.notification) != null,
+            additionalEnabled = additionalSettings.enabled
+        )
+        val candidate = when (route) {
+            UberMirrorRoute.CUSTOM_PROGRESS -> {
+                val data = (extraction as UberExtractionResult.Extracted).data
+                NotificationClassifier.toUberCandidate(
+                    context = this,
+                    sbn = active,
+                    data = data,
+                    progressDisplaySettings = progressDisplaySettings()
+                )
+            }
+
+            UberMirrorRoute.NATIVE_PROGRESS -> {
+                classifyCandidate(active, allowStandardProgress = true)
+            }
+
+            UberMirrorRoute.ADDITIONAL -> {
+                classifyCandidate(active, allowStandardProgress = false)
+            }
+
+            UberMirrorRoute.NONE -> null
+        }
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Uber extraction completed; ${active.debugIdentity()}; result=${extraction.javaClass.simpleName}; route=$route; candidate=${candidate?.displaySettings?.source ?: "none"}"
+        )
+        applyClassifiedCandidate(active, candidate)
+    }
+
     private fun noteMirrorVisibility(
         candidate: MirrorCandidate,
         state: String,
@@ -751,13 +861,17 @@ class NotificationMirrorService : NotificationListenerService() {
         }
     }
 
-    private fun classifyCandidate(sbn: StatusBarNotification): MirrorCandidate? {
+    private fun classifyCandidate(
+        sbn: StatusBarNotification,
+        allowStandardProgress: Boolean = true
+    ): MirrorCandidate? {
         var classification = "no_result"
         val candidate = NotificationClassifier.toCandidate(
             context = this,
             sbn = sbn,
             progressEnabled = progressPreferences.enabled,
             progressDisplaySettings = progressDisplaySettings(),
+            allowStandardProgress = allowStandardProgress,
             additionalCategorySettings = ::additionalCategorySettings,
             debug = { classification = it }
         )

@@ -30,7 +30,8 @@ data class ObservedNotificationCategory(
     val appLabel: String,
     val channelName: String?,
     val lastSeenMillis: Long,
-    val isSystemApp: Boolean = false
+    val isSystemApp: Boolean = false,
+    val sourceDir: String? = null
 ) {
     val displayName: String
         get() = channelName?.takeIf { it.isNotBlank() } ?: key.channelId
@@ -43,14 +44,15 @@ data class ObservedNotificationCategory(
             appLabel.cleanField(),
             channelName.orEmpty().cleanField(),
             lastSeenMillis.toString(),
-            isSystemApp.toString()
+            isSystemApp.toString(),
+            sourceDir.orEmpty().cleanField()
         ).joinToString(FIELD_SEPARATOR)
     }
 
     companion object {
         fun parse(value: String): ObservedNotificationCategory? {
             val parts = value.split(FIELD_SEPARATOR)
-            if (parts.size != 6 && parts.size != 7) return null
+            if (parts.size !in 6..8) return null
             val key = NotificationCategoryKey(
                 packageName = parts[0],
                 uid = parts[1].toIntOrNull() ?: return null,
@@ -61,11 +63,17 @@ data class ObservedNotificationCategory(
                 appLabel = parts[3],
                 channelName = parts[4].takeIf { it.isNotBlank() },
                 lastSeenMillis = parts[5].toLongOrNull() ?: return null,
-                isSystemApp = parts.getOrNull(6)?.toBooleanStrictOrNull() ?: false
+                isSystemApp = parts.getOrNull(6)?.toBooleanStrictOrNull() ?: false,
+                sourceDir = parts.getOrNull(7)?.takeIf { it.isNotBlank() }
             )
         }
     }
 }
+
+data class NotificationCategorySnapshot(
+    val categories: List<ObservedNotificationCategory>,
+    val settingsByKey: Map<NotificationCategoryKey, NotificationCategorySettings>
+)
 
 data class NotificationCategorySettings(
     val enabled: Boolean = false,
@@ -142,6 +150,13 @@ class NotificationCategoryPreferences(context: Context) {
                 .thenBy { it.key.channelId })
     }
 
+    fun snapshot(): NotificationCategorySnapshot {
+        return NotificationCategorySnapshot(
+            categories = observedCategories(),
+            settingsByKey = settingsByKey()
+        )
+    }
+
     fun observe(
         packageName: String,
         uid: Int,
@@ -149,6 +164,7 @@ class NotificationCategoryPreferences(context: Context) {
         appLabel: String,
         channelName: String?,
         isSystemApp: Boolean? = null,
+        sourceDir: String? = null,
         nowMillis: Long = System.currentTimeMillis()
     ): Boolean {
         val cleanChannelId = channelId?.takeIf { it.isNotBlank() } ?: return false
@@ -161,6 +177,7 @@ class NotificationCategoryPreferences(context: Context) {
             appLabel = appLabel,
             channelName = channelName?.takeIf { it.isNotBlank() } ?: current?.channelName,
             isSystemApp = isSystemApp ?: current?.isSystemApp ?: false,
+            sourceDir = sourceDir?.takeIf { it.isNotBlank() } ?: current?.sourceDir,
             lastSeenMillis = if (
                 current == null ||
                 nowMillis - current.lastSeenMillis >= LAST_SEEN_WRITE_INTERVAL_MS
@@ -213,7 +230,7 @@ class NotificationCategoryPreferences(context: Context) {
         transform: (NotificationCategorySettings) -> NotificationCategorySettings
     ) {
         val next = settingsByKey().toMutableMap()
-        next[key] = transform(settingsFor(key))
+        next[key] = transform(next[key] ?: NotificationCategorySettings())
         saveSettings(next)
     }
 
@@ -243,7 +260,7 @@ class NotificationCategoryPreferences(context: Context) {
     ) {
         val next = settingsByKey().toMutableMap()
         keys.forEach { key ->
-            val current = settingsFor(key)
+            val current = next[key] ?: NotificationCategorySettings()
             next[key] = if (enabled && !current.enabled) {
                 progressDefaultEnabledSettings()
             } else {

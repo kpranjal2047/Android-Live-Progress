@@ -68,6 +68,7 @@ android {
         }
 
         release {
+            signingConfig = signingConfigs.getByName("debug")
             if (privateSigningConfig != null) {
                 signingConfig = privateSigningConfig
             }

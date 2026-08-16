@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">میڈیا لائیو نوٹیفکیشنز</string>
     <string name="setting_language">زبان</string>
     <string name="setting_hide_mirrors_qs">Quick Settings کھلنے پر مرر نوٹیفکیشنز چھپائیں</string>
+    <string name="setting_hide_status_pill_source_foreground">ماخذ ایپ کھلنے پر اسٹیٹس بار پِل چھپائیں</string>
     <string name="setting_enable_progress_live_updates">پروگریس لائیو نوٹیفکیشنز آن کریں</string>
     <string name="setting_notification_categories">نوٹیفکیشن زمرے</string>
     <string name="notification_categories_title">اضافی لائیو نوٹیفکیشنز</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Shizuku اجازت تیاری چھوڑی گئی</string>
     <string name="diagnostic_canceled_live_test">لائیو نوٹیفکیشن ٹیسٹ منسوخ ہوا۔</string>
     <string name="diagnostic_qs_setting_changed">Quick Settings میں مرر چھپانے کی سیٹنگ بدلی</string>
+    <string name="diagnostic_foreground_pill_setting_changed">فورگراؤنڈ اسٹیٹس پِل سیٹنگ بدلی</string>
     <string name="diagnostic_progress_enabled_changed">پروگریس لائیو نوٹیفکیشنز سیٹنگ بدلی گئی</string>
     <string name="diagnostic_progress_aod_changed">پروگریس AOD سیٹنگ بدلی</string>
     <string name="diagnostic_progress_lock_changed">پروگریس لاک اسکرین سیٹنگ بدلی</string>

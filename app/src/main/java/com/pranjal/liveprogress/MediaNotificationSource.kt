@@ -11,6 +11,7 @@ data class MediaNotificationSource(
 
 object MediaNotificationSourceFactory {
     fun from(context: Context, sbn: StatusBarNotification): MediaNotificationSource? {
+        if (UberNotificationSupport.isUber(sbn)) return null
         val notification = sbn.notification ?: return null
         if (!NotificationClassifier.isMediaLike(notification)) return null
         val label = AppLabelResolver.label(context, sbn.packageName, notification)

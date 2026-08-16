@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Notifications média en direct</string>
     <string name="setting_language">Langue</string>
     <string name="setting_hide_mirrors_qs">Masquer les notifications miroirs lorsque les réglages rapides sont ouverts</string>
+    <string name="setting_hide_status_pill_source_foreground">Masquer la pastille de la barre d’état quand l’app source est ouverte</string>
     <string name="setting_enable_progress_live_updates">Activer les notifications de progression en direct</string>
     <string name="setting_notification_categories">Catégories de notifications</string>
     <string name="notification_categories_title">Notifications en direct supplémentaires</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Configuration de l’autorisation Shizuku ignorée</string>
     <string name="diagnostic_canceled_live_test">Notification de test en direct annulée.</string>
     <string name="diagnostic_qs_setting_changed">Réglage de masquage dans les réglages rapides modifié</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Réglage de pastille au premier plan modifié</string>
     <string name="diagnostic_progress_enabled_changed">Réglage des notifications de progression en direct modifié</string>
     <string name="diagnostic_progress_aod_changed">Réglage AOD de progression modifié</string>
     <string name="diagnostic_progress_lock_changed">Réglage de verrouillage de progression modifié</string>

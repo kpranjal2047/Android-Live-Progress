@@ -135,6 +135,8 @@ class MainActivity : Activity() {
             progressEnabled = progressPreferences.enabled,
             hideWhenQuickSettingsExpanded =
                 visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
+            hideWhenSourceAppInForeground =
+                visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
             accessibilityEnabled = isAccessibilityEnabled(),
             suppressOriginalNotification = progressPreferences.suppressOriginalNotification,
             shizukuAvailable = privileged.shizukuAvailable,
@@ -234,7 +236,10 @@ class MainActivity : Activity() {
     }
 
     private fun skipAccessibilitySetup() {
-        VisibilityPreferences(this).hideMirrorsWhenQuickSettingsExpanded = false
+        VisibilityPreferences(this).apply {
+            hideMirrorsWhenQuickSettingsExpanded = false
+            hideStatusBarPillWhenSourceAppForeground = false
+        }
         AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_skipped_accessibility_setup))
         VisibilityPreferenceEvents.notifyChanged()
         renderCurrentScreen()
@@ -597,6 +602,19 @@ class MainActivity : Activity() {
                 refreshStatus()
             }
         })
+        settingsContainer.addView(settingToggle(
+            label = getString(R.string.setting_hide_status_pill_source_foreground),
+            checked = visibilityPreferences.hideStatusBarPillWhenSourceAppForeground
+        ) {
+            visibilityPreferences.hideStatusBarPillWhenSourceAppForeground = it
+            AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_foreground_pill_setting_changed))
+            VisibilityPreferenceEvents.notifyChanged()
+            if (it && !isAccessibilityEnabled()) {
+                renderCurrentScreen()
+            } else {
+                refreshStatus()
+            }
+        })
 
         settingsContainer.addView(sectionTitle(getString(R.string.section_progress_live_updates)))
         settingsContainer.addView(settingToggle(getString(R.string.setting_enable_progress_live_updates), progressPreferences.enabled) {
@@ -745,7 +763,7 @@ class MainActivity : Activity() {
 
             addView(
                 ImageView(this@MainActivity).apply {
-                    setImageResource(R.drawable.ic_live_progress)
+                    setImageResource(R.mipmap.ic_launcher)
                     contentDescription = getString(R.string.app_name)
                 },
                 LinearLayout.LayoutParams(56.dp(), 56.dp()).apply {
@@ -1103,7 +1121,7 @@ class MainActivity : Activity() {
             .setStyledByProgress(true)
 
         val builder = Notification.Builder(this, MirrorNotificationBuilder.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_live_progress)
+            .setSmallIcon(R.drawable.ic_notification_live_progress)
             .setContentTitle(getString(R.string.live_test_notification_title))
             .setContentText(getString(R.string.live_test_notification_text))
             .setSubText(getString(R.string.app_name))

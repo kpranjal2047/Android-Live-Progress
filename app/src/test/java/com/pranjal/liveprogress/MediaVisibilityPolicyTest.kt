@@ -182,6 +182,24 @@ class MediaVisibilityPolicyTest {
     }
 
     @Test
+    fun showsUnlockedMediaMirrorWhenSourceAppIsForegroundAndSettingOff() {
+        val decision = MediaVisibilityPolicy.decide(
+            mediaEnabled = true,
+            hasActiveMedia = true,
+            locked = false,
+            screenOff = false,
+            quickSettingsExpanded = false,
+            hideWhenSourceAppInForeground = false,
+            sourceAppInForeground = true,
+            progressMirrorActive = false,
+            showOnAod = true,
+            showOnLockScreen = false
+        )
+        assertTrue(decision.showMirror)
+        assertTrue(decision.showShortCriticalText)
+    }
+
+    @Test
     fun screenOffMediaMirrorIgnoresForegroundSourceState() {
         val decision = MediaVisibilityPolicy.decide(
             mediaEnabled = true,

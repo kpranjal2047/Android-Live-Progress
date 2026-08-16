@@ -16,6 +16,7 @@ object MediaVisibilityPolicy {
         screenOff: Boolean,
         quickSettingsExpanded: Boolean,
         hideWhenQuickSettingsExpanded: Boolean = true,
+        hideWhenSourceAppInForeground: Boolean = true,
         sourceAppInForeground: Boolean = false,
         progressMirrorActive: Boolean,
         showOnAod: Boolean,
@@ -40,7 +41,7 @@ object MediaVisibilityPolicy {
             )
         }
 
-        if (sourceAppInForeground) {
+        if (hideWhenSourceAppInForeground && sourceAppInForeground) {
             return hidden("source app foreground")
         }
 

@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Notificaciones multimedia en vivo</string>
     <string name="setting_language">Idioma</string>
     <string name="setting_hide_mirrors_qs">Ocultar notificaciones reflejadas cuando Ajustes rápidos esté expandido</string>
+    <string name="setting_hide_status_pill_source_foreground">Ocultar píldora de la barra de estado al abrir la app de origen</string>
     <string name="setting_enable_progress_live_updates">Activar notificaciones de progreso en vivo</string>
     <string name="setting_notification_categories">Categorías de notificación</string>
     <string name="notification_categories_title">Notificaciones en vivo adicionales</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Configuración de permiso de Shizuku omitida</string>
     <string name="diagnostic_canceled_live_test">Prueba de notificación en vivo cancelada.</string>
     <string name="diagnostic_qs_setting_changed">Opción de ocultación en ajustes rápidos cambiada</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Opción de píldora en primer plano cambiada</string>
     <string name="diagnostic_progress_enabled_changed">Ajuste de notificaciones de progreso en vivo cambiado</string>
     <string name="diagnostic_progress_aod_changed">Opción AOD de progreso cambiada</string>
     <string name="diagnostic_progress_lock_changed">Opción de bloqueo de progreso cambiada</string>

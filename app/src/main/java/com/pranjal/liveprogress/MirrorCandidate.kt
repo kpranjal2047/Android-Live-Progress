@@ -47,5 +47,6 @@ data class MirrorCandidate(
     val showWhen: Boolean,
     val actions: List<Notification.Action>,
     val progress: ProgressInfo,
+    val visualPayloadKey: String? = null,
     val displaySettings: MirrorCandidateDisplaySettings
 )

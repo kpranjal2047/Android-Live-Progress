@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">إشعارات وسائط مباشرة</string>
     <string name="setting_language">اللغة</string>
     <string name="setting_hide_mirrors_qs">إخفاء الإشعارات المعكوسة عند توسيع الإعدادات السريعة</string>
+    <string name="setting_hide_status_pill_source_foreground">إخفاء شارة شريط الحالة عند فتح التطبيق المصدر</string>
     <string name="setting_enable_progress_live_updates">تفعيل إشعارات التقدم المباشرة</string>
     <string name="setting_notification_categories">فئات الإشعارات</string>
     <string name="notification_categories_title">إشعارات مباشرة إضافية</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">تم تخطي إعداد إذن Shizuku</string>
     <string name="diagnostic_canceled_live_test">تم إلغاء اختبار الإشعار المباشر.</string>
     <string name="diagnostic_qs_setting_changed">تم تغيير إعداد الإخفاء في الإعدادات السريعة</string>
+    <string name="diagnostic_foreground_pill_setting_changed">تم تغيير إعداد شارة شريط الحالة في المقدمة</string>
     <string name="diagnostic_progress_enabled_changed">تم تغيير إعداد إشعارات التقدم المباشرة</string>
     <string name="diagnostic_progress_aod_changed">تم تغيير إعداد AOD للتقدم</string>
     <string name="diagnostic_progress_lock_changed">تم تغيير إعداد شاشة قفل التقدم</string>

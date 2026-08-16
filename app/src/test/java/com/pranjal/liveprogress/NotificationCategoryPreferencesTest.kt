@@ -33,7 +33,8 @@ class NotificationCategoryPreferencesTest {
             appLabel = "Example",
             channelName = "Delivery status",
             lastSeenMillis = 123456789L,
-            isSystemApp = true
+            isSystemApp = true,
+            sourceDir = "/data/app/~~example/base.apk"
         )
 
         assertEquals(category, ObservedNotificationCategory.parse(category.encode()))
@@ -54,6 +55,7 @@ class NotificationCategoryPreferencesTest {
             false,
             ObservedNotificationCategory.parse(legacy)?.isSystemApp
         )
+        assertNull(ObservedNotificationCategory.parse(legacy)?.sourceDir)
     }
 
     @Test

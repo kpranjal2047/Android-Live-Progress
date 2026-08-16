@@ -10,9 +10,17 @@ class VisibilityPreferences(context: Context) {
         get() = prefs.getBoolean(KEY_HIDE_MIRRORS_WHEN_QS_EXPANDED, true)
         set(value) = prefs.edit().putBoolean(KEY_HIDE_MIRRORS_WHEN_QS_EXPANDED, value).apply()
 
+    var hideStatusBarPillWhenSourceAppForeground: Boolean
+        get() = prefs.getBoolean(KEY_HIDE_STATUS_BAR_PILL_WHEN_SOURCE_APP_FOREGROUND, true)
+        set(value) = prefs.edit()
+            .putBoolean(KEY_HIDE_STATUS_BAR_PILL_WHEN_SOURCE_APP_FOREGROUND, value)
+            .apply()
+
     companion object {
         private const val PREFS = "live_progress_visibility_preferences"
         private const val KEY_HIDE_MIRRORS_WHEN_QS_EXPANDED = "hide_mirrors_when_qs_expanded"
+        private const val KEY_HIDE_STATUS_BAR_PILL_WHEN_SOURCE_APP_FOREGROUND =
+            "hide_status_bar_pill_when_source_app_foreground"
     }
 }
 

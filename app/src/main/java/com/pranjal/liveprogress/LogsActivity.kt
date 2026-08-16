@@ -5,7 +5,6 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.text.TextUtils
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
@@ -293,8 +292,6 @@ class LogsActivity : ComponentActivity() {
             setTextColor(colors.textSecondary)
             setLineSpacing(2.dp().toFloat(), 1f)
             setPadding(14.dp(), 12.dp(), 14.dp(), 12.dp())
-            ellipsize = TextUtils.TruncateAt.END
-            maxLines = 1
             background = rounded(colors.surfaceContainer, 18.dp())
         }
     }

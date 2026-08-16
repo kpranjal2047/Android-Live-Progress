@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">मीडिया लाइव नोटिफिकेशन</string>
     <string name="setting_language">भाषा</string>
     <string name="setting_hide_mirrors_qs">Quick Settings खुली होने पर मिरर नोटिफिकेशन छिपाएं</string>
+    <string name="setting_hide_status_pill_source_foreground">स्रोत ऐप खुला होने पर स्टेटस बार पिल छिपाएं</string>
     <string name="setting_enable_progress_live_updates">प्रोग्रेस लाइव नोटिफिकेशन चालू करें</string>
     <string name="setting_notification_categories">नोटिफिकेशन श्रेणियां</string>
     <string name="notification_categories_title">अतिरिक्त लाइव नोटिफिकेशन</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Shizuku अनुमति तैयारी छोड़ी गई</string>
     <string name="diagnostic_canceled_live_test">लाइव नोटिफिकेशन टेस्ट रद्द किया गया।</string>
     <string name="diagnostic_qs_setting_changed">Quick Settings में मिरर छिपाने की सेटिंग बदली</string>
+    <string name="diagnostic_foreground_pill_setting_changed">फ़ोरग्राउंड स्टेटस पिल सेटिंग बदली</string>
     <string name="diagnostic_progress_enabled_changed">प्रोग्रेस लाइव नोटिफिकेशन सेटिंग बदली</string>
     <string name="diagnostic_progress_aod_changed">प्रोग्रेस AOD सेटिंग बदली</string>
     <string name="diagnostic_progress_lock_changed">प्रोग्रेस लॉक स्क्रीन सेटिंग बदली</string>

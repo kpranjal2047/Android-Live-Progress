@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Pemberitahuan media langsung</string>
     <string name="setting_language">Bahasa</string>
     <string name="setting_hide_mirrors_qs">Sembunyikan pemberitahuan cermin apabila Tetapan Pantas dikembangkan</string>
+    <string name="setting_hide_status_pill_source_foreground">Sembunyikan pil bar status apabila aplikasi sumber dibuka</string>
     <string name="setting_enable_progress_live_updates">Hidupkan pemberitahuan kemajuan langsung</string>
     <string name="setting_notification_categories">Kategori pemberitahuan</string>
     <string name="notification_categories_title">Pemberitahuan Langsung Tambahan</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Persediaan kebenaran Shizuku dilangkau</string>
     <string name="diagnostic_canceled_live_test">Ujian pemberitahuan langsung dibatalkan.</string>
     <string name="diagnostic_qs_setting_changed">Tetapan sembunyi dalam Tetapan Pantas berubah</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Tetapan pil bar status latar depan berubah</string>
     <string name="diagnostic_progress_enabled_changed">Tetapan pemberitahuan kemajuan langsung berubah</string>
     <string name="diagnostic_progress_aod_changed">Tetapan AOD kemajuan berubah</string>
     <string name="diagnostic_progress_lock_changed">Tetapan skrin kunci kemajuan berubah</string>

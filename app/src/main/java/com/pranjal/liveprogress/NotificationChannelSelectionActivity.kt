@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,8 +21,10 @@ import android.view.WindowInsets
 import android.widget.AbsListView
 import android.widget.BaseAdapter
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Button
 import android.widget.Toast
@@ -34,14 +37,23 @@ class NotificationChannelSelectionActivity : Activity() {
         const val ASSISTANT_BIND_DELAY_MS = 500L
         const val ASSISTANT_RETRY_DELAY_MS = 700L
         const val MAX_ASSISTANT_REFRESH_ATTEMPTS = 5
+        const val APP_GROUP_ITEM_TYPE = 0
+        const val CATEGORY_ITEM_TYPE = 1
+        const val BEHAVIOR_ITEM_TYPE = 2
     }
 
     private var categoryList: ListView? = null
     private var pendingListPosition: Int? = null
     private var pendingListTop: Int = 0
+    private var pendingListAnchor: ListScrollAnchor? = null
+    private var pageLoadVersion = 0L
+    private val appIconCache = mutableMapOf<AppIconKey, Drawable?>()
+    private val pendingAppIconKeys = mutableSetOf<AppIconKey>()
     private var shizukuRefreshRunning = false
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val categoryExecutor = Executors.newSingleThreadExecutor()
     private val refreshExecutor = Executors.newSingleThreadExecutor()
+    private val iconExecutor = Executors.newFixedThreadPool(2)
 
     private data class UiPalette(
         val background: Int,
@@ -71,11 +83,33 @@ class NotificationChannelSelectionActivity : Activity() {
         val failedAppCount: Int
     )
 
+    private data class ListScrollAnchor(
+        val packageName: String,
+        val uid: Int,
+        val channelId: String?,
+        val itemType: Int
+    )
+
+    private data class AppIconKey(
+        val packageName: String,
+        val uid: Int,
+        val sourceDir: String?
+    )
+
+    private data class CategoryPageData(
+        val includeSystemApps: Boolean,
+        val allCategoryCount: Int,
+        val categories: List<ObservedNotificationCategory>,
+        val items: List<CategoryListItem>,
+        val canSuppressOriginal: Boolean
+    )
+
     private sealed interface CategoryListItem {
         data class AppGroup(
             val group: AppCategoryGroup,
             val selectedCount: Int,
-            val totalCount: Int
+            val totalCount: Int,
+            val sourceDir: String?
         ) : CategoryListItem
 
         data class Category(
@@ -99,55 +133,68 @@ class NotificationChannelSelectionActivity : Activity() {
         AppUiLifecycleTracker.onActivityStarted()
     }
 
-    override fun onResume() {
-        super.onResume()
-        renderContent()
-    }
-
     override fun onStop() {
         AppUiLifecycleTracker.onActivityStopped(this)
         super.onStop()
     }
 
     override fun onDestroy() {
+        categoryExecutor.shutdownNow()
         refreshExecutor.shutdownNow()
+        iconExecutor.shutdownNow()
         super.onDestroy()
     }
 
     private fun renderContent() {
-        setContentView(buildContent())
+        if (isFinishing || isDestroyed) return
+        val version = ++pageLoadVersion
+        categoryList = null
+        setContentView(buildLoadingContent())
+        categoryExecutor.execute {
+            val pageData = loadCategoryPageData()
+            mainHandler.post {
+                if (!isFinishing && version == pageLoadVersion) {
+                    setContentView(buildContent(pageData))
+                }
+            }
+        }
     }
 
-    private fun buildContent(): View {
+    private fun buildLoadingContent(): View {
+        val colors = palette()
+        return contentRoot().apply {
+            addView(pageTitle(colors), blockParams(bottom = 18.dp()))
+            addView(
+                ProgressBar(this@NotificationChannelSelectionActivity).apply {
+                    isIndeterminate = true
+                },
+                LinearLayout.LayoutParams(
+                    48.dp(),
+                    48.dp()
+                ).apply {
+                    gravity = Gravity.CENTER_HORIZONTAL
+                }
+            )
+        }
+    }
+
+    private fun buildContent(pageData: CategoryPageData): View {
         val colors = palette()
         val root = contentRoot()
-        val title = TextView(this).apply {
-            text = getString(R.string.notification_categories_title)
-            textSize = 34f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(colors.textPrimary)
-            includeFontPadding = false
-        }
+        root.addView(pageTitle(colors), blockParams(bottom = 18.dp()))
 
         val categoryPreferences = NotificationCategoryPreferences(this)
-        val includeSystemApps = categoryPreferences.showSystemApps
-        val allCategoryCount = categoryPreferences.observedCategories().size
-        val categories = categoryPreferences.observedCategories(
-            includeSystemApps = includeSystemApps
-        )
-        val canSuppressOriginal = PrivilegedAccess.canUseOriginalNotificationSuppression(this)
-        root.addView(title, blockParams(bottom = 18.dp()))
-        root.addView(actionButtons(categories), blockParams(bottom = 10.dp()))
+        root.addView(actionButtons(pageData.categories), blockParams(bottom = 10.dp()))
         root.addView(
             systemAppsToggle(
-                checked = includeSystemApps,
+                checked = pageData.includeSystemApps,
                 categoryPreferences = categoryPreferences
             ),
             blockParams(bottom = 10.dp())
         )
-        if (categories.isEmpty()) {
+        if (pageData.categories.isEmpty()) {
             categoryList = null
-            val emptyText = if (allCategoryCount > 0 && !includeSystemApps) {
+            val emptyText = if (pageData.allCategoryCount > 0 && !pageData.includeSystemApps) {
                 getString(R.string.setting_system_categories_hidden_empty)
             } else {
                 getString(R.string.setting_always_mirror_categories_empty)
@@ -156,9 +203,9 @@ class NotificationChannelSelectionActivity : Activity() {
         } else {
             root.addView(
                 categoryListView(
-                    items = categoryListItems(categories, categoryPreferences),
+                    items = pageData.items,
                     categoryPreferences = categoryPreferences,
-                    canSuppressOriginal = canSuppressOriginal
+                    canSuppressOriginal = pageData.canSuppressOriginal
                 ),
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -171,9 +218,34 @@ class NotificationChannelSelectionActivity : Activity() {
         return root
     }
 
+    private fun pageTitle(colors: UiPalette): TextView {
+        return TextView(this).apply {
+            text = getString(R.string.notification_categories_title)
+            textSize = 34f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
+        }
+    }
+
+    private fun loadCategoryPageData(): CategoryPageData {
+        val categoryPreferences = NotificationCategoryPreferences(this)
+        val includeSystemApps = categoryPreferences.showSystemApps
+        val categorySnapshot = categoryPreferences.snapshot()
+        val allCategoryCount = categorySnapshot.categories.size
+        val categories = categorySnapshot.categories.filter { includeSystemApps || !it.isSystemApp }
+        return CategoryPageData(
+            includeSystemApps = includeSystemApps,
+            allCategoryCount = allCategoryCount,
+            categories = categories,
+            items = categoryListItems(categories, categorySnapshot.settingsByKey),
+            canSuppressOriginal = PrivilegedAccess.canUseOriginalNotificationSuppression(this)
+        )
+    }
+
     private fun categoryListItems(
         categories: List<ObservedNotificationCategory>,
-        categoryPreferences: NotificationCategoryPreferences
+        settingsByKey: Map<NotificationCategoryKey, NotificationCategorySettings>
     ): List<CategoryListItem> {
         val items = mutableListOf<CategoryListItem>()
         categories.groupBy {
@@ -184,16 +256,19 @@ class NotificationChannelSelectionActivity : Activity() {
                 isSystemApp = it.isSystemApp
             )
         }.forEach { (group, appCategories) ->
-            val enabledCount = appCategories.count { categoryPreferences.isSelected(it.key) }
+            val enabledCount = appCategories.count { category ->
+                settingsByKey[category.key]?.enabled == true
+            }
             items.add(
                 CategoryListItem.AppGroup(
                     group = group,
                     selectedCount = enabledCount,
-                    totalCount = appCategories.size
+                    totalCount = appCategories.size,
+                    sourceDir = appCategories.firstNotNullOfOrNull { it.sourceDir }
                 )
             )
             appCategories.forEach { category ->
-                val settings = categoryPreferences.settingsFor(category.key)
+                val settings = settingsByKey[category.key] ?: NotificationCategorySettings()
                 items.add(CategoryListItem.Category(category, settings))
                 if (settings.enabled) {
                     items.add(CategoryListItem.Behavior(category, settings))
@@ -248,6 +323,21 @@ class NotificationChannelSelectionActivity : Activity() {
             }
         }
 
+        fun positionFor(anchor: ListScrollAnchor): Int? {
+            val exactPosition = items.indexOfFirst { item ->
+                item.scrollAnchor() == anchor
+            }
+            if (exactPosition >= 0) return exactPosition
+
+            if (anchor.itemType == BEHAVIOR_ITEM_TYPE && anchor.channelId != null) {
+                val categoryPosition = items.indexOfFirst { item ->
+                    item.scrollAnchor() == anchor.copy(itemType = CATEGORY_ITEM_TYPE)
+                }
+                if (categoryPosition >= 0) return categoryPosition
+            }
+            return null
+        }
+
         override fun isEnabled(position: Int): Boolean = false
 
         override fun getView(
@@ -260,6 +350,11 @@ class NotificationChannelSelectionActivity : Activity() {
                     val allEnabled = item.selectedCount == item.totalCount
                     appGroupToggle(
                         label = item.group.appLabel,
+                        iconKey = AppIconKey(
+                            packageName = item.group.packageName,
+                            uid = item.group.uid,
+                            sourceDir = item.sourceDir
+                        ),
                         selectedCount = item.selectedCount,
                         totalCount = item.totalCount,
                         checked = allEnabled
@@ -394,6 +489,7 @@ class NotificationChannelSelectionActivity : Activity() {
 
     private fun appGroupToggle(
         label: String,
+        iconKey: AppIconKey,
         selectedCount: Int,
         totalCount: Int,
         checked: Boolean,
@@ -418,6 +514,12 @@ class NotificationChannelSelectionActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+        row.addView(
+            appIconView(iconKey),
+            LinearLayout.LayoutParams(44.dp(), 44.dp()).apply {
+                marginEnd = 12.dp()
+            }
+        )
         textColumn.addView(
             TextView(this).apply {
                 text = label
@@ -451,6 +553,62 @@ class NotificationChannelSelectionActivity : Activity() {
         )
         row.setOnClickListener { onChanged(!checked) }
         return listItemContainer(row, top = 10.dp(), bottom = 8.dp())
+    }
+
+    private fun appIconView(key: AppIconKey): ImageView {
+        return ImageView(this).apply {
+            tag = key
+            contentDescription = null
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            background = rounded(palette().surface, 18.dp())
+            if (appIconCache.containsKey(key)) {
+                setImageDrawable(iconForDisplay(key))
+            } else {
+                addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(view: View) {
+                        view.removeOnAttachStateChangeListener(this)
+                        if (appIconCache.containsKey(key)) {
+                            setImageDrawable(iconForDisplay(key))
+                        } else {
+                            loadAppIcon(key)
+                        }
+                    }
+
+                    override fun onViewDetachedFromWindow(view: View) = Unit
+                })
+            }
+        }
+    }
+
+    private fun loadAppIcon(key: AppIconKey) {
+        if (!pendingAppIconKeys.add(key)) return
+        iconExecutor.execute {
+            val icon = AppLabelResolver.icon(
+                context = this,
+                packageName = key.packageName,
+                uid = key.uid,
+                sourceDir = key.sourceDir
+            )
+            mainHandler.post {
+                pendingAppIconKeys.remove(key)
+                appIconCache[key] = icon
+                updateVisibleAppIcon(key)
+            }
+        }
+    }
+
+    private fun updateVisibleAppIcon(key: AppIconKey) {
+        val list = categoryList ?: return
+        repeat(list.childCount) { index ->
+            list.getChildAt(index)
+                .findViewWithTag<ImageView>(key)
+                ?.setImageDrawable(iconForDisplay(key))
+        }
+    }
+
+    private fun iconForDisplay(key: AppIconKey): Drawable? {
+        val icon = appIconCache[key] ?: return null
+        return icon.constantState?.newDrawable(resources)?.mutate() ?: icon
     }
 
     private fun categoryToggle(
@@ -788,6 +946,7 @@ class NotificationChannelSelectionActivity : Activity() {
                     ),
                     channelName = channelName,
                     isSystemApp = app.isSystemApp,
+                    sourceDir = app.sourceDir,
                     nowMillis = now
                 ) || changed
             }
@@ -842,23 +1001,83 @@ class NotificationChannelSelectionActivity : Activity() {
             getString(R.string.diagnostic_progress_category_selection_changed)
         )
         AdditionalNotificationPreferenceEvents.notifyChanged()
-        renderContent()
+        refreshCategoryList()
+    }
+
+    private fun refreshCategoryList() {
+        val list = categoryList ?: run {
+            renderContent()
+            return
+        }
+        val version = ++pageLoadVersion
+        categoryExecutor.execute {
+            val pageData = loadCategoryPageData()
+            mainHandler.post {
+                if (isFinishing || version != pageLoadVersion || categoryList !== list) return@post
+                if (pageData.categories.isEmpty()) {
+                    renderContent()
+                    return@post
+                }
+                list.adapter = CategoryAdapter(
+                    items = pageData.items,
+                    categoryPreferences = NotificationCategoryPreferences(this),
+                    canSuppressOriginal = pageData.canSuppressOriginal
+                )
+                restoreListPosition(list)
+            }
+        }
     }
 
     private fun captureListPosition() {
         val list = categoryList ?: return
         pendingListPosition = list.firstVisiblePosition
         pendingListTop = list.getChildAt(0)?.top ?: 0
+        pendingListAnchor = (list.adapter as? CategoryAdapter)
+            ?.getItem(list.firstVisiblePosition)
+            ?.scrollAnchor()
     }
 
     private fun restoreListPosition(list: ListView) {
-        val position = pendingListPosition ?: return
+        val fallbackPosition = pendingListPosition ?: return
         val top = pendingListTop
+        val anchor = pendingListAnchor
         pendingListPosition = null
         pendingListTop = 0
-        list.post {
-            val lastPosition = (list.count - 1).coerceAtLeast(0)
-            list.setSelectionFromTop(position.coerceIn(0, lastPosition), top)
+        pendingListAnchor = null
+        val adapter = list.adapter as? CategoryAdapter
+        val position = adapter?.let { activeAdapter ->
+            anchor?.let(activeAdapter::positionFor)
+        } ?: fallbackPosition
+        list.viewTreeObserver.addOnGlobalLayoutListener(object :
+            android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                list.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                val lastPosition = (list.count - 1).coerceAtLeast(0)
+                list.setSelectionFromTop(position.coerceIn(0, lastPosition), top)
+            }
+        })
+    }
+
+    private fun CategoryListItem.scrollAnchor(): ListScrollAnchor {
+        return when (this) {
+            is CategoryListItem.AppGroup -> ListScrollAnchor(
+                packageName = group.packageName,
+                uid = group.uid,
+                channelId = null,
+                itemType = APP_GROUP_ITEM_TYPE
+            )
+            is CategoryListItem.Category -> ListScrollAnchor(
+                packageName = category.key.packageName,
+                uid = category.key.uid,
+                channelId = category.key.channelId,
+                itemType = CATEGORY_ITEM_TYPE
+            )
+            is CategoryListItem.Behavior -> ListScrollAnchor(
+                packageName = category.key.packageName,
+                uid = category.key.uid,
+                channelId = category.key.channelId,
+                itemType = BEHAVIOR_ITEM_TYPE
+            )
         }
     }
 

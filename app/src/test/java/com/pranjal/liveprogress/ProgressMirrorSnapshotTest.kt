@@ -30,6 +30,7 @@ class ProgressMirrorSnapshotTest {
         assertNotEquals(snapshot, snapshot.copy(actionsCount = 2))
         assertNotEquals(snapshot, snapshot.copy(sourceSmallIconKey = "icon-2"))
         assertNotEquals(snapshot, snapshot.copy(largeIconKey = "large-2"))
+        assertNotEquals(snapshot, snapshot.copy(visualPayloadKey = "uber-artwork-2"))
     }
 
     private fun snapshot(): ProgressMirrorSnapshot {
@@ -46,6 +47,7 @@ class ProgressMirrorSnapshotTest {
             actionsCount = 1,
             sourceSmallIconKey = "icon-1",
             largeIconKey = "large-1",
+            visualPayloadKey = "uber-artwork-1",
             locked = false,
             screenOff = false,
             shouldSuppressOriginal = false,

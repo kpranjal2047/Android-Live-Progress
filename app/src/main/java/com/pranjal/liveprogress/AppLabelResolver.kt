@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Process
 import android.os.UserHandle
 
@@ -46,6 +47,25 @@ object AppLabelResolver {
         return appInfo.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
     }
 
+    fun icon(
+        context: Context,
+        packageName: String,
+        uid: Int? = null,
+        sourceDir: String? = null
+    ): Drawable? {
+        val packageManager = context.packageManager
+        packageManagerApplicationInfo(context, packageName)?.let { appInfo ->
+            runCatching { appInfo.loadIcon(packageManager) }.getOrNull()?.let { return it }
+        }
+        launcherIcon(context, packageName, uid)?.let { return it }
+        archiveIcon(context, sourceDir)?.let { return it }
+        return packageContextApplicationInfo(context, packageName)?.let { appInfo ->
+            runCatching {
+                appInfo.loadIcon(context.createPackageContext(packageName, 0).packageManager)
+            }.getOrNull()
+        }
+    }
+
     private fun Notification.substituteAppName(packageName: String): String? {
         return extras
             ?.getCharSequence(EXTRA_SUBSTITUTE_APP_NAME)
@@ -84,6 +104,17 @@ object AppLabelResolver {
         }.getOrNull()
     }
 
+    private fun launcherIcon(context: Context, packageName: String, uid: Int?): Drawable? {
+        val launcherApps = context.getSystemService(LauncherApps::class.java) ?: return null
+        val user = uid?.let(UserHandle::getUserHandleForUid) ?: Process.myUserHandle()
+        return runCatching {
+            launcherApps.getActivityList(packageName, user)
+                .firstOrNull()
+                ?.applicationInfo
+                ?.loadIcon(context.packageManager)
+        }.getOrNull()
+    }
+
     private fun archiveLabel(context: Context, packageName: String, sourceDir: String?): String? {
         val cleanSourceDir = sourceDir?.takeIf { it.isNotBlank() } ?: return null
         val appInfo = runCatching {
@@ -94,6 +125,18 @@ object AppLabelResolver {
         appInfo.sourceDir = cleanSourceDir
         appInfo.publicSourceDir = cleanSourceDir
         return appInfo.loadLabelSafely(context, packageName)
+    }
+
+    private fun archiveIcon(context: Context, sourceDir: String?): Drawable? {
+        val cleanSourceDir = sourceDir?.takeIf { it.isNotBlank() } ?: return null
+        val appInfo = runCatching {
+            context.packageManager
+                .getPackageArchiveInfo(cleanSourceDir, PackageManager.PackageInfoFlags.of(0))
+                ?.applicationInfo
+        }.getOrNull() ?: return null
+        appInfo.sourceDir = cleanSourceDir
+        appInfo.publicSourceDir = cleanSourceDir
+        return runCatching { appInfo.loadIcon(context.packageManager) }.getOrNull()
     }
 
     private fun packageManagerApplicationInfo(context: Context, packageName: String): ApplicationInfo? {

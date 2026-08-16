@@ -1,13 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <exclude
+        <include
             domain="sharedpref"
             path="." />
+        <exclude
+            domain="sharedpref"
+            path="android_live_progress_diagnostics.xml" />
+        <exclude
+            domain="sharedpref"
+            path="android_live_progress_privileged_state.xml" />
+        <exclude
+            domain="sharedpref"
+            path="android_live_progress_suppression_state.xml" />
     </cloud-backup>
     <device-transfer>
-        <exclude
+        <include
             domain="sharedpref"
             path="." />
+        <exclude
+            domain="sharedpref"
+            path="android_live_progress_diagnostics.xml" />
+        <exclude
+            domain="sharedpref"
+            path="android_live_progress_privileged_state.xml" />
+        <exclude
+            domain="sharedpref"
+            path="android_live_progress_suppression_state.xml" />
     </device-transfer>
 </data-extraction-rules>

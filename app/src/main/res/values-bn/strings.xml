@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">মিডিয়া লাইভ নোটিফিকেশন</string>
     <string name="setting_language">ভাষা</string>
     <string name="setting_hide_mirrors_qs">Quick Settings খোলা থাকলে মিরর নোটিফিকেশন লুকান</string>
+    <string name="setting_hide_status_pill_source_foreground">সোর্স অ্যাপ খোলা থাকলে স্ট্যাটাস বারের পিল লুকান</string>
     <string name="setting_enable_progress_live_updates">প্রগ্রেস লাইভ নোটিফিকেশন চালু করুন</string>
     <string name="setting_notification_categories">নোটিফিকেশন বিভাগ</string>
     <string name="notification_categories_title">অতিরিক্ত লাইভ নোটিফিকেশন</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Shizuku অনুমতি প্রস্তুতি এড়ানো হয়েছে</string>
     <string name="diagnostic_canceled_live_test">লাইভ নোটিফিকেশন টেস্ট বাতিল হয়েছে।</string>
     <string name="diagnostic_qs_setting_changed">Quick Settings-এ মিরর লুকানোর সেটিং বদলেছে</string>
+    <string name="diagnostic_foreground_pill_setting_changed">ফোরগ্রাউন্ড স্ট্যাটাস পিল সেটিং বদলেছে</string>
     <string name="diagnostic_progress_enabled_changed">প্রগ্রেস লাইভ নোটিফিকেশন সেটিং বদলেছে</string>
     <string name="diagnostic_progress_aod_changed">প্রগ্রেস AOD সেটিং বদলেছে</string>
     <string name="diagnostic_progress_lock_changed">প্রগ্রেস লক স্ক্রিন সেটিং বদলেছে</string>

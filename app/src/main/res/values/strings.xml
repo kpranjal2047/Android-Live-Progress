@@ -18,7 +18,7 @@
     <string name="setup_listener_reason">Live Progress needs notification listener access to read eligible progress and media notifications.</string>
     <string name="setup_listener_action">Open notification listener settings</string>
     <string name="setup_accessibility_title">Enable Quick Settings detection</string>
-    <string name="setup_accessibility_reason">Enable this only if you want Live Progress to hide mirrored notifications when Quick Settings is expanded and when the source app is open. Skip turns Quick Settings hiding off.</string>
+    <string name="setup_accessibility_reason">Enable this only if you want Live Progress to hide mirrored notifications when Quick Settings is expanded or when the source app is open. Skip turns both options off.</string>
     <string name="setup_accessibility_action">Open accessibility settings</string>
     <string name="setup_shizuku_title">Grant Shizuku permission</string>
     <string name="setup_shizuku_reason">Grant this only if you want Live Progress to hide original progress notifications on the lock screen and AOD. Skip turns that setting off.</string>
@@ -36,6 +36,7 @@
     <string name="section_developer">Developer</string>
     <string name="setting_language">Language</string>
     <string name="setting_hide_mirrors_qs">Hide mirrored notifications when Quick Settings is expanded</string>
+    <string name="setting_hide_status_pill_source_foreground">Hide status bar pill when source app is open</string>
     <string name="setting_enable_progress_live_updates">Enable progress live notifications</string>
     <string name="setting_notification_categories">Notification categories</string>
     <string name="notification_categories_title">Additional Live Notifications</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Skipped Shizuku permission setup</string>
     <string name="diagnostic_canceled_live_test">Canceled live notification test.</string>
     <string name="diagnostic_qs_setting_changed">QS mirror hiding setting changed</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Foreground status bar pill setting changed</string>
     <string name="diagnostic_progress_enabled_changed">Progress live notifications setting changed</string>
     <string name="diagnostic_progress_aod_changed">Progress AOD setting changed</string>
     <string name="diagnostic_progress_lock_changed">Progress lock screen setting changed</string>

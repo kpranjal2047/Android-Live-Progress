@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">Живые медиауведомления</string>
     <string name="setting_language">Язык</string>
     <string name="setting_hide_mirrors_qs">Скрывать зеркальные уведомления при раскрытых быстрых настройках</string>
+    <string name="setting_hide_status_pill_source_foreground">Скрывать индикатор в строке состояния, когда открыто исходное приложение</string>
     <string name="setting_enable_progress_live_updates">Включить живые уведомления о прогрессе</string>
     <string name="setting_notification_categories">Категории уведомлений</string>
     <string name="notification_categories_title">Дополнительные живые уведомления</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Настройка разрешения Shizuku пропущена</string>
     <string name="diagnostic_canceled_live_test">Тест живого уведомления отменен.</string>
     <string name="diagnostic_qs_setting_changed">Настройка скрытия в быстрых настройках изменена</string>
+    <string name="diagnostic_foreground_pill_setting_changed">Настройка индикатора на переднем плане изменена</string>
     <string name="diagnostic_progress_enabled_changed">Настройка живых уведомлений о прогрессе изменена</string>
     <string name="diagnostic_progress_aod_changed">Настройка AOD для прогресса изменена</string>
     <string name="diagnostic_progress_lock_changed">Настройка экрана блокировки для прогресса изменена</string>

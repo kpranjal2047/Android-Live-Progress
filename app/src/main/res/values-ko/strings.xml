@@ -34,6 +34,7 @@
     <string name="section_media_live_updates">미디어 실시간 알림</string>
     <string name="setting_language">언어</string>
     <string name="setting_hide_mirrors_qs">빠른 설정이 펼쳐지면 복제 알림 숨기기</string>
+    <string name="setting_hide_status_pill_source_foreground">원본 앱이 열려 있을 때 상태 표시줄 알약 숨기기</string>
     <string name="setting_enable_progress_live_updates">진행 실시간 알림 켜기</string>
     <string name="setting_notification_categories">알림 카테고리</string>
     <string name="notification_categories_title">추가 실시간 알림</string>
@@ -103,6 +104,7 @@
     <string name="diagnostic_skipped_shizuku_setup">Shizuku 권한 설정을 건너뜀</string>
     <string name="diagnostic_canceled_live_test">라이브 알림 테스트를 취소했습니다.</string>
     <string name="diagnostic_qs_setting_changed">빠른 설정 복제 숨김 설정 변경됨</string>
+    <string name="diagnostic_foreground_pill_setting_changed">포그라운드 상태 표시줄 알약 설정 변경됨</string>
     <string name="diagnostic_progress_enabled_changed">진행 실시간 알림 설정 변경됨</string>
     <string name="diagnostic_progress_aod_changed">진행 AOD 설정이 변경됨</string>
     <string name="diagnostic_progress_lock_changed">진행 잠금 화면 설정이 변경됨</string>

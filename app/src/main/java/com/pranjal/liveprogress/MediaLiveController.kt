@@ -310,6 +310,8 @@ class MediaLiveController(
             screenOff = VisibilityState.screenOff,
             quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
             hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
+            hideWhenSourceAppInForeground =
+                visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
             sourceAppInForeground = VisibilityState.isSourcePackageInForeground(state.packageName),
             progressMirrorActive = progressMirrorActive,
             showOnAod = showOnAod,
@@ -319,7 +321,7 @@ class MediaLiveController(
         AppDiagnostics.verbose(
             service,
             "media",
-            "Media visibility evaluated; package=${state.packageName}; enabled=${preferences.enabled}; additionalForced=$additionalForced; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; sourceForeground=${VisibilityState.isSourcePackageInForeground(state.packageName)}; progressActive=$progressMirrorActive; showAod=$showOnAod; showLock=$showOnLockScreen; hideOriginal=$hideOriginal; showMirror=${decision.showMirror}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; suppress=${decision.suppressOriginal}; reason=${decision.reason}"
+            "Media visibility evaluated; package=${state.packageName}; enabled=${preferences.enabled}; additionalForced=$additionalForced; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.hideStatusBarPillWhenSourceAppForeground}; sourceForeground=${VisibilityState.isSourcePackageInForeground(state.packageName)}; progressActive=$progressMirrorActive; showAod=$showOnAod; showLock=$showOnLockScreen; hideOriginal=$hideOriginal; showMirror=${decision.showMirror}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; suppress=${decision.suppressOriginal}; reason=${decision.reason}"
         )
 
         if (!decision.showMirror) {

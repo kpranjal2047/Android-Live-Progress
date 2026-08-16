@@ -6,7 +6,7 @@ import org.junit.Test
 
 class SetupFlowPolicyTest {
     @Test
-    fun accessibilityIsOptionalButRequiredWhenQsHideSettingIsOn() {
+    fun accessibilityIsOptionalButRequiredWhenAVisibilitySettingIsOn() {
         assertEquals(
             SetupRequirementKind.ACCESSIBILITY,
             readyState(
@@ -17,6 +17,13 @@ class SetupFlowPolicyTest {
         assertNull(
             readyState(
                 hideWhenQuickSettingsExpanded = false,
+                accessibilityEnabled = false
+            )
+        )
+        assertEquals(
+            SetupRequirementKind.ACCESSIBILITY,
+            readyState(
+                hideWhenSourceAppInForeground = true,
                 accessibilityEnabled = false
             )
         )
@@ -108,6 +115,7 @@ class SetupFlowPolicyTest {
         notificationListenerReady: Boolean = true,
         progressEnabled: Boolean = true,
         hideWhenQuickSettingsExpanded: Boolean = false,
+        hideWhenSourceAppInForeground: Boolean = false,
         accessibilityEnabled: Boolean = true,
         suppressOriginalNotification: Boolean = false,
         shizukuAvailable: Boolean = false,
@@ -119,6 +127,7 @@ class SetupFlowPolicyTest {
             notificationListenerReady = notificationListenerReady,
             progressEnabled = progressEnabled,
             hideWhenQuickSettingsExpanded = hideWhenQuickSettingsExpanded,
+            hideWhenSourceAppInForeground = hideWhenSourceAppInForeground,
             accessibilityEnabled = accessibilityEnabled,
             suppressOriginalNotification = suppressOriginalNotification,
             shizukuAvailable = shizukuAvailable,
