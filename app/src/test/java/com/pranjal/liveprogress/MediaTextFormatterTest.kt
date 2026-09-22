@@ -126,6 +126,12 @@ class MediaTextFormatterTest {
     }
 
     @Test
+    fun scrollsGenericCriticalTextWindow() {
+        assertEquals("Reachin", MediaTextFormatter.scrollingPillText("Reaching 9:43 PM", 0))
+        assertEquals("aching ", MediaTextFormatter.scrollingPillText("Reaching 9:43 PM", 2_000))
+    }
+
+    @Test
     fun buildsDetailAndSubText() {
         assertEquals(
             "Artist - Album",

@@ -6,10 +6,7 @@ import org.junit.Test
 class MirrorPriorityPolicyTest {
     @Test
     fun screenOnLockScreenUsesDefaultPriority() {
-        val mode = MirrorPriorityPolicy.forSurface(
-            locked = true,
-            screenOff = false
-        )
+        val mode = MirrorPriorityPolicy.forSurface(locked = true)
 
         assertEquals(MirrorPriorityMode.DEFAULT, mode)
         assertEquals(MirrorNotificationBuilder.CHANNEL_ID, MirrorNotificationBuilder.channelId(mode))
@@ -18,10 +15,7 @@ class MirrorPriorityPolicyTest {
 
     @Test
     fun unlockedSurfaceUsesLowPriority() {
-        val mode = MirrorPriorityPolicy.forSurface(
-            locked = false,
-            screenOff = false
-        )
+        val mode = MirrorPriorityPolicy.forSurface(locked = false)
 
         assertEquals(MirrorPriorityMode.LOW, mode)
         assertEquals(
@@ -35,19 +29,16 @@ class MirrorPriorityPolicyTest {
     }
 
     @Test
-    fun aodSurfaceUsesLowPriority() {
-        val mode = MirrorPriorityPolicy.forSurface(
-            locked = true,
-            screenOff = true
-        )
+    fun aodSurfaceUsesDefaultPriority() {
+        val mode = MirrorPriorityPolicy.forSurface(locked = true)
 
-        assertEquals(MirrorPriorityMode.LOW, mode)
+        assertEquals(MirrorPriorityMode.DEFAULT, mode)
         assertEquals(
-            MirrorNotificationBuilder.LOW_PRIORITY_CHANNEL_ID,
+            MirrorNotificationBuilder.CHANNEL_ID,
             MirrorNotificationBuilder.channelId(mode)
         )
         assertEquals(
-            MediaLiveNotificationBuilder.LOW_PRIORITY_CHANNEL_ID,
+            MediaLiveNotificationBuilder.CHANNEL_ID,
             MediaLiveNotificationBuilder.channelId(mode)
         )
     }

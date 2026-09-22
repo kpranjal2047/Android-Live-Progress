@@ -9,7 +9,7 @@ class NotificationCategoryPreferencesTest {
     fun categoryKeyRoundTrips() {
         val key = NotificationCategoryKey(
             packageName = "com.example.source",
-            uid = 12345,
+            userId = 0,
             channelId = "delivery_status"
         )
 
@@ -27,7 +27,7 @@ class NotificationCategoryPreferencesTest {
         val category = ObservedNotificationCategory(
             key = NotificationCategoryKey(
                 packageName = "com.example.source",
-                uid = 12345,
+                userId = 0,
                 channelId = "delivery_status"
             ),
             appLabel = "Example",
@@ -41,21 +41,17 @@ class NotificationCategoryPreferencesTest {
     }
 
     @Test
-    fun observedCategoryReadsOldRecordsAsUserApps() {
-        val legacy = listOf(
+    fun observedCategoryRejectsIncompleteRecords() {
+        val incomplete = listOf(
             "com.example.source",
-            "12345",
+            "0",
             "delivery_status",
             "Example",
             "Delivery status",
             "123456789"
         ).joinToString("\u001F")
 
-        assertEquals(
-            false,
-            ObservedNotificationCategory.parse(legacy)?.isSystemApp
-        )
-        assertNull(ObservedNotificationCategory.parse(legacy)?.sourceDir)
+        assertNull(ObservedNotificationCategory.parse(incomplete))
     }
 
     @Test
@@ -63,7 +59,7 @@ class NotificationCategoryPreferencesTest {
         val category = ObservedNotificationCategory(
             key = NotificationCategoryKey(
                 packageName = "com.example.source",
-                uid = 12345,
+                userId = 0,
                 channelId = "delivery_status"
             ),
             appLabel = "Example",
@@ -89,7 +85,7 @@ class NotificationCategoryPreferencesTest {
     fun categorySettingsRoundTripsWithKey() {
         val key = NotificationCategoryKey(
             packageName = "com.example.source",
-            uid = 12345,
+            userId = 0,
             channelId = "delivery_status"
         )
         val settings = NotificationCategorySettings(
@@ -107,10 +103,10 @@ class NotificationCategoryPreferencesTest {
     }
 
     @Test
-    fun categorySettingsReadsOldRecordsWithKeepAfterDismissDisabled() {
+    fun categorySettingsRejectsIncompleteRecords() {
         val encoded = listOf(
             "com.example.source",
-            "12345",
+            "0",
             "delivery_status",
             "true",
             "false",
@@ -118,13 +114,7 @@ class NotificationCategoryPreferencesTest {
             "true"
         ).joinToString("\u001F")
 
-        val settings = NotificationCategorySettings.parse(encoded)?.second
-
-        assertEquals(true, settings?.enabled)
-        assertEquals(false, settings?.showOnAod)
-        assertEquals(true, settings?.showOnLockScreen)
-        assertEquals(true, settings?.hideOriginalNotification)
-        assertEquals(false, settings?.keepAfterOriginalDismissed)
+        assertNull(NotificationCategorySettings.parse(encoded))
     }
 
     @Test

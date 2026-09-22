@@ -46,7 +46,9 @@ object MirrorNotificationBuilder {
         }
 
         val title = candidate.title ?: candidate.appLabel
-        val progressText = candidate.progress.shortText.takeIf { it.isNotBlank() }
+        val progressText = candidate.progress.shortText
+            .takeIf { candidate.showProgressText && it.isNotBlank() }
+        val shortCriticalText = candidate.shortCriticalText ?: candidate.progress.shortText
         val contentText = expandedProgressText(candidate.text, progressText)
         val subText = candidate.subText ?: candidate.appLabel
         val color = if (candidate.color != Notification.COLOR_DEFAULT) {
@@ -90,8 +92,8 @@ object MirrorNotificationBuilder {
                         false
                     )
                 }
-                if (candidate.progress.shortText.isNotBlank()) {
-                    setShortCriticalText(candidate.progress.shortText)
+                if (shortCriticalText.isNotBlank()) {
+                    setShortCriticalText(shortCriticalText)
                 }
                 candidate.actions.forEach { addAction(it) }
             }

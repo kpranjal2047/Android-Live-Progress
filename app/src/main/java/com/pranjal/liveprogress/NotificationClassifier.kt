@@ -2,6 +2,7 @@ package com.pranjal.liveprogress
 
 import android.app.Notification
 import android.content.Context
+import android.os.SystemClock
 import android.os.Bundle
 import android.service.notification.StatusBarNotification
 import kotlin.math.absoluteValue
@@ -25,6 +26,7 @@ object NotificationClassifier {
             uid: Int,
             channelId: String?
         ) -> NotificationCategorySettings = { _, _, _ -> NotificationCategorySettings() },
+        ocrText: NotificationOcrText? = null,
         debug: ((String) -> Unit)? = null
     ): MirrorCandidate? {
         if (sbn.packageName == context.packageName) {
@@ -79,8 +81,10 @@ object NotificationClassifier {
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)
             ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG)
+            ?: ocrText?.title
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)
             ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)
+            ?: ocrText?.text
         val appLabel = AppLabelResolver.label(context, sbn.packageName, notification)
         val actions = notification.actions
             ?.filter { it.actionIntent != null && it.remoteInputs.isNullOrEmpty() && !it.isAuthenticationRequired }
@@ -153,6 +157,119 @@ object NotificationClassifier {
             actions = actions,
             progress = data.progress,
             visualPayloadKey = data.visualPayloadKey,
+            displaySettings = progressDisplaySettings
+        )
+    }
+
+    fun toDominosCandidate(
+        context: Context,
+        sbn: StatusBarNotification,
+        data: DominosNotificationData,
+        progressDisplaySettings: MirrorCandidateDisplaySettings
+    ): MirrorCandidate? {
+        val notification = sbn.notification ?: return null
+        if (notification.isAlreadyLiveProgress()) return null
+        val actions = notification.actions
+            ?.filter { it.actionIntent != null && it.remoteInputs.isNullOrEmpty() && !it.isAuthenticationRequired }
+            ?.take(MAX_ACTIONS)
+            ?: emptyList()
+        val deadline = data.countdownDeadlineElapsedRealtime
+        return MirrorCandidate(
+            key = sbn.key,
+            packageName = sbn.packageName,
+            sourceId = sbn.id,
+            sourceTag = sbn.tag,
+            sourceUid = sbn.uid,
+            sourceUser = sbn.user,
+            channelId = notification.channelId,
+            notificationId = mirrorIdFor(sbn.key),
+            appLabel = AppLabelResolver.label(context, sbn.packageName, notification),
+            title = data.title,
+            text = data.text,
+            subText = AppLabelResolver.label(context, sbn.packageName, notification),
+            contentIntent = notification.contentIntent,
+            smallIcon = notification.smallIcon,
+            largeIcon = notification.getLargeIcon(),
+            color = notification.color,
+            whenMillis = notification.`when`,
+            showWhen = notification.extras?.getBoolean(
+                Notification.EXTRA_SHOW_WHEN,
+                notification.`when` > 0L
+            ) ?: (notification.`when` > 0L),
+            actions = actions,
+            progress = data.progress,
+            shortCriticalText = when {
+                data.deliveryStatus == DominosDeliveryStatus.DELIVERED -> {
+                    context.getString(R.string.dominos_delivery_delivered)
+                }
+                data.deliveryStatus == DominosDeliveryStatus.REACHED -> {
+                    context.getString(R.string.dominos_delivery_reached)
+                }
+                deadline != null -> DominosDeliveryTime.remainingText(
+                    deadline,
+                    SystemClock.elapsedRealtime()
+                )
+                else -> null
+            },
+            showProgressText = data.deliveryStatus == DominosDeliveryStatus.NONE,
+            countdownDeadlineElapsedRealtime = deadline,
+            displaySettings = progressDisplaySettings
+        )
+    }
+
+    fun toWhereIsMyTrainCandidate(
+        context: Context,
+        sbn: StatusBarNotification,
+        data: WhereIsMyTrainNotificationData,
+        progressDisplaySettings: MirrorCandidateDisplaySettings
+    ): MirrorCandidate? {
+        val notification = sbn.notification ?: return null
+        if (notification.isAlreadyLiveProgress()) return null
+        val actions = notification.actions
+            ?.filter { it.actionIntent != null && it.remoteInputs.isNullOrEmpty() && !it.isAuthenticationRequired }
+            ?.take(MAX_ACTIONS)
+            ?: emptyList()
+        val reachingText = data.eta
+            ?.toString()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { eta -> context.getString(R.string.where_is_my_train_reaching, eta) }
+        return MirrorCandidate(
+            key = sbn.key,
+            packageName = sbn.packageName,
+            sourceId = sbn.id,
+            sourceTag = sbn.tag,
+            sourceUid = sbn.uid,
+            sourceUser = sbn.user,
+            channelId = notification.channelId,
+            notificationId = mirrorIdFor(sbn.key),
+            appLabel = AppLabelResolver.label(context, sbn.packageName, notification),
+            title = WhereIsMyTrainText.statusText(
+                currentStatus = data.currentStatus,
+                scheduleStatus = data.scheduleStatus
+            ) ?: data.title,
+            text = WhereIsMyTrainText.destinationText(
+                destination = data.destination,
+                distance = data.distance,
+                reachingText = reachingText
+            ) ?: WhereIsMyTrainText.statusText(
+                currentStatus = data.currentStatus,
+                scheduleStatus = data.scheduleStatus
+            ),
+            subText = data.title,
+            contentIntent = notification.contentIntent,
+            smallIcon = notification.smallIcon,
+            largeIcon = notification.getLargeIcon(),
+            color = notification.color,
+            whenMillis = notification.`when`,
+            showWhen = notification.extras?.getBoolean(
+                Notification.EXTRA_SHOW_WHEN,
+                notification.`when` > 0L
+            ) ?: (notification.`when` > 0L),
+            actions = actions,
+            progress = data.progress,
+            scrollingShortCriticalText = reachingText,
+            showProgressText = false,
             displaySettings = progressDisplaySettings
         )
     }

@@ -1,182 +1,126 @@
-![Live Progress icon](docs/assets/live-progress-icon.svg)
+![Live Progress app icon](docs/assets/live-progress-icon.svg)
 
 # Live Progress
 
-Beautiful Android 16 live notifications for progress tasks and media playback.
+Live notifications for the updates you care about most on Android 16 and newer.
 
 ![Android 16+](https://img.shields.io/badge/Android-16%2B-3DDC84?logo=android&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-**Status bar pills** • **Lock screen mirrors** • **AOD updates** • **Media progress** • **System colors**
+**Progress at a glance** | **Media controls** | **Lock screen** | **Always-on display**
 
 ---
 
-## ✨ What It Does
+## What Live Progress Does
 
-**Live Progress** brings Android 16 live notifications to apps that show useful progress or media notifications.
+Live Progress turns supported notifications into easy-to-glance live updates. It keeps the original app notification active, so its information can continue updating normally.
 
-It helps you glance at:
+- Track downloads, uploads, and other progress tasks.
+- See media playback title, time, progress, and controls.
+- Follow supported Uber trips, Domino's deliveries, and Where Is My Train updates.
+- Keep selected notifications visible as live updates, even when an app does not provide a progress bar.
+- Choose where updates appear: status bar, lock screen, and always-on display.
 
-- 📊 Download, upload, and other real progress notifications
-- 🎵 Current media playback with title, time, and controls
-- 🌙 Always-on display updates while the screen is off
-- 🔒 Optional lock screen mirrors
-- 🟢 Status bar pills with short progress or media text
+## Highlights
 
-The app keeps the original notification active so updates continue normally.
+### Progress Updates
 
----
+- Shows supported progress notifications as live updates.
+- Shows a percentage only when the original notification supplies genuine progress.
+- Keeps the expanded update current as the original notification changes.
+- Supports multiple active progress updates.
+- Can show supported Uber trip progress, including driver and vehicle artwork.
+- Can show Domino's order progress, delivery time, and reached/delivered status.
+- Can show Where Is My Train progress, route, destination, distance, schedule information, and expected reaching time.
 
-## 🚀 Highlights
+### Media Updates
 
-- Uses an adaptive launcher icon that supports Android themed icons.
+- Shows the currently active media playback as a live update.
+- Lets you choose title, elapsed time, or remaining time for the status-bar text.
+- Includes playback progress and available previous, play/pause, and next controls.
+- Shows useful playback time on the always-on display.
+- Automatically gives progress updates priority when both progress and media are active.
 
-### 📊 Progress Mirrors
+### Additional Live Notifications
 
-- Shows eligible progress notifications as Android 16 live notifications.
-- Supports eligible Uber trip notifications with live trip progress and driver/car artwork.
-- Displays progress percentage in the status bar when the original notification provides real progress.
-- Keeps expanded mirror content updated in real time.
-- Supports multiple progress notifications.
-- Can optionally show progress mirrors on the lock screen and AOD.
-- Includes a Dismiss action for live mirrors that cannot be swiped away on the lock screen.
-- Lets you choose whether the status bar pill hides while the source app is open.
+Choose notification categories from your apps that should always appear as live updates.
 
-### 🎵 Media Live Notifications
+- Browse categories grouped under each app.
+- Turn on all categories for an app, or choose them individually.
+- Choose lock-screen and always-on-display visibility for every selected category.
+- Keep a selected live update after its original notification is dismissed, when needed.
+- New categories remain off until you choose them, unless you enable automatic activation.
+- Optionally refresh the category list to discover more notifications from installed apps.
 
-- Shows media playback as a live notification when enabled.
-- Supports status bar text modes: **Title**, **Elapsed**, and **Remaining**.
-- Shows media progress and playback actions.
-- Can show media progress on AOD.
-- Includes a Dismiss action for the mirrored media notification.
-- Uses the same source-app status bar pill setting as progress mirrors.
-- Automatically hides media mirrors when a progress mirror is active.
+## Where Updates Appear
 
-### 🧩 Additional Live Notifications
+| Place | What you control |
+| --- | --- |
+| Status bar | Short progress, delivery, train, or media text. |
+| Quick Settings | Live updates can hide while Quick Settings is expanded. |
+| Lock screen | Choose whether progress, media, and selected categories appear. |
+| Always-on display | Choose whether progress, media, and selected categories appear while the screen is off. |
+| Source app open | Optionally hide the duplicate status-bar update while using the original app. |
 
-Some apps use useful notification categories without exposing real Android progress. Live Progress lets you open **Notification categories** under **Additional Live Notifications** and choose which observed categories should mirror as live notifications.
-
-- Categories appear after Live Progress has observed notifications from those apps.
-- Apps are grouped clearly, with notification categories listed underneath.
-- Selected categories mirror as indeterminate live notifications when the original has no real progress.
-- If a selected category later exposes real progress, the mirror shows that real progress.
-- A Shizuku refresh option can find notification categories from installed apps.
-- System app categories are hidden by default and can be shown from the categories page.
-- Progress and media notifications keep their normal behavior when their main live notification settings are enabled.
-- Each selected category shows compact controls for lock screen visibility, AOD, original notification hiding where supported, and keeping the live mirror after the original is dismissed.
-- New categories stay off by default unless automatic enabling is turned on.
-- Live Progress does not guess percentages from notification text.
-
-### 🎨 Native Look
-
-- Uses Android’s system color palette.
-- Supports light and dark mode.
-- Uses a Material 3 Expressive-inspired settings screen.
-
----
-
-## 👀 Where Mirrors Appear
-
-- 🔓 **Unlocked:** progress and media mirrors can show live status bar pills.
-- 📱 **Source app open:** mirrors can hide when foreground detection is available.
-- ⚙️ **Quick Settings expanded:** mirrors can hide when the optional setting is enabled.
-- 🔒 **Lock screen:** progress and media mirrors are optional.
-- 🌙 **AOD / screen off:** progress and media mirrors are optional, with progress taking priority.
-
-When a progress mirror is active, media mirrors are hidden everywhere so progress gets priority.
-
----
-
-## 🔐 Permissions
-
-Live Progress asks for permissions only when needed.
-
-- 🔔 **Notifications:** posts mirrored live notifications and test notifications.
-- ⭐ **Live notification access:** enables Android 16 promoted/live notification behavior.
-- 👂 **Notification listener:** reads eligible notifications from other apps.
-- ⚙️ **Accessibility service:** optional. Detects expanded Quick Settings and foreground apps so mirrors can hide when they should.
-- 🧰 **Shizuku:** optional. Helps hide original progress notifications on the lock screen and AOD when enabled.
-
-Live Progress does **not** use root.
-
----
-
-## 📲 Setup
+## Getting Started
 
 1. Install and open **Live Progress**.
-2. Follow the startup permission pages.
-3. Enable the features you want from the main settings screen.
-4. Use **Post live notification test** to confirm live notifications are working.
+2. Follow the guided permission setup.
+3. Choose whether to use progress updates, media updates, and additional live notifications.
+4. Use **Post live notification test** to confirm the live presentation is available on your phone.
 
-Optional setup pages can be skipped. Skipping an optional permission turns off the feature that needs it.
+Some optional features request access only when you enable them. For example, hiding duplicates in expanded Quick Settings needs Accessibility access, and hiding an original notification on the lock screen or always-on display needs optional Shizuku access.
 
-Your Live Progress settings and selected notification categories can be restored with Google Backup or a device transfer. Permissions, temporary notification-hiding state, and developer logs are not restored.
-
----
-
-## 🎛️ Main Settings
+## Settings You Can Adjust
 
 ### General
 
-- Language
-- Hide mirrored notifications when Quick Settings is expanded
-- Hide the status bar pill while the source app is open
+- App language
+- Hide updates while Quick Settings is expanded
+- Hide the status-bar update while the original app is open
 
 ### Progress
 
 - Enable progress live notifications
-- Show live notifications on lock screen
-- Show live notifications on AOD
-- Hide original notification on lock screen and AOD, when supported
+- Show updates on the lock screen
+- Show updates on the always-on display
+- Hide the original notification on the lock screen and always-on display, where supported
 
 ### Media
 
 - Enable media live notifications
-- Show live notifications on lock screen
-- Show live notifications on AOD
-- Status bar text mode
-- Scroll title in status bar
+- Choose status-bar text
+- Scroll long song titles
+- Show updates on the lock screen and always-on display
 
 ### Additional Live Notifications
 
-- Notification categories
-- Enable new notification categories automatically
-- Per-category lock screen, AOD, original notification, and keep-after-dismiss controls
+- Choose notification categories
+- Automatically enable newly discovered categories
+- Set lock-screen, always-on-display, original-notification, and keep-after-dismiss behavior for each category
 
 ### Developer
 
-- Logging level
-- Verbose logging for detailed troubleshooting traces
-- Clear logs timing
-- Logs page with smooth long-log scrolling and file export using the system file picker
+- Enable Normal or Verbose logs when troubleshooting
+- Choose how long logs are retained
+- View and export logs using Android's file picker
 
-### About
+## Privacy And Backup
 
-- Inline app card with version, license, attribution note, and source-code link
+- Live Progress works on your phone and does not need an Internet connection.
+- Your settings and enabled notification categories can be restored with Google Backup or a device transfer.
+- Permission choices, temporary notification-hiding state, discovered-category history, first-run setup state, and developer logs are not restored.
+- Live Progress does not use root.
 
----
+## Notes
 
-## ⚠️ Notes And Limits
+- Android 16 or newer is required.
+- Live-update appearance can vary across phone brands and Android versions.
+- Hiding an original notification is optional and may not work for every app or phone.
+- Custom app notifications may change after the source app is updated. Live Progress will continue to show the original notification when a special live update cannot be created.
 
-- Android 16 / API 36+ is required.
-- Some manufacturers may customize live notification behavior.
-- Hiding mirrors while the source app is open requires the optional accessibility service.
-- Original notification hiding is best-effort and may not work for every app or device.
-- Custom notification layouts are not copied exactly.
-- User-selected notification categories mirror as indeterminate updates unless the original notification exposes real progress.
+## License
 
----
+Released under the [MIT License](LICENSE).
 
-## 🔏 Private Local Builds
-
-Maintainer builds can use a private signing key by copying `keystore.properties.example` to `keystore.properties` and filling in local key details. The real `keystore.properties` file and key files are ignored by Git.
-
-Only builds signed with the same private key can upgrade an existing installed copy, so public builds from this repository cannot replace the maintainer-signed app.
-
----
-
-## 📄 License
-
-This project is released under the [MIT License](LICENSE).
-
-If you use this project or substantial parts of its code, acknowledgment or attribution to the original author is appreciated.
+If you use this project or substantial parts of its code, acknowledgment of the original author is appreciated.

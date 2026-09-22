@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">Включить все</string>
     <string name="action_turn_all_off">Отключить все</string>
     <string name="action_refresh_categories_shizuku">Обновить категории через Shizuku</string>
+    <string name="category_refresh_confirmation_title">Обновить категории уведомлений?</string>
+    <string name="category_refresh_confirmation_message">Это может занять несколько минут в зависимости от числа установленных приложений. После запуска отменить операцию нельзя.</string>
+    <string name="category_refresh_confirm_action">Обновить</string>
+    <string name="category_refresh_preparing">Подготовка обновления категорий уведомлений…</string>
+    <string name="category_refresh_progress">Сканирование приложений: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">Не найдено приложений для обновления.</string>
-    <string name="category_refresh_starting">Обновление категорий уведомлений всех приложений через Shizuku</string>
     <string name="category_refresh_complete">Обновление завершено: найдено новых категорий: %1$d</string>
     <string name="category_refresh_complete_with_failures">Обновление завершено: найдено новых категорий: %1$d, не удалось проверить приложений: %2$d</string>
     <string name="category_refresh_failed">Сбой обновления Shizuku: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">Настройка экрана блокировки для прогресса изменена</string>
     <string name="diagnostic_progress_suppression_changed">Настройка скрытия исходного уведомления прогресса изменена</string>
     <string name="diagnostic_progress_category_selection_changed">Выбор категории прогресса изменен</string>
-    <string name="diagnostic_category_shizuku_refresh">Обновление категорий через Shizuku завершено</string>
     <string name="diagnostic_media_settings_changed">Настройки медиа изменены</string>
     <string name="diagnostic_language_setting_changed">Язык изменен</string>
     <string name="diagnostic_notification_permission_required">Перед публикацией живого теста требуется разрешение на публикацию уведомлений.</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">Android сообщает, что тестовое уведомление можно продвигать.</string>
     <string name="diagnostic_opened_promoted_settings">Настройки продвигаемых уведомлений открыты.</string>
     <string name="diagnostic_promoted_settings_unavailable">Настройки продвигаемых уведомлений недоступны на этой сборке; открыты настройки уведомлений приложения.</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">Прибыло</string>
+    <string name="dominos_delivery_delivered">Доставлено</string>
+    <string name="where_is_my_train_reaching">Прибудет в %1$s</string>
 </resources>

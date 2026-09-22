@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">அனைத்தையும் இயக்கு</string>
     <string name="action_turn_all_off">அனைத்தையும் அணை</string>
     <string name="action_refresh_categories_shizuku">Shizuku மூலம் வகைகளைப் புதுப்பி</string>
+    <string name="category_refresh_confirmation_title">அறிவிப்பு வகைகளைப் புதுப்பிக்கவா?</string>
+    <string name="category_refresh_confirmation_message">நிறுவப்பட்ட செயலிகளின் எண்ணிக்கையைப் பொறுத்து இதற்கு சில நிமிடங்கள் ஆகலாம். தொடங்கிய பின் ரத்துசெய்ய முடியாது.</string>
+    <string name="category_refresh_confirm_action">புதுப்பி</string>
+    <string name="category_refresh_preparing">அறிவிப்பு வகை புதுப்பிப்பைத் தயாரிக்கிறது…</string>
+    <string name="category_refresh_progress">செயலிகள் ஸ்கேன் செய்யப்படுகின்றன: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">புதுப்பிக்க செயலிகள் இல்லை.</string>
-    <string name="category_refresh_starting">Shizuku மூலம் அனைத்து செயலிகளின் அறிவிப்பு வகைகள் புதுப்பிக்கப்படுகின்றன</string>
     <string name="category_refresh_complete">புதுப்பிப்பு முடிந்தது: %1$d புதிய வகைகள் கிடைத்தன</string>
     <string name="category_refresh_complete_with_failures">புதுப்பிப்பு முடிந்தது: %1$d புதிய வகைகள் கிடைத்தன, %2$d செயலிகளை ஸ்கேன் செய்ய முடியவில்லை</string>
     <string name="category_refresh_failed">Shizuku புதுப்பிப்பு தோல்வியடைந்தது: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">Progress lock screen setting மாற்றப்பட்டது</string>
     <string name="diagnostic_progress_suppression_changed">அசல் முன்னேற்ற அறிவிப்பு மறைப்பு அமைப்பு மாற்றப்பட்டது</string>
     <string name="diagnostic_progress_category_selection_changed">முன்னேற்ற வகை தேர்வு மாற்றப்பட்டது</string>
-    <string name="diagnostic_category_shizuku_refresh">Shizuku மூலம் வகை புதுப்பிப்பு முடிந்தது</string>
     <string name="diagnostic_media_settings_changed">மீடியா settings மாற்றப்பட்டன</string>
     <string name="diagnostic_language_setting_changed">மொழி மாற்றப்பட்டது</string>
     <string name="diagnostic_notification_permission_required">லைவ் சோதனையை வெளியிடுவதற்கு முன் அறிவிப்பு வெளியிடும் அனுமதி தேவை.</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">சோதனை notification prominent ஆகலாம் என்று Android கூறுகிறது.</string>
     <string name="diagnostic_opened_promoted_settings">Prominent notification அமைப்புகள் திறக்கப்பட்டன.</string>
     <string name="diagnostic_promoted_settings_unavailable">இந்த build-இல் prominent notification அமைப்புகள் இல்லை; app notification அமைப்புகள் திறக்கப்பட்டன.</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">வந்துவிட்டது</string>
+    <string name="dominos_delivery_delivered">டெலிவரி செய்யப்பட்டது</string>
+    <string name="where_is_my_train_reaching">%1$sக்கு சேரும்</string>
 </resources>

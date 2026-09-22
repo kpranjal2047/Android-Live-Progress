@@ -4,9 +4,25 @@ enum class SetupRequirementKind {
     NOTIFICATIONS,
     PROMOTED_NOTIFICATIONS,
     NOTIFICATION_LISTENER,
-    ACCESSIBILITY,
-    SHIZUKU
+    ACCESSIBILITY
 }
+
+enum class AutomaticSetupItem {
+    NOTIFICATIONS,
+    PROMOTED_NOTIFICATIONS,
+    NOTIFICATION_LISTENER,
+    ACCESSIBILITY
+}
+
+data class SetupAccessState(
+    val notificationsReady: Boolean,
+    val promotedNotificationsReady: Boolean,
+    val notificationListenerReady: Boolean,
+    val accessibilityEnabled: Boolean,
+    val accessibilityRequired: Boolean,
+    val shizukuAvailable: Boolean,
+    val shizukuGranted: Boolean
+)
 
 data class ToggleState(
     val checked: Boolean,
@@ -14,31 +30,30 @@ data class ToggleState(
 )
 
 object SetupFlowPolicy {
-    fun firstMissingRequirement(
-        notificationsReady: Boolean,
-        promotedNotificationsReady: Boolean,
-        notificationListenerReady: Boolean,
-        progressEnabled: Boolean,
-        hideWhenQuickSettingsExpanded: Boolean,
-        hideWhenSourceAppInForeground: Boolean,
-        accessibilityEnabled: Boolean,
-        suppressOriginalNotification: Boolean,
-        shizukuAvailable: Boolean,
-        shizukuGranted: Boolean
-    ): SetupRequirementKind? {
-        if (!notificationsReady) return SetupRequirementKind.NOTIFICATIONS
-        if (!promotedNotificationsReady) return SetupRequirementKind.PROMOTED_NOTIFICATIONS
-        if (!notificationListenerReady) return SetupRequirementKind.NOTIFICATION_LISTENER
-        if ((hideWhenQuickSettingsExpanded || hideWhenSourceAppInForeground) && !accessibilityEnabled) {
-            return SetupRequirementKind.ACCESSIBILITY
+    fun shouldRequestShizukuFirst(
+        state: SetupAccessState,
+        shizukuDeferred: Boolean
+    ): Boolean {
+        return state.shizukuAvailable && !state.shizukuGranted && !shizukuDeferred
+    }
+
+    fun automaticItemsMissing(state: SetupAccessState): List<AutomaticSetupItem> {
+        return buildList {
+            if (!state.notificationsReady) add(AutomaticSetupItem.NOTIFICATIONS)
+            if (!state.promotedNotificationsReady) add(AutomaticSetupItem.PROMOTED_NOTIFICATIONS)
+            if (!state.notificationListenerReady) add(AutomaticSetupItem.NOTIFICATION_LISTENER)
+            if (state.accessibilityRequired && !state.accessibilityEnabled) {
+                add(AutomaticSetupItem.ACCESSIBILITY)
+            }
         }
-        if (
-            progressEnabled &&
-            suppressOriginalNotification &&
-            shizukuAvailable &&
-            !shizukuGranted
-        ) {
-            return SetupRequirementKind.SHIZUKU
+    }
+
+    fun firstMissingManualRequirement(state: SetupAccessState): SetupRequirementKind? {
+        if (!state.notificationsReady) return SetupRequirementKind.NOTIFICATIONS
+        if (!state.promotedNotificationsReady) return SetupRequirementKind.PROMOTED_NOTIFICATIONS
+        if (!state.notificationListenerReady) return SetupRequirementKind.NOTIFICATION_LISTENER
+        if (state.accessibilityRequired && !state.accessibilityEnabled) {
+            return SetupRequirementKind.ACCESSIBILITY
         }
         return null
     }

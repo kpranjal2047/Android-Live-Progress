@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">सब चालू करें</string>
     <string name="action_turn_all_off">सब बंद करें</string>
     <string name="action_refresh_categories_shizuku">Shizuku से श्रेणियां रीफ्रेश करें</string>
+    <string name="category_refresh_confirmation_title">सूचना श्रेणियां रीफ्रेश करें?</string>
+    <string name="category_refresh_confirmation_message">इंस्टॉल किए गए ऐप्स की संख्या के आधार पर इसमें कुछ मिनट लग सकते हैं। शुरू होने के बाद इसे रद्द नहीं किया जा सकता।</string>
+    <string name="category_refresh_confirm_action">रीफ्रेश करें</string>
+    <string name="category_refresh_preparing">सूचना श्रेणियों का रीफ्रेश तैयार किया जा रहा है…</string>
+    <string name="category_refresh_progress">ऐप्स स्कैन हो रहे हैं: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">रीफ्रेश करने के लिए कोई ऐप नहीं मिला।</string>
-    <string name="category_refresh_starting">Shizuku से सभी ऐप नोटिफिकेशन कैटेगरी रीफ्रेश हो रही हैं</string>
     <string name="category_refresh_complete">रीफ्रेश पूरा: %1$d नई श्रेणियां मिलीं</string>
     <string name="category_refresh_complete_with_failures">रीफ्रेश पूरा: %1$d नई श्रेणियां मिलीं, %2$d ऐप्स स्कैन नहीं हो सकीं</string>
     <string name="category_refresh_failed">Shizuku रीफ्रेश विफल: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">प्रोग्रेस लॉक स्क्रीन सेटिंग बदली</string>
     <string name="diagnostic_progress_suppression_changed">मूल प्रोग्रेस नोटिफिकेशन छिपाने की सेटिंग बदली</string>
     <string name="diagnostic_progress_category_selection_changed">प्रोग्रेस श्रेणी चयन बदला</string>
-    <string name="diagnostic_category_shizuku_refresh">Shizuku से श्रेणी रीफ्रेश पूरा हुआ</string>
     <string name="diagnostic_media_settings_changed">मीडिया सेटिंग बदली</string>
     <string name="diagnostic_language_setting_changed">भाषा सेटिंग बदली</string>
     <string name="diagnostic_notification_permission_required">लाइव टेस्ट भेजने से पहले नोटिफिकेशन भेजने की अनुमति जरूरी है।</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">Android कहता है कि टेस्ट नोटिफिकेशन प्रमुख बनाया जा सकता है।</string>
     <string name="diagnostic_opened_promoted_settings">प्रमुख नोटिफिकेशन सेटिंग खोली गई।</string>
     <string name="diagnostic_promoted_settings_unavailable">इस बिल्ड पर प्रमुख नोटिफिकेशन सेटिंग उपलब्ध नहीं है; ऐप नोटिफिकेशन सेटिंग खोली गई।</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">पहुंच गया</string>
+    <string name="dominos_delivery_delivered">वितरित</string>
+    <string name="where_is_my_train_reaching">पहुंचेगी %1$s</string>
 </resources>

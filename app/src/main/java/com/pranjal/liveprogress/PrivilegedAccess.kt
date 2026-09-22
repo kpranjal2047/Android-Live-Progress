@@ -69,6 +69,37 @@ object PrivilegedAccess {
         }
     }
 
+    fun grantSetupAccessAsync(
+        context: Context,
+        items: List<AutomaticSetupItem>,
+        callback: (ShellResult) -> Unit
+    ) {
+        val appContext = context.applicationContext
+        executor.execute {
+            val listener = ComponentName(appContext, NotificationMirrorService::class.java)
+                .flattenToString()
+            val accessibility = ComponentName(appContext, QuickSettingsAccessibilityService::class.java)
+                .flattenToString()
+            val result = runPrivileged(
+                automaticSetupCommand(
+                    packageName = appContext.packageName,
+                    listener = listener,
+                    accessibility = accessibility,
+                    items = items
+                )
+            )
+            if (items.contains(AutomaticSetupItem.NOTIFICATION_LISTENER)) {
+                requestListenerRebind(appContext, "automatic Shizuku setup")
+            }
+            AppDiagnostics.note(
+                appContext,
+                "privileged_setup",
+                "Automatic setup shell completed; exit=${result.exitCode}"
+            )
+            main.post { callback(result) }
+        }
+    }
+
     fun ensureTemporaryAssistantAsync(
         context: Context,
         reason: String,
@@ -373,6 +404,56 @@ object PrivilegedAccess {
         """.trimIndent()
     }
 
+    private fun automaticSetupCommand(
+        packageName: String,
+        listener: String,
+        accessibility: String,
+        items: List<AutomaticSetupItem>
+    ): String {
+        val enableNotifications = items.contains(AutomaticSetupItem.NOTIFICATIONS)
+        val enablePromotedNotifications = items.contains(AutomaticSetupItem.PROMOTED_NOTIFICATIONS)
+        val enableListener = items.contains(AutomaticSetupItem.NOTIFICATION_LISTENER)
+        val enableAccessibility = items.contains(AutomaticSetupItem.ACCESSIBILITY)
+        return """
+            set +e
+            pkg='$packageName'
+            listener='$listener'
+            accessibility='$accessibility'
+            user=${'$'}(am get-current-user 2>/dev/null || echo 0)
+            ${if (enableNotifications) {
+                """
+                pm grant --user "${'$'}user" "${'$'}pkg" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1
+                appops set --uid "${'$'}pkg" android:post_notification allow >/dev/null 2>&1
+                """.trimIndent()
+            } else ""}
+            ${if (enablePromotedNotifications) {
+                "appops set --uid \"${'$'}pkg\" android:post_promoted_notifications allow >/dev/null 2>&1"
+            } else ""}
+            ${if (enableListener) {
+                "cmd notification allow_listener \"${'$'}listener\" \"${'$'}user\" >/dev/null 2>&1"
+            } else ""}
+            ${if (enableAccessibility) {
+                """
+                enabled=${'$'}(settings --user "${'$'}user" get secure enabled_accessibility_services 2>/dev/null)
+                if [ "${'$'}enabled" = "null" ]; then enabled=''; fi
+                case ":${'$'}enabled:" in
+                  *":${'$'}accessibility:"*) ;;
+                  *)
+                    if [ -n "${'$'}enabled" ]; then
+                      enabled="${'$'}enabled:${'$'}accessibility"
+                    else
+                      enabled="${'$'}accessibility"
+                    fi
+                    settings --user "${'$'}user" put secure enabled_accessibility_services "${'$'}enabled" >/dev/null 2>&1
+                    ;;
+                esac
+                settings --user "${'$'}user" put secure accessibility_enabled 1 >/dev/null 2>&1
+                """.trimIndent()
+            } else ""}
+            echo "automatic_setup_complete"
+        """.trimIndent()
+    }
+
     private fun runPrivileged(command: String): ShellResult {
         if (!shizukuPing()) return ShellResult(1, "", "Shizuku is not running")
         if (!shizukuPermissionGranted()) return ShellResult(1, "", "Shizuku permission is required")
@@ -388,6 +469,18 @@ object PrivilegedAccess {
             context,
             "privileged_setup",
             "Requested assistant rebind=$requested; reason=$reason"
+        )
+    }
+
+    private fun requestListenerRebind(context: Context, reason: String) {
+        val component = ComponentName(context, NotificationMirrorService::class.java)
+        val requested = runCatching {
+            NotificationListenerService.requestRebind(component)
+        }.isSuccess
+        AppDiagnostics.note(
+            context,
+            "privileged_setup",
+            "Requested notification listener rebind=$requested; reason=$reason"
         )
     }
 

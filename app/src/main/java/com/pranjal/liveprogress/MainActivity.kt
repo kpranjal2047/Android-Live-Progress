@@ -29,6 +29,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -42,11 +43,21 @@ class MainActivity : Activity() {
             "android.settings.APP_NOTIFICATION_PROMOTION_SETTINGS"
         const val ACTION_MANAGE_APP_PROMOTED_NOTIFICATIONS_VALUE =
             "android.settings.MANAGE_APP_PROMOTED_NOTIFICATIONS"
+        const val ACTION_ACCESSIBILITY_DETAILS_SETTINGS_VALUE =
+            "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"
         const val CONTENT_PADDING_DP = 20
         const val SOURCE_CODE_URL = "https://github.com/kpranjal2047/Android-Live-Progress"
+        const val STATE_MANUAL_SETUP_SELECTED = "manual_setup_selected"
+        const val STATE_SHIZUKU_DEFERRED = "shizuku_deferred"
+        const val STATE_INITIAL_ONBOARDING = "initial_onboarding"
     }
 
     private lateinit var settingsContainer: LinearLayout
+    private var manualSetupSelected = false
+    private var shizukuDeferred = false
+    private var initialOnboarding = false
+    private val shizukuSetupObserver: (ShizukuSetupState) -> Unit = ::onShizukuSetupStateChanged
+    private val categoryRefreshObserver: (CategoryRefreshState) -> Unit = ::onCategoryRefreshStateChanged
 
     private enum class ButtonStyle {
         Filled,
@@ -81,6 +92,10 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        manualSetupSelected = savedInstanceState?.getBoolean(STATE_MANUAL_SETUP_SELECTED) ?: false
+        shizukuDeferred = savedInstanceState?.getBoolean(STATE_SHIZUKU_DEFERRED) ?: false
+        initialOnboarding = savedInstanceState?.getBoolean(STATE_INITIAL_ONBOARDING)
+            ?: FirstRunSetupPreferences(this).claimInitialLaunch()
         AppDiagnostics.pruneExpired(this)
         BackgroundRuntime.initialize(this, getString(R.string.diagnostic_main_activity_started))
         renderCurrentScreen()
@@ -89,6 +104,8 @@ class MainActivity : Activity() {
     override fun onStart() {
         super.onStart()
         AppUiLifecycleTracker.onActivityStarted()
+        ShizukuSetupCoordinator.addObserver(shizukuSetupObserver)
+        CategoryRefreshCoordinator.addObserver(categoryRefreshObserver)
     }
 
     override fun onResume() {
@@ -97,8 +114,17 @@ class MainActivity : Activity() {
     }
 
     override fun onStop() {
+        ShizukuSetupCoordinator.removeObserver(shizukuSetupObserver)
+        CategoryRefreshCoordinator.removeObserver(categoryRefreshObserver)
         AppUiLifecycleTracker.onActivityStopped(this)
         super.onStop()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(STATE_MANUAL_SETUP_SELECTED, manualSetupSelected)
+        outState.putBoolean(STATE_SHIZUKU_DEFERRED, shizukuDeferred)
+        outState.putBoolean(STATE_INITIAL_ONBOARDING, initialOnboarding)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onRequestPermissionsResult(
@@ -113,7 +139,35 @@ class MainActivity : Activity() {
     }
 
     private fun renderCurrentScreen() {
-        val missingRequirement = firstMissingSetupRequirement()
+        when (val setupState = ShizukuSetupCoordinator.currentState()) {
+            is ShizukuSetupState.Running -> {
+                setContentView(buildAutomaticSetupProgressContent(setupState.items))
+                return
+            }
+            is ShizukuSetupState.Finished -> {
+                if (setupState.outcome.failedItems.isNotEmpty()) {
+                    manualSetupSelected = true
+                }
+                ShizukuSetupCoordinator.acknowledgeFinished(setupState.outcome)
+            }
+            ShizukuSetupState.Idle -> Unit
+        }
+
+        if (renderInitialCategoryRefreshIfNeeded()) return
+
+        val accessState = SetupAccessStateReader.read(this)
+        if (SetupFlowPolicy.shouldRequestShizukuFirst(accessState, shizukuDeferred)) {
+            setContentView(buildSetupContent(shizukuSetupRequirement()))
+            return
+        }
+
+        val automaticItems = SetupFlowPolicy.automaticItemsMissing(accessState)
+        if (accessState.shizukuGranted && automaticItems.isNotEmpty() && !manualSetupSelected) {
+            setContentView(buildAutomaticSetupOfferContent(automaticItems))
+            return
+        }
+
+        val missingRequirement = firstMissingSetupRequirement(accessState)
         if (missingRequirement != null) {
             setContentView(buildSetupContent(missingRequirement))
             return
@@ -123,25 +177,8 @@ class MainActivity : Activity() {
         refreshStatus()
     }
 
-    private fun firstMissingSetupRequirement(): SetupRequirement? {
-        val manager = getSystemService(NotificationManager::class.java)
-        val progressPreferences = ProgressPreferences(this)
-        val visibilityPreferences = VisibilityPreferences(this)
-        val privileged = PrivilegedAccess.currentState(this)
-        val requirement = SetupFlowPolicy.firstMissingRequirement(
-            notificationsReady = hasPostPermission() && manager.areNotificationsEnabled(),
-            promotedNotificationsReady = manager.canPostPromotedNotifications(),
-            notificationListenerReady = isNotificationListenerEnabled(),
-            progressEnabled = progressPreferences.enabled,
-            hideWhenQuickSettingsExpanded =
-                visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
-            hideWhenSourceAppInForeground =
-                visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
-            accessibilityEnabled = isAccessibilityEnabled(),
-            suppressOriginalNotification = progressPreferences.suppressOriginalNotification,
-            shizukuAvailable = privileged.shizukuAvailable,
-            shizukuGranted = privileged.shizukuGranted
-        ) ?: return null
+    private fun firstMissingSetupRequirement(accessState: SetupAccessState): SetupRequirement? {
+        val requirement = SetupFlowPolicy.firstMissingManualRequirement(accessState) ?: return null
 
         return when (requirement) {
             SetupRequirementKind.NOTIFICATIONS -> SetupRequirement(
@@ -160,23 +197,26 @@ class MainActivity : Activity() {
                 titleRes = R.string.setup_listener_title,
                 reasonRes = R.string.setup_listener_reason,
                 actionRes = R.string.setup_listener_action,
-                action = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+                action = ::openNotificationListenerSettings
             )
             SetupRequirementKind.ACCESSIBILITY -> SetupRequirement(
                 titleRes = R.string.setup_accessibility_title,
                 reasonRes = R.string.setup_accessibility_reason,
                 actionRes = R.string.setup_accessibility_action,
-                action = { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+                action = ::openAccessibilitySettings,
                 skipAction = ::skipAccessibilitySetup
             )
-            SetupRequirementKind.SHIZUKU -> SetupRequirement(
-                titleRes = R.string.setup_shizuku_title,
-                reasonRes = R.string.setup_shizuku_reason,
-                actionRes = R.string.setup_shizuku_action,
-                action = ::requestShizukuPermission,
-                skipAction = ::skipShizukuSetup
-            )
         }
+    }
+
+    private fun shizukuSetupRequirement(): SetupRequirement {
+        return SetupRequirement(
+            titleRes = R.string.setup_shizuku_title,
+            reasonRes = R.string.setup_shizuku_reason,
+            actionRes = R.string.setup_shizuku_action,
+            action = ::requestShizukuPermission,
+            skipAction = ::skipShizukuSetup
+        )
     }
 
     private fun buildSetupContent(requirement: SetupRequirement): View {
@@ -229,6 +269,236 @@ class MainActivity : Activity() {
         return scrollContent(root)
     }
 
+    private fun buildAutomaticSetupOfferContent(items: List<AutomaticSetupItem>): View {
+        val colors = palette()
+        val root = contentRoot()
+        val appTitle = TextView(this).apply {
+            text = getString(R.string.app_name)
+            textSize = 34f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
+        }
+        val title = TextView(this).apply {
+            text = getString(R.string.setup_automatic_title)
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
+        }
+        val reason = TextView(this).apply {
+            text = getString(R.string.setup_automatic_reason)
+            textSize = 15f
+            setTextColor(colors.textSecondary)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            setPadding(0, 12.dp(), 0, 16.dp())
+        }
+        val itemList = TextView(this).apply {
+            text = items.joinToString(separator = "\n") { item ->
+                "• ${getString(item.labelRes())}"
+            }
+            textSize = 14f
+            setTextColor(colors.textSecondary)
+            setLineSpacing(2.dp().toFloat(), 1f)
+            setPadding(0, 0, 0, 24.dp())
+        }
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(22.dp(), 22.dp(), 22.dp(), 22.dp())
+            background = rounded(colors.surfaceContainer, 30.dp())
+            addView(title)
+            addView(reason)
+            addView(itemList)
+            addView(button(getString(R.string.setup_automatic_action), ::startAutomaticSetup))
+            addView(
+                button(
+                    label = getString(R.string.setup_manual_action),
+                    style = ButtonStyle.Tonal,
+                    action = {
+                        manualSetupSelected = true
+                        renderCurrentScreen()
+                    }
+                ),
+                blockParams(top = 10.dp())
+            )
+        }
+        root.addView(appTitle, blockParams(bottom = 18.dp()))
+        root.addView(card, blockParams(top = 8.dp()))
+        return scrollContent(root)
+    }
+
+    private fun buildAutomaticSetupProgressContent(items: List<AutomaticSetupItem>): View {
+        val colors = palette()
+        val root = contentRoot()
+        val title = TextView(this).apply {
+            text = getString(R.string.setup_automatic_progress_title)
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
+        }
+        val message = TextView(this).apply {
+            text = getString(R.string.setup_automatic_progress_message)
+            textSize = 15f
+            setTextColor(colors.textSecondary)
+            setPadding(0, 12.dp(), 0, 18.dp())
+        }
+        val progress = ProgressBar(this).apply {
+            isIndeterminate = true
+        }
+        val itemList = TextView(this).apply {
+            text = items.joinToString(separator = "\n") { item -> getString(item.labelRes()) }
+            textSize = 14f
+            setTextColor(colors.textSecondary)
+            setPadding(0, 18.dp(), 0, 0)
+        }
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(22.dp(), 22.dp(), 22.dp(), 22.dp())
+            background = rounded(colors.surfaceContainer, 30.dp())
+            addView(title)
+            addView(message)
+            addView(progress)
+            addView(itemList)
+        }
+        root.addView(card, blockParams(top = 8.dp()))
+        return scrollContent(root)
+    }
+
+    private fun startAutomaticSetup() {
+        if (!ShizukuSetupCoordinator.start(this)) {
+            renderCurrentScreen()
+        }
+    }
+
+    private fun AutomaticSetupItem.labelRes(): Int {
+        return when (this) {
+            AutomaticSetupItem.NOTIFICATIONS -> R.string.setup_item_notifications
+            AutomaticSetupItem.PROMOTED_NOTIFICATIONS -> R.string.setup_item_promoted_notifications
+            AutomaticSetupItem.NOTIFICATION_LISTENER -> R.string.setup_item_notification_listener
+            AutomaticSetupItem.ACCESSIBILITY -> R.string.setup_item_accessibility
+        }
+    }
+
+    private fun renderInitialCategoryRefreshIfNeeded(): Boolean {
+        val preferences = FirstRunSetupPreferences(this)
+        if (!initialOnboarding || preferences.initialCategoryRefreshHandled) return false
+        when (val refreshState = CategoryRefreshCoordinator.currentState()) {
+            CategoryRefreshState.Preparing,
+            is CategoryRefreshState.Scanning -> {
+                setContentView(buildInitialCategoryRefreshContent(refreshState))
+                return true
+            }
+            is CategoryRefreshState.Finished -> {
+                preferences.initialCategoryRefreshHandled = true
+                CategoryRefreshCoordinator.acknowledgeFinished(refreshState.result)
+                return false
+            }
+            CategoryRefreshState.Idle -> Unit
+        }
+
+        val accessState = SetupAccessStateReader.read(this)
+        if (!accessState.shizukuGranted) {
+            if (FirstRunCategoryRefreshPolicy.shouldMarkHandledWithoutRefresh(
+                    initialOnboarding,
+                    preferences.initialCategoryRefreshHandled,
+                    accessState.shizukuAvailable,
+                    shizukuDeferred
+                )
+            ) {
+                preferences.initialCategoryRefreshHandled = true
+            }
+            return false
+        }
+        val manualSetupComplete = SetupFlowPolicy.firstMissingManualRequirement(accessState) == null
+        if (!FirstRunCategoryRefreshPolicy.shouldStart(
+                initialOnboarding,
+                preferences.initialCategoryRefreshHandled,
+                accessState.shizukuGranted,
+                manualSetupComplete
+            )
+        ) return false
+        if (CategoryRefreshCoordinator.start(this)) {
+            setContentView(buildInitialCategoryRefreshContent(CategoryRefreshCoordinator.currentState()))
+            return true
+        }
+        preferences.initialCategoryRefreshHandled = true
+        return false
+    }
+
+    private fun buildInitialCategoryRefreshContent(state: CategoryRefreshState): View {
+        val colors = palette()
+        val root = contentRoot()
+        val title = TextView(this).apply {
+            text = getString(R.string.setup_category_refresh_title)
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(colors.textPrimary)
+            includeFontPadding = false
+        }
+        val message = TextView(this).apply {
+            text = when (state) {
+                CategoryRefreshState.Preparing -> getString(R.string.category_refresh_preparing)
+                is CategoryRefreshState.Scanning -> getString(
+                    R.string.category_refresh_progress,
+                    state.progress.completedApps,
+                    state.progress.totalApps,
+                    state.progress.percentage
+                )
+                else -> getString(R.string.category_refresh_preparing)
+            }
+            textSize = 15f
+            setTextColor(colors.textSecondary)
+            setPadding(0, 12.dp(), 0, 18.dp())
+        }
+        val progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = state !is CategoryRefreshState.Scanning
+            if (state is CategoryRefreshState.Scanning) {
+                max = 100
+                this.progress = state.progress.percentage
+            }
+        }
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(22.dp(), 22.dp(), 22.dp(), 22.dp())
+            background = rounded(colors.surfaceContainer, 30.dp())
+            addView(title)
+            addView(message)
+            addView(progress)
+        }
+        root.addView(card, blockParams(top = 8.dp()))
+        return scrollContent(root)
+    }
+
+    private fun onShizukuSetupStateChanged(state: ShizukuSetupState) {
+        when (state) {
+            is ShizukuSetupState.Running -> setContentView(buildAutomaticSetupProgressContent(state.items))
+            is ShizukuSetupState.Finished -> {
+                if (state.outcome.failedItems.isNotEmpty()) {
+                    manualSetupSelected = true
+                }
+                ShizukuSetupCoordinator.acknowledgeFinished(state.outcome)
+                renderCurrentScreen()
+            }
+            ShizukuSetupState.Idle -> Unit
+        }
+    }
+
+    private fun onCategoryRefreshStateChanged(state: CategoryRefreshState) {
+        val preferences = FirstRunSetupPreferences(this)
+        if (!initialOnboarding || preferences.initialCategoryRefreshHandled) return
+        when (state) {
+            CategoryRefreshState.Preparing,
+            is CategoryRefreshState.Scanning -> setContentView(buildInitialCategoryRefreshContent(state))
+            is CategoryRefreshState.Finished -> {
+                preferences.initialCategoryRefreshHandled = true
+                CategoryRefreshCoordinator.acknowledgeFinished(state.result)
+                renderCurrentScreen()
+            }
+            CategoryRefreshState.Idle -> Unit
+        }
+    }
+
     private fun requestShizukuPermission() {
         val message = PrivilegedAccess.requestShizukuPermission()
         AppDiagnostics.note(this, "privileged_setup", message)
@@ -246,6 +516,7 @@ class MainActivity : Activity() {
     }
 
     private fun skipShizukuSetup() {
+        shizukuDeferred = true
         ProgressPreferences(this).suppressOriginalNotification = false
         AppDiagnostics.note(this, "privileged_setup", getString(R.string.diagnostic_skipped_shizuku_setup))
         ProgressPreferenceEvents.notifyChanged()
@@ -649,6 +920,7 @@ class MainActivity : Activity() {
             AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_suppression_changed))
             ProgressPreferenceEvents.notifyChanged()
             if (it && privileged.shizukuAvailable && !privileged.shizukuGranted) {
+                shizukuDeferred = false
                 renderCurrentScreen()
             } else {
                 refreshStatus()
@@ -1193,6 +1465,41 @@ class MainActivity : Activity() {
         startActivity(appNotificationSettingsIntent())
     }
 
+    private fun openNotificationListenerSettings() {
+        val component = ComponentName(this, NotificationMirrorService::class.java)
+        openSettingsDetailsOrFallback(
+            detailsIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                .putExtra(
+                    Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+                    component.flattenToString()
+                ),
+            fallbackIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        )
+    }
+
+    private fun openAccessibilitySettings() {
+        val component = ComponentName(this, QuickSettingsAccessibilityService::class.java)
+        openSettingsDetailsOrFallback(
+            detailsIntent = Intent(ACTION_ACCESSIBILITY_DETAILS_SETTINGS_VALUE)
+                .putExtra(Intent.EXTRA_COMPONENT_NAME, component),
+            fallbackIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                .putExtra(Intent.EXTRA_COMPONENT_NAME, component)
+        )
+    }
+
+    private fun openSettingsDetailsOrFallback(
+        detailsIntent: Intent,
+        fallbackIntent: Intent
+    ) {
+        try {
+            startActivity(detailsIntent)
+        } catch (_: ActivityNotFoundException) {
+            startActivity(fallbackIntent)
+        } catch (_: SecurityException) {
+            startActivity(fallbackIntent)
+        }
+    }
+
     private fun promotedSettingsIntents(): List<Intent> {
         return listOf(
             Intent(runtimeSettingsAction(
@@ -1238,13 +1545,6 @@ class MainActivity : Activity() {
     private fun hasPostPermission(): Boolean {
         return checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun isNotificationListenerEnabled(): Boolean {
-        val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-            ?: return false
-        val component = ComponentName(this, NotificationMirrorService::class.java).flattenToString()
-        return enabled.split(':').any { it.equals(component, ignoreCase = true) }
     }
 
     private fun isAccessibilityEnabled(): Boolean {

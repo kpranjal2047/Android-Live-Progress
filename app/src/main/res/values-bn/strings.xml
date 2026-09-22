@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">সব চালু করুন</string>
     <string name="action_turn_all_off">সব বন্ধ করুন</string>
     <string name="action_refresh_categories_shizuku">Shizuku দিয়ে বিভাগ রিফ্রেশ করুন</string>
+    <string name="category_refresh_confirmation_title">বিজ্ঞপ্তি বিভাগ রিফ্রেশ করবেন?</string>
+    <string name="category_refresh_confirmation_message">ইনস্টল করা অ্যাপের সংখ্যার উপর নির্ভর করে এতে কয়েক মিনিট লাগতে পারে। শুরু হলে এটি বাতিল করা যাবে না।</string>
+    <string name="category_refresh_confirm_action">রিফ্রেশ</string>
+    <string name="category_refresh_preparing">বিজ্ঞপ্তি বিভাগ রিফ্রেশ প্রস্তুত করা হচ্ছে…</string>
+    <string name="category_refresh_progress">অ্যাপ স্ক্যান করা হচ্ছে: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">রিফ্রেশ করার মতো কোনো অ্যাপ পাওয়া যায়নি।</string>
-    <string name="category_refresh_starting">Shizuku দিয়ে সব অ্যাপের নোটিফিকেশন ক্যাটাগরি রিফ্রেশ হচ্ছে</string>
     <string name="category_refresh_complete">রিফ্রেশ শেষ: %1$dটি নতুন বিভাগ পাওয়া গেছে</string>
     <string name="category_refresh_complete_with_failures">রিফ্রেশ শেষ: %1$dটি নতুন বিভাগ পাওয়া গেছে, %2$dটি অ্যাপ স্ক্যান করা যায়নি</string>
     <string name="category_refresh_failed">Shizuku রিফ্রেশ ব্যর্থ: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">প্রগ্রেস লক স্ক্রিন সেটিং বদলেছে</string>
     <string name="diagnostic_progress_suppression_changed">আসল প্রগ্রেস নোটিফিকেশন লুকানোর সেটিং বদলেছে</string>
     <string name="diagnostic_progress_category_selection_changed">প্রগ্রেস বিভাগ নির্বাচন বদলেছে</string>
-    <string name="diagnostic_category_shizuku_refresh">Shizuku দিয়ে বিভাগ রিফ্রেশ শেষ হয়েছে</string>
     <string name="diagnostic_media_settings_changed">মিডিয়া সেটিং বদলেছে</string>
     <string name="diagnostic_language_setting_changed">ভাষা বদলেছে</string>
     <string name="diagnostic_notification_permission_required">লাইভ টেস্ট পাঠানোর আগে নোটিফিকেশন পাঠানোর অনুমতি প্রয়োজন।</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">Android বলছে টেস্ট নোটিফিকেশন প্রধান করা যাবে।</string>
     <string name="diagnostic_opened_promoted_settings">প্রধান নোটিফিকেশন সেটিং খোলা হয়েছে।</string>
     <string name="diagnostic_promoted_settings_unavailable">এই বিল্ডে প্রধান নোটিফিকেশন সেটিং নেই; অ্যাপ নোটিফিকেশন সেটিং খোলা হয়েছে।</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">পৌঁছেছে</string>
+    <string name="dominos_delivery_delivered">ডেলিভার হয়েছে</string>
+    <string name="where_is_my_train_reaching">%1$s এ পৌঁছাবে</string>
 </resources>

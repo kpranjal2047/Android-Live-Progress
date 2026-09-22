@@ -75,6 +75,8 @@ class MediaLiveController(
             explicitRefresh = true,
             reason = "media controller initialized"
         )
+        // A session may already be playing before Android delivers another notification callback.
+        updateFromController()
         AppDiagnostics.verbose(service, "media", "Media live controller initialized")
     }
 
@@ -332,10 +334,7 @@ class MediaLiveController(
         val source = activeSource
         val appLabel = appLabelFor(state, source)
         val titleElapsedMs = System.currentTimeMillis() - titleStartTime
-        val priorityMode = MirrorPriorityPolicy.forSurface(
-            locked = VisibilityState.locked,
-            screenOff = VisibilityState.screenOff
-        )
+        val priorityMode = MirrorPriorityPolicy.forSurface(locked = VisibilityState.locked)
         val snapshot = MediaNotificationSnapshot.from(
             state = state,
             source = source,

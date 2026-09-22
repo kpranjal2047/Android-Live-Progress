@@ -17,6 +17,8 @@ class ProgressMirrorSnapshotTest {
         val snapshot = snapshot()
 
         assertNotEquals(snapshot, snapshot.copy(progress = 43, shortText = "43%"))
+        assertNotEquals(snapshot, snapshot.copy(shortText = "18 min"))
+        assertNotEquals(snapshot, snapshot.copy(showProgressText = false))
         assertNotEquals(snapshot, snapshot.copy(locked = true))
         assertNotEquals(snapshot, snapshot.copy(screenOff = true))
         assertNotEquals(snapshot, snapshot.copy(shouldSuppressOriginal = true))
@@ -43,6 +45,7 @@ class ProgressMirrorSnapshotTest {
             max = 100,
             indeterminate = false,
             shortText = "42%",
+            showProgressText = true,
             color = 0,
             actionsCount = 1,
             sourceSmallIconKey = "icon-1",

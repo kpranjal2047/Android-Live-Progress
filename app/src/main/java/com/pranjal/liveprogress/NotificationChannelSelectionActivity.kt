@@ -1,6 +1,7 @@
 package com.pranjal.liveprogress
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
@@ -11,7 +12,6 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.UserHandle
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
@@ -28,15 +28,14 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Button
 import android.widget.Toast
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class NotificationChannelSelectionActivity : Activity() {
     private companion object {
         const val CONTENT_PADDING_DP = 20
-        const val ASSISTANT_BIND_DELAY_MS = 500L
-        const val ASSISTANT_RETRY_DELAY_MS = 700L
-        const val MAX_ASSISTANT_REFRESH_ATTEMPTS = 5
         const val APP_GROUP_ITEM_TYPE = 0
         const val CATEGORY_ITEM_TYPE = 1
         const val BEHAVIOR_ITEM_TYPE = 2
@@ -49,10 +48,14 @@ class NotificationChannelSelectionActivity : Activity() {
     private var pageLoadVersion = 0L
     private val appIconCache = mutableMapOf<AppIconKey, Drawable?>()
     private val pendingAppIconKeys = mutableSetOf<AppIconKey>()
-    private var shizukuRefreshRunning = false
+    private var renderedShizukuAvailability: Boolean? = null
+    private var refreshBackCallbackRegistered = false
+    private val refreshBackCallback = OnBackInvokedCallback {
+        // A confirmed refresh is deliberately non-cancellable.
+    }
+    private val refreshStateObserver: (CategoryRefreshState) -> Unit = ::onRefreshStateChanged
     private val mainHandler = Handler(Looper.getMainLooper())
     private val categoryExecutor = Executors.newSingleThreadExecutor()
-    private val refreshExecutor = Executors.newSingleThreadExecutor()
     private val iconExecutor = Executors.newFixedThreadPool(2)
 
     private data class UiPalette(
@@ -72,27 +75,21 @@ class NotificationChannelSelectionActivity : Activity() {
 
     private data class AppCategoryGroup(
         val packageName: String,
-        val uid: Int,
+        val userId: Int,
         val appLabel: String,
         val isSystemApp: Boolean
     )
 
-    private data class CategoryRefreshResult(
-        val changed: Boolean,
-        val newCategoryCount: Int,
-        val failedAppCount: Int
-    )
-
     private data class ListScrollAnchor(
         val packageName: String,
-        val uid: Int,
+        val userId: Int,
         val channelId: String?,
         val itemType: Int
     )
 
     private data class AppIconKey(
         val packageName: String,
-        val uid: Int,
+        val userId: Int,
         val sourceDir: String?
     )
 
@@ -101,7 +98,8 @@ class NotificationChannelSelectionActivity : Activity() {
         val allCategoryCount: Int,
         val categories: List<ObservedNotificationCategory>,
         val items: List<CategoryListItem>,
-        val canSuppressOriginal: Boolean
+        val canSuppressOriginal: Boolean,
+        val shizukuAvailable: Boolean
     )
 
     private sealed interface CategoryListItem {
@@ -125,35 +123,58 @@ class NotificationChannelSelectionActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        renderContent()
+        renderForRefreshState(CategoryRefreshCoordinator.currentState())
     }
 
     override fun onStart() {
         super.onStart()
         AppUiLifecycleTracker.onActivityStarted()
+        CategoryRefreshCoordinator.addObserver(refreshStateObserver)
     }
 
     override fun onStop() {
+        CategoryRefreshCoordinator.removeObserver(refreshStateObserver)
         AppUiLifecycleTracker.onActivityStopped(this)
         super.onStop()
     }
 
+    override fun onResume() {
+        super.onResume()
+        val refreshInProgress = CategoryRefreshCoordinator.currentState().isRefreshInProgress()
+        val shizukuAvailable = PrivilegedAccess.currentState(this).shizukuAvailable
+        if (!refreshInProgress && renderedShizukuAvailability != null &&
+            renderedShizukuAvailability != shizukuAvailable
+        ) {
+            renderContent()
+        }
+    }
+
     override fun onDestroy() {
+        updateRefreshBackHandling(false)
         categoryExecutor.shutdownNow()
-        refreshExecutor.shutdownNow()
         iconExecutor.shutdownNow()
         super.onDestroy()
     }
 
     private fun renderContent() {
-        if (isFinishing || isDestroyed) return
+        if (
+            isFinishing ||
+            isDestroyed ||
+            CategoryRefreshCoordinator.currentState().isRefreshInProgress()
+        ) {
+            return
+        }
         val version = ++pageLoadVersion
         categoryList = null
         setContentView(buildLoadingContent())
         categoryExecutor.execute {
             val pageData = loadCategoryPageData()
             mainHandler.post {
-                if (!isFinishing && version == pageLoadVersion) {
+                if (
+                    !isFinishing &&
+                    version == pageLoadVersion &&
+                    !CategoryRefreshCoordinator.currentState().isRefreshInProgress()
+                ) {
                     setContentView(buildContent(pageData))
                 }
             }
@@ -179,12 +200,19 @@ class NotificationChannelSelectionActivity : Activity() {
     }
 
     private fun buildContent(pageData: CategoryPageData): View {
+        renderedShizukuAvailability = pageData.shizukuAvailable
         val colors = palette()
         val root = contentRoot()
         root.addView(pageTitle(colors), blockParams(bottom = 18.dp()))
 
         val categoryPreferences = NotificationCategoryPreferences(this)
-        root.addView(actionButtons(pageData.categories), blockParams(bottom = 10.dp()))
+        root.addView(
+            actionButtons(
+                categories = pageData.categories,
+                shizukuAvailable = pageData.shizukuAvailable
+            ),
+            blockParams(bottom = 10.dp())
+        )
         root.addView(
             systemAppsToggle(
                 checked = pageData.includeSystemApps,
@@ -218,6 +246,153 @@ class NotificationChannelSelectionActivity : Activity() {
         return root
     }
 
+    private fun onRefreshStateChanged(state: CategoryRefreshState) {
+        if (isFinishing || isDestroyed) return
+        renderForRefreshState(state)
+    }
+
+    private fun renderForRefreshState(state: CategoryRefreshState) {
+        when (state) {
+            CategoryRefreshState.Idle -> {
+                updateRefreshBackHandling(false)
+                renderContent()
+            }
+
+            CategoryRefreshState.Preparing,
+            is CategoryRefreshState.Scanning -> {
+                updateRefreshBackHandling(true)
+                categoryList = null
+                pageLoadVersion += 1
+                setContentView(buildRefreshContent(state))
+            }
+
+            is CategoryRefreshState.Finished -> {
+                updateRefreshBackHandling(false)
+                CategoryRefreshCoordinator.acknowledgeFinished(state.result)
+                showToast(refreshResultMessage(state.result))
+                renderContent()
+            }
+        }
+    }
+
+    private fun buildRefreshContent(state: CategoryRefreshState): View {
+        val colors = palette()
+        val root = contentRoot()
+        root.addView(pageTitle(colors), blockParams(bottom = 18.dp()))
+        val progress = (state as? CategoryRefreshState.Scanning)?.progress
+        val message = if (progress == null) {
+            getString(R.string.category_refresh_preparing)
+        } else {
+            getString(
+                R.string.category_refresh_progress,
+                progress.completedApps,
+                progress.totalApps,
+                progress.percentage
+            )
+        }
+        val body = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+        }
+        body.addView(
+            TextView(this).apply {
+                text = if (progress == null) "" else getString(
+                    R.string.category_refresh_percentage,
+                    progress.percentage
+                )
+                textSize = 40f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setTextColor(colors.textPrimary)
+                includeFontPadding = false
+            },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 14.dp()
+            }
+        )
+        body.addView(
+            ProgressBar(
+                this,
+                null,
+                android.R.attr.progressBarStyleHorizontal
+            ).apply {
+                isIndeterminate = progress == null
+                if (progress != null) {
+                    max = 100
+                    this.progress = progress.percentage
+                }
+                progressTintList = ColorStateList.valueOf(colors.primary)
+                progressBackgroundTintList = ColorStateList.valueOf(colors.surfaceContainerHigh)
+            },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                8.dp()
+            ).apply {
+                marginStart = 20.dp()
+                marginEnd = 20.dp()
+                bottomMargin = 18.dp()
+            }
+        )
+        body.addView(
+            TextView(this).apply {
+                text = message
+                textSize = 16f
+                gravity = Gravity.CENTER
+                setTextColor(colors.textSecondary)
+                setLineSpacing(2.dp().toFloat(), 1f)
+            }
+        )
+        root.addView(
+            body,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            ).apply {
+                gravity = Gravity.CENTER_VERTICAL
+            }
+        )
+        return root
+    }
+
+    private fun refreshResultMessage(result: CategoryRefreshResult): String {
+        return when (result) {
+            is CategoryRefreshResult.Completed -> {
+                if (result.failedAppCount > 0) {
+                    getString(
+                        R.string.category_refresh_complete_with_failures,
+                        result.newCategoryCount,
+                        result.failedAppCount
+                    )
+                } else {
+                    getString(R.string.category_refresh_complete, result.newCategoryCount)
+                }
+            }
+
+            CategoryRefreshResult.NoAppsFound -> getString(R.string.category_refresh_no_apps)
+            is CategoryRefreshResult.Failed -> getString(
+                R.string.category_refresh_failed,
+                result.detail
+            )
+        }
+    }
+
+    private fun updateRefreshBackHandling(refreshInProgress: Boolean) {
+        if (refreshInProgress == refreshBackCallbackRegistered) return
+        if (refreshInProgress) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                refreshBackCallback
+            )
+        } else {
+            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(refreshBackCallback)
+        }
+        refreshBackCallbackRegistered = refreshInProgress
+    }
+
     private fun pageTitle(colors: UiPalette): TextView {
         return TextView(this).apply {
             text = getString(R.string.notification_categories_title)
@@ -234,12 +409,15 @@ class NotificationChannelSelectionActivity : Activity() {
         val categorySnapshot = categoryPreferences.snapshot()
         val allCategoryCount = categorySnapshot.categories.size
         val categories = categorySnapshot.categories.filter { includeSystemApps || !it.isSystemApp }
+        val privilegedState = PrivilegedAccess.currentState(this)
         return CategoryPageData(
             includeSystemApps = includeSystemApps,
             allCategoryCount = allCategoryCount,
             categories = categories,
             items = categoryListItems(categories, categorySnapshot.settingsByKey),
-            canSuppressOriginal = PrivilegedAccess.canUseOriginalNotificationSuppression(this)
+            canSuppressOriginal = privilegedState.temporaryAssistantActive ||
+                (privilegedState.shizukuAvailable && privilegedState.shizukuGranted),
+            shizukuAvailable = privilegedState.shizukuAvailable
         )
     }
 
@@ -251,7 +429,7 @@ class NotificationChannelSelectionActivity : Activity() {
         categories.groupBy {
             AppCategoryGroup(
                 packageName = it.key.packageName,
-                uid = it.key.uid,
+                userId = it.key.userId,
                 appLabel = it.appLabel,
                 isSystemApp = it.isSystemApp
             )
@@ -352,7 +530,7 @@ class NotificationChannelSelectionActivity : Activity() {
                         label = item.group.appLabel,
                         iconKey = AppIconKey(
                             packageName = item.group.packageName,
-                            uid = item.group.uid,
+                            userId = item.group.userId,
                             sourceDir = item.sourceDir
                         ),
                         selectedCount = item.selectedCount,
@@ -361,7 +539,7 @@ class NotificationChannelSelectionActivity : Activity() {
                     ) {
                         categoryPreferences.setAppEnabled(
                             packageName = item.group.packageName,
-                            uid = item.group.uid,
+                            userId = item.group.userId,
                             enabled = !allEnabled
                         )
                         onCategoryPreferenceChanged()
@@ -586,7 +764,7 @@ class NotificationChannelSelectionActivity : Activity() {
             val icon = AppLabelResolver.icon(
                 context = this,
                 packageName = key.packageName,
-                uid = key.uid,
+                userId = key.userId,
                 sourceDir = key.sourceDir
             )
             mainHandler.post {
@@ -659,7 +837,10 @@ class NotificationChannelSelectionActivity : Activity() {
         return listItemContainer(row, bottom = 8.dp(), start = 20.dp())
     }
 
-    private fun actionButtons(categories: List<ObservedNotificationCategory>): View {
+    private fun actionButtons(
+        categories: List<ObservedNotificationCategory>,
+        shizukuAvailable: Boolean
+    ): View {
         val column = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -688,17 +869,19 @@ class NotificationChannelSelectionActivity : Activity() {
             }
         )
         column.addView(row)
-        column.addView(
-            actionButton(getString(R.string.action_refresh_categories_shizuku)) {
-                refreshCategoriesWithShizuku()
-            },
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                52.dp()
-            ).apply {
-                topMargin = 10.dp()
-            }
-        )
+        if (shizukuAvailable) {
+            column.addView(
+                actionButton(getString(R.string.action_refresh_categories_shizuku)) {
+                    onRefreshCategoriesClicked()
+                },
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    52.dp()
+                ).apply {
+                    topMargin = 10.dp()
+                }
+            )
+        }
         return column
     }
 
@@ -773,220 +956,27 @@ class NotificationChannelSelectionActivity : Activity() {
         }
     }
 
-    private fun refreshCategoriesWithShizuku() {
-        if (shizukuRefreshRunning) return
+    private fun onRefreshCategoriesClicked() {
         val state = PrivilegedAccess.currentState(this)
-        if (!state.shizukuAvailable) {
-            showToast(getString(R.string.category_refresh_failed, "Shizuku is not running"))
-            return
-        }
-        if (!state.shizukuGranted) {
-            showToast(PrivilegedAccess.requestShizukuPermission())
-            return
-        }
+        when (CategoryRefreshPolicy.actionFor(state.shizukuAvailable, state.shizukuGranted)) {
+            CategoryRefreshAction.HIDDEN -> renderContent()
+            CategoryRefreshAction.REQUEST_SHIZUKU_PERMISSION -> {
+                showToast(PrivilegedAccess.requestShizukuPermission())
+            }
 
-        shizukuRefreshRunning = true
-        showToast(getString(R.string.category_refresh_starting))
-        AppDiagnostics.verbose(
-            this,
-            "mirror",
-            "Notification category Shizuku refresh started; temporaryAssistant=${state.temporaryAssistantActive}"
-        )
-        PrivilegedAccess.listInstalledNotificationAppsAsync(this) { result ->
-            val apps = result.getOrElse {
-                finishCategoryRefresh(
-                    message = getString(R.string.category_refresh_failed, it.describeForUser()),
-                    hadTemporaryAssistant = true,
-                    changed = false
-                )
-                return@listInstalledNotificationAppsAsync
-            }
-            if (apps.isEmpty()) {
-                finishCategoryRefresh(
-                    message = getString(R.string.category_refresh_no_apps),
-                    hadTemporaryAssistant = true,
-                    changed = false
-                )
-                return@listInstalledNotificationAppsAsync
-            }
-            AppDiagnostics.verbose(
-                this,
-                "mirror",
-                "Notification category Shizuku refresh app list loaded; apps=${apps.size}"
-            )
-            ensureAssistantAndRefreshCategories(
-                apps = apps,
-                hadTemporaryAssistant = state.temporaryAssistantActive
-            )
+            CategoryRefreshAction.CONFIRM_REFRESH -> showRefreshConfirmation()
         }
     }
 
-    private fun ensureAssistantAndRefreshCategories(
-        apps: List<InstalledNotificationApp>,
-        hadTemporaryAssistant: Boolean
-    ) {
-        PrivilegedAccess.ensureTemporaryAssistantAsync(
-            this,
-            "refresh notification categories with Shizuku"
-        ) { ready, message ->
-            if (!ready) {
-                finishCategoryRefresh(
-                    message = getString(R.string.category_refresh_failed, message),
-                    hadTemporaryAssistant = hadTemporaryAssistant,
-                    changed = false
-                )
-                return@ensureTemporaryAssistantAsync
+    private fun showRefreshConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.category_refresh_confirmation_title)
+            .setMessage(R.string.category_refresh_confirmation_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.category_refresh_confirm_action) { _, _ ->
+                CategoryRefreshCoordinator.start(this)
             }
-            refreshCategoriesWhenAssistantReady(
-                apps = apps,
-                hadTemporaryAssistant = hadTemporaryAssistant,
-                attempt = 1
-            )
-        }
-    }
-
-    private fun refreshCategoriesWhenAssistantReady(
-        apps: List<InstalledNotificationApp>,
-        hadTemporaryAssistant: Boolean,
-        attempt: Int
-    ) {
-        val delay = if (attempt == 1) ASSISTANT_BIND_DELAY_MS else ASSISTANT_RETRY_DELAY_MS
-        AppDiagnostics.verbose(
-            this,
-            "mirror",
-            "Waiting for notification assistant bridge during category refresh; attempt=$attempt; delayMs=$delay"
-        )
-        mainHandler.postDelayed(
-            {
-                if (!NotificationAssistantBridgeService.isConnected()) {
-                    if (attempt < MAX_ASSISTANT_REFRESH_ATTEMPTS) {
-                        refreshCategoriesWhenAssistantReady(
-                            apps = apps,
-                            hadTemporaryAssistant = hadTemporaryAssistant,
-                            attempt = attempt + 1
-                        )
-                    } else {
-                        finishCategoryRefresh(
-                            message = getString(
-                                R.string.category_refresh_failed,
-                                "notification assistant bridge is not connected"
-                            ),
-                            hadTemporaryAssistant = hadTemporaryAssistant,
-                            changed = false
-                        )
-                    }
-                    return@postDelayed
-                }
-
-                refreshExecutor.execute {
-                    val result = scanInstalledAppCategories(apps)
-                    runOnUiThread {
-                        val message = if (result.failedAppCount > 0) {
-                            getString(
-                                R.string.category_refresh_complete_with_failures,
-                                result.newCategoryCount,
-                                result.failedAppCount
-                            )
-                        } else {
-                            getString(
-                                R.string.category_refresh_complete,
-                                result.newCategoryCount
-                            )
-                        }
-                        finishCategoryRefresh(
-                            message = message,
-                            hadTemporaryAssistant = hadTemporaryAssistant,
-                            changed = result.changed
-                        )
-                    }
-                }
-            },
-            delay
-        )
-    }
-
-    private fun scanInstalledAppCategories(apps: List<InstalledNotificationApp>): CategoryRefreshResult {
-        val preferences = NotificationCategoryPreferences(this)
-        val beforeKeys = preferences.observedCategories().map { it.key }.toSet()
-        var changed = false
-        var failedApps = 0
-        val now = System.currentTimeMillis()
-        apps.forEach { app ->
-            if (app.packageName == packageName) return@forEach
-            val user = UserHandle.getUserHandleForUid(app.uid)
-            val channels = NotificationAssistantBridgeService.getSourceChannels(
-                packageName = app.packageName,
-                user = user
-            ).getOrElse {
-                failedApps += 1
-                AppDiagnostics.note(
-                    this,
-                    "mirror",
-                    getString(R.string.category_refresh_failed, it.describeForUser())
-                )
-                return@forEach
-            }
-            AppDiagnostics.verbose(
-                this,
-                "mirror",
-                "Scanned notification categories for ${app.packageName}; count=${channels.size}; system=${app.isSystemApp}"
-            )
-            channels.forEach { channel ->
-                val channelId = channel.id.takeIf { it.isNotBlank() } ?: return@forEach
-                val channelName = channel.name?.toString()?.takeIf { it.isNotBlank() }
-                changed = preferences.observe(
-                    packageName = app.packageName,
-                    uid = app.uid,
-                    channelId = channelId,
-                    appLabel = AppLabelResolver.label(
-                        this,
-                        app.packageName,
-                        uid = app.uid,
-                        sourceDir = app.sourceDir
-                    ),
-                    channelName = channelName,
-                    isSystemApp = app.isSystemApp,
-                    sourceDir = app.sourceDir,
-                    nowMillis = now
-                ) || changed
-            }
-        }
-        val afterKeys = preferences.observedCategories().map { it.key }.toSet()
-        return CategoryRefreshResult(
-            changed = changed,
-            newCategoryCount = (afterKeys - beforeKeys).size,
-            failedAppCount = failedApps
-        )
-    }
-
-    private fun finishCategoryRefresh(
-        message: String,
-        hadTemporaryAssistant: Boolean,
-        changed: Boolean
-    ) {
-        shizukuRefreshRunning = false
-        if (!hadTemporaryAssistant) {
-            PrivilegedAccess.releaseTemporaryAssistantAsync(
-                this,
-                "notification category Shizuku refresh finished"
-            )
-        }
-        showToast(message)
-        AppDiagnostics.note(
-            this,
-            "mirror",
-            getString(R.string.diagnostic_category_shizuku_refresh)
-        )
-        AppDiagnostics.verbose(
-            this,
-            "mirror",
-            "Notification category Shizuku refresh finished; changed=$changed; temporaryAssistantWasActive=$hadTemporaryAssistant"
-        )
-        if (changed) {
-            captureListPosition()
-            AdditionalNotificationPreferenceEvents.notifyChanged()
-            renderContent()
-        }
+            .show()
     }
 
     private fun showToast(message: String) {
@@ -1062,30 +1052,23 @@ class NotificationChannelSelectionActivity : Activity() {
         return when (this) {
             is CategoryListItem.AppGroup -> ListScrollAnchor(
                 packageName = group.packageName,
-                uid = group.uid,
+                userId = group.userId,
                 channelId = null,
                 itemType = APP_GROUP_ITEM_TYPE
             )
             is CategoryListItem.Category -> ListScrollAnchor(
                 packageName = category.key.packageName,
-                uid = category.key.uid,
+                userId = category.key.userId,
                 channelId = category.key.channelId,
                 itemType = CATEGORY_ITEM_TYPE
             )
             is CategoryListItem.Behavior -> ListScrollAnchor(
                 packageName = category.key.packageName,
-                uid = category.key.uid,
+                userId = category.key.userId,
                 channelId = category.key.channelId,
                 itemType = BEHAVIOR_ITEM_TYPE
             )
         }
-    }
-
-    private fun Throwable.describeForUser(): String {
-        return listOfNotNull(
-            javaClass.simpleName,
-            message?.takeIf { it.isNotBlank() }
-        ).joinToString(": ")
     }
 
     private fun applySystemBarPadding(view: View) {

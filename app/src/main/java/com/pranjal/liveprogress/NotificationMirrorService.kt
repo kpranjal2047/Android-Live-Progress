@@ -1,5 +1,6 @@
 package com.pranjal.liveprogress
 
+import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Handler
@@ -18,7 +19,16 @@ class NotificationMirrorService : NotificationListenerService() {
     private val progressUseSourceIconByKey = mutableMapOf<String, Boolean>()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val uberExtractionExecutor = Executors.newSingleThreadExecutor()
+    private val dominosExtractionExecutor = Executors.newSingleThreadExecutor()
+    private val whereIsMyTrainExtractionExecutor = Executors.newSingleThreadExecutor()
+    private val notificationOcrExecutor = Executors.newSingleThreadExecutor()
     private val uberExtractionVersions = mutableMapOf<String, Int>()
+    private val dominosExtractionVersions = mutableMapOf<String, Int>()
+    private val whereIsMyTrainExtractionVersions = mutableMapOf<String, Int>()
+    private val notificationOcrVersions = mutableMapOf<String, Int>()
+    private val scrollingCriticalTextStartedAt = mutableMapOf<String, Long>()
+    private val dominosCountdownRunnable = Runnable { refreshDominosCountdowns() }
+    private val scrollingCriticalTextRunnable = Runnable { refreshScrollingCriticalTexts() }
     private val visibilityListener = { reconcileVisibility() }
     private lateinit var notificationManager: NotificationManager
     private lateinit var mediaLiveController: MediaLiveController
@@ -28,11 +38,16 @@ class NotificationMirrorService : NotificationListenerService() {
     private var progressMirrorActive = false
     private var lastRefreshUptimeMs = 0L
     private var nextUberExtractionVersion = 0
+    private var nextDominosExtractionVersion = 0
+    private var nextWhereIsMyTrainExtractionVersion = 0
+    private var nextNotificationOcrVersion = 0
     private val progressPreferenceListener = { onProgressPreferencesChanged() }
     private val additionalPreferenceListener = { onAdditionalPreferencesChanged() }
     private val visibilityPreferenceListener = { onVisibilityPreferencesChanged() }
 
     companion object {
+        private const val SERVICE_STARTUP_REFRESH_DELAY_MS = 500L
+
         @Volatile
         private var activeService: NotificationMirrorService? = null
 
@@ -97,6 +112,10 @@ class NotificationMirrorService : NotificationListenerService() {
         VisibilityPreferenceEvents.addListener(visibilityPreferenceListener)
         VisibilityState.register(this)
         VisibilityState.addListener(visibilityListener)
+        mainHandler.postDelayed(
+            { refreshActiveNotifications("listener service startup") },
+            SERVICE_STARTUP_REFRESH_DELAY_MS
+        )
         AppDiagnostics.verbose(this, "listener", "Notification mirror service created")
     }
 
@@ -104,8 +123,15 @@ class NotificationMirrorService : NotificationListenerService() {
         if (activeService === this) activeService = null
         mediaLiveController.destroy()
         uberExtractionVersions.clear()
+        dominosExtractionVersions.clear()
+        whereIsMyTrainExtractionVersions.clear()
+        notificationOcrVersions.clear()
+        scrollingCriticalTextStartedAt.clear()
         mainHandler.removeCallbacksAndMessages(null)
         uberExtractionExecutor.shutdownNow()
+        dominosExtractionExecutor.shutdownNow()
+        whereIsMyTrainExtractionExecutor.shutdownNow()
+        notificationOcrExecutor.shutdownNow()
         ProgressPreferenceEvents.removeListener(progressPreferenceListener)
         AdditionalNotificationPreferenceEvents.removeListener(additionalPreferenceListener)
         VisibilityPreferenceEvents.removeListener(visibilityPreferenceListener)
@@ -176,6 +202,15 @@ class NotificationMirrorService : NotificationListenerService() {
             if (shouldExtractUber(sbn)) {
                 previous[sbn.key]?.let { refreshed[sbn.key] = it }
                 scheduleUberExtraction(sbn, "active notification refresh")
+            } else if (shouldExtractDominos(sbn)) {
+                previous[sbn.key]?.let { refreshed[sbn.key] = it }
+                scheduleDominosExtraction(sbn, "active notification refresh")
+            } else if (shouldExtractWhereIsMyTrain(sbn)) {
+                previous[sbn.key]?.let { refreshed[sbn.key] = it }
+                scheduleWhereIsMyTrainExtraction(sbn, "active notification refresh")
+            } else if (shouldExtractNotificationText(sbn)) {
+                previous[sbn.key]?.let { refreshed[sbn.key] = it }
+                scheduleNotificationTextExtraction(sbn, "active notification refresh")
             } else {
                 mediaLiveController.onNotificationPosted(sbn)
                 classifyCandidate(sbn)
@@ -233,6 +268,18 @@ class NotificationMirrorService : NotificationListenerService() {
             scheduleUberExtraction(sbn, "notification posted")
             return
         }
+        if (shouldExtractDominos(sbn)) {
+            scheduleDominosExtraction(sbn, "notification posted")
+            return
+        }
+        if (shouldExtractWhereIsMyTrain(sbn)) {
+            scheduleWhereIsMyTrainExtraction(sbn, "notification posted")
+            return
+        }
+        if (shouldExtractNotificationText(sbn)) {
+            scheduleNotificationTextExtraction(sbn, "notification posted")
+            return
+        }
         mediaLiveController.onNotificationPosted(sbn)
         applyClassifiedCandidate(sbn, classifyCandidate(sbn))
     }
@@ -253,6 +300,9 @@ class NotificationMirrorService : NotificationListenerService() {
         removeRetainedMirrorsForReplacement(candidate)
         retainedAfterSourceRemovedKeys.remove(candidate.key)
         val isNewCandidate = candidate.key !in candidates
+        if (candidates[candidate.key]?.scrollingShortCriticalText != candidate.scrollingShortCriticalText) {
+            scrollingCriticalTextStartedAt.remove(candidate.key)
+        }
         candidates[candidate.key] = candidate
         if (isNewCandidate) {
             AppDiagnostics.note(
@@ -267,6 +317,9 @@ class NotificationMirrorService : NotificationListenerService() {
 
     private fun removeMirrorFor(sbn: StatusBarNotification) {
         uberExtractionVersions.remove(sbn.key)
+        dominosExtractionVersions.remove(sbn.key)
+        whereIsMyTrainExtractionVersions.remove(sbn.key)
+        notificationOcrVersions.remove(sbn.key)
         dismissedProgressKeys.remove(sbn.key)
         val removed = candidates[sbn.key] ?: return
         val retained = retainMirrorAfterSourceRemoved(
@@ -490,6 +543,13 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     private fun applyVisibility(candidate: MirrorCandidate) {
+        val currentCandidate = refreshScrollingCriticalText(refreshDominosCountdownText(candidate))
+        applyVisibilityInternal(currentCandidate)
+        scheduleDominosCountdownRefresh()
+        scheduleScrollingCriticalTextRefresh()
+    }
+
+    private fun applyVisibilityInternal(candidate: MirrorCandidate) {
         VisibilityState.refreshLockState(this)
         val displaySettings = candidate.displaySettings
         val retainedAfterSourceRemoval = candidate.key in retainedAfterSourceRemovedKeys
@@ -568,10 +628,7 @@ class NotificationMirrorService : NotificationListenerService() {
                 retainedAfterSourceRemoval = retainedAfterSourceRemoval
             ) &&
             PrivilegedAccess.canUseOriginalNotificationSuppression(this)
-        val priorityMode = MirrorPriorityPolicy.forSurface(
-            locked = VisibilityState.locked,
-            screenOff = VisibilityState.screenOff
-        )
+        val priorityMode = MirrorPriorityPolicy.forSurface(locked = VisibilityState.locked)
         val postResult = postMirrorNotification(
             candidate = candidate,
             shouldSuppressOriginal = shouldSuppressOriginal,
@@ -593,6 +650,90 @@ class NotificationMirrorService : NotificationListenerService() {
             OriginalSuppressionController.onLockedMirrorShown(this, candidate)
         } else if (visibilityChanged) {
             OriginalSuppressionController.restoreAll(this, "progress original should remain visible")
+        }
+    }
+
+    private fun refreshDominosCountdownText(candidate: MirrorCandidate): MirrorCandidate {
+        val deadline = candidate.countdownDeadlineElapsedRealtime ?: return candidate
+        val shortText = DominosDeliveryTime.remainingText(deadline, SystemClock.elapsedRealtime())
+        if (candidate.shortCriticalText == shortText) return candidate
+        val updated = candidate.copy(shortCriticalText = shortText)
+        if (candidates[candidate.key] != null) {
+            candidates[candidate.key] = updated
+        }
+        return updated
+    }
+
+    private fun refreshScrollingCriticalText(candidate: MirrorCandidate): MirrorCandidate {
+        val sourceText = candidate.scrollingShortCriticalText?.trim().orEmpty()
+        if (sourceText.isBlank()) return candidate
+        val startedAt = scrollingCriticalTextStartedAt.getOrPut(candidate.key) {
+            SystemClock.elapsedRealtime()
+        }
+        val text = MediaTextFormatter.scrollingPillText(
+            sourceText,
+            (SystemClock.elapsedRealtime() - startedAt).coerceAtLeast(0L)
+        )
+        if (candidate.shortCriticalText == text) return candidate
+        val updated = candidate.copy(shortCriticalText = text)
+        if (candidates[candidate.key] != null) {
+            candidates[candidate.key] = updated
+        }
+        return updated
+    }
+
+    private fun refreshDominosCountdowns() {
+        val visibleCandidates = candidates.values
+            .filter { candidate ->
+                candidate.countdownDeadlineElapsedRealtime != null &&
+                    mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
+            }
+            .toList()
+        visibleCandidates.forEach(::applyVisibility)
+        scheduleDominosCountdownRefresh()
+    }
+
+    private fun scheduleDominosCountdownRefresh() {
+        mainHandler.removeCallbacks(dominosCountdownRunnable)
+        val nowElapsedRealtime = SystemClock.elapsedRealtime()
+        val delay = candidates.values
+            .asSequence()
+            .filter { candidate ->
+                candidate.countdownDeadlineElapsedRealtime != null &&
+                    mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
+            }
+            .mapNotNull { candidate ->
+                DominosDeliveryTime.nextUpdateDelayMillis(
+                    candidate.countdownDeadlineElapsedRealtime ?: return@mapNotNull null,
+                    nowElapsedRealtime
+                )
+            }
+            .minOrNull()
+            ?: return
+        mainHandler.postDelayed(dominosCountdownRunnable, delay)
+    }
+
+    private fun refreshScrollingCriticalTexts() {
+        val visibleCandidates = candidates.values
+            .filter { candidate ->
+                !candidate.scrollingShortCriticalText.isNullOrBlank() &&
+                    mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
+            }
+            .toList()
+        visibleCandidates.forEach(::applyVisibility)
+    }
+
+    private fun scheduleScrollingCriticalTextRefresh() {
+        mainHandler.removeCallbacks(scrollingCriticalTextRunnable)
+        val hasVisibleScrollingText = candidates.values.any { candidate ->
+            !candidate.scrollingShortCriticalText.isNullOrBlank() &&
+                mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
+        }
+        if (hasVisibleScrollingText) {
+            mainHandler.postDelayed(
+                scrollingCriticalTextRunnable,
+                MediaUpdateScheduler.SCROLL_UPDATE_MS
+            )
         }
     }
 
@@ -698,6 +839,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun clearProgressSnapshot(key: String) {
         progressSnapshotsByKey.remove(key)
         progressUseSourceIconByKey.remove(key)
+        scrollingCriticalTextStartedAt.remove(key)
     }
 
     private fun shouldExtractUber(sbn: StatusBarNotification): Boolean {
@@ -777,6 +919,246 @@ class NotificationMirrorService : NotificationListenerService() {
             this,
             "mirror",
             "Uber extraction completed; ${active.debugIdentity()}; result=${extraction.javaClass.simpleName}; route=$route; candidate=${candidate?.displaySettings?.source ?: "none"}"
+        )
+        applyClassifiedCandidate(active, candidate)
+    }
+
+    private fun shouldExtractDominos(sbn: StatusBarNotification): Boolean {
+        return progressPreferences.enabled && DominosNotificationSupport.isDominos(sbn)
+    }
+
+    private fun scheduleDominosExtraction(
+        sbn: StatusBarNotification,
+        reason: String
+    ) {
+        val version = ++nextDominosExtractionVersion
+        dominosExtractionVersions[sbn.key] = version
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Domino's extraction queued; ${sbn.debugIdentity()}; version=$version; reason=$reason"
+        )
+        dominosExtractionExecutor.execute {
+            val result = DominosNotificationSupport.extract(this, sbn)
+            mainHandler.post {
+                handleDominosExtractionResult(sbn, version, result)
+            }
+        }
+    }
+
+    private fun handleDominosExtractionResult(
+        source: StatusBarNotification,
+        version: Int,
+        extraction: DominosExtractionResult
+    ) {
+        if (dominosExtractionVersions[source.key] != version) return
+        val active = activeNotificationsSnapshot("Domino's extraction result")
+            .firstOrNull { it.key == source.key }
+            ?: run {
+                dominosExtractionVersions.remove(source.key)
+                return
+            }
+        if (!progressPreferences.enabled || !DominosNotificationSupport.isDominos(active)) {
+            dominosExtractionVersions.remove(source.key)
+            return
+        }
+        dominosExtractionVersions.remove(source.key)
+        val additionalSettings = additionalCategorySettings(
+            packageName = active.packageName,
+            uid = active.uid,
+            channelId = active.notification.channelId
+        )
+        val route = DominosNotificationRouting.decide(
+            progressEnabled = progressPreferences.enabled,
+            recognizedCustomLayout = extraction !is DominosExtractionResult.NotDominosLiveNotification,
+            hasCustomCandidate = extraction is DominosExtractionResult.Extracted,
+            hasNativeProgress = NotificationClassifier.standardProgressInfo(active.notification) != null,
+            additionalEnabled = additionalSettings.enabled
+        )
+        val candidate = when (route) {
+            DominosMirrorRoute.CUSTOM_PROGRESS -> {
+                val data = (extraction as DominosExtractionResult.Extracted).data
+                NotificationClassifier.toDominosCandidate(
+                    context = this,
+                    sbn = active,
+                    data = data,
+                    progressDisplaySettings = progressDisplaySettings()
+                )
+            }
+
+            DominosMirrorRoute.NATIVE_PROGRESS -> {
+                classifyCandidate(active, allowStandardProgress = true)
+            }
+
+            DominosMirrorRoute.ADDITIONAL -> {
+                classifyCandidate(active, allowStandardProgress = false)
+            }
+
+            DominosMirrorRoute.NONE -> null
+        }
+        val deadline = (extraction as? DominosExtractionResult.Extracted)
+            ?.data
+            ?.countdownDeadlineElapsedRealtime
+        val extractionReason = (extraction as? DominosExtractionResult.UnreadableDominosLiveNotification)
+            ?.reason
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Domino's extraction completed; ${active.debugIdentity()}; result=${extraction.javaClass.simpleName}; reason=${extractionReason.orEmpty()}; route=$route; deliveryDeadline=${deadline != null}; candidate=${candidate?.displaySettings?.source ?: "none"}"
+        )
+        applyClassifiedCandidate(active, candidate)
+    }
+
+    private fun shouldExtractWhereIsMyTrain(sbn: StatusBarNotification): Boolean {
+        return progressPreferences.enabled && WhereIsMyTrainNotificationSupport.isWhereIsMyTrain(sbn)
+    }
+
+    private fun scheduleWhereIsMyTrainExtraction(
+        sbn: StatusBarNotification,
+        reason: String
+    ) {
+        val version = ++nextWhereIsMyTrainExtractionVersion
+        whereIsMyTrainExtractionVersions[sbn.key] = version
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Where Is My Train extraction queued; ${sbn.debugIdentity()}; version=$version; reason=$reason"
+        )
+        whereIsMyTrainExtractionExecutor.execute {
+            val result = WhereIsMyTrainNotificationSupport.extract(this, sbn)
+            mainHandler.post {
+                handleWhereIsMyTrainExtractionResult(sbn, version, result)
+            }
+        }
+    }
+
+    private fun handleWhereIsMyTrainExtractionResult(
+        source: StatusBarNotification,
+        version: Int,
+        extraction: WhereIsMyTrainExtractionResult
+    ) {
+        if (whereIsMyTrainExtractionVersions[source.key] != version) return
+        val active = activeNotificationsSnapshot("Where Is My Train extraction result")
+            .firstOrNull { it.key == source.key }
+            ?: run {
+                whereIsMyTrainExtractionVersions.remove(source.key)
+                return
+            }
+        if (!progressPreferences.enabled || !WhereIsMyTrainNotificationSupport.isWhereIsMyTrain(active)) {
+            whereIsMyTrainExtractionVersions.remove(source.key)
+            return
+        }
+        whereIsMyTrainExtractionVersions.remove(source.key)
+        val additionalSettings = additionalCategorySettings(
+            packageName = active.packageName,
+            uid = active.uid,
+            channelId = active.notification.channelId
+        )
+        val route = WhereIsMyTrainNotificationRouting.decide(
+            progressEnabled = progressPreferences.enabled,
+            recognizedCustomLayout = extraction !is WhereIsMyTrainExtractionResult.NotLiveStatusNotification,
+            hasCustomCandidate = extraction is WhereIsMyTrainExtractionResult.Extracted,
+            hasNativeProgress = NotificationClassifier.standardProgressInfo(active.notification) != null,
+            additionalEnabled = additionalSettings.enabled
+        )
+        val candidate = when (route) {
+            WhereIsMyTrainMirrorRoute.CUSTOM_PROGRESS -> {
+                val data = (extraction as WhereIsMyTrainExtractionResult.Extracted).data
+                NotificationClassifier.toWhereIsMyTrainCandidate(
+                    context = this,
+                    sbn = active,
+                    data = data,
+                    progressDisplaySettings = progressDisplaySettings()
+                )
+            }
+
+            WhereIsMyTrainMirrorRoute.NATIVE_PROGRESS -> {
+                classifyCandidate(active, allowStandardProgress = true)
+            }
+
+            WhereIsMyTrainMirrorRoute.ADDITIONAL -> {
+                classifyCandidate(active, allowStandardProgress = false)
+            }
+
+            WhereIsMyTrainMirrorRoute.NONE -> null
+        }
+        val extractionReason = (extraction as? WhereIsMyTrainExtractionResult.UnreadableLiveStatusNotification)
+            ?.reason
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Where Is My Train extraction completed; ${active.debugIdentity()}; result=${extraction.javaClass.simpleName}; reason=${extractionReason.orEmpty()}; route=$route; candidate=${candidate?.displaySettings?.source ?: "none"}"
+        )
+        applyClassifiedCandidate(active, candidate)
+    }
+
+    /**
+     * Custom notification layouts occasionally render their only useful text into an image. OCR is
+     * intentionally limited to otherwise-eligible, non-media notifications with incomplete text.
+     */
+    private fun shouldExtractNotificationText(sbn: StatusBarNotification): Boolean {
+        val notification = sbn.notification ?: return false
+        if (
+            sbn.packageName == packageName ||
+            NotificationClassifier.isAlreadyLiveProgress(notification) ||
+            NotificationClassifier.isMediaLike(notification)
+        ) {
+            return false
+        }
+        val extras = notification.extras
+        val title = extras?.getCharSequence(Notification.EXTRA_TITLE)
+            ?: extras?.getCharSequence(Notification.EXTRA_TITLE_BIG)
+        val text = extras?.getCharSequence(Notification.EXTRA_TEXT)
+            ?: extras?.getCharSequence(Notification.EXTRA_BIG_TEXT)
+        if (!title.isNullOrBlank() && !text.isNullOrBlank()) return false
+
+        val hasStandardProgress = NotificationClassifier.standardProgressInfo(notification) != null
+        val additionalEnabled = additionalCategorySettings(
+            packageName = sbn.packageName,
+            uid = sbn.uid,
+            channelId = notification.channelId
+        ).enabled
+        return (progressPreferences.enabled && hasStandardProgress) || additionalEnabled
+    }
+
+    private fun scheduleNotificationTextExtraction(
+        sbn: StatusBarNotification,
+        reason: String
+    ) {
+        val version = ++nextNotificationOcrVersion
+        notificationOcrVersions[sbn.key] = version
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Image text extraction queued; ${sbn.debugIdentity()}; version=$version; reason=$reason"
+        )
+        notificationOcrExecutor.execute {
+            val result = NotificationImageOcr.extract(this, sbn)
+            mainHandler.post {
+                handleNotificationTextExtractionResult(sbn, version, result)
+            }
+        }
+    }
+
+    private fun handleNotificationTextExtractionResult(
+        source: StatusBarNotification,
+        version: Int,
+        ocrText: NotificationOcrText?
+    ) {
+        if (notificationOcrVersions[source.key] != version) return
+        val active = activeNotificationsSnapshot("image text extraction result")
+            .firstOrNull { it.key == source.key }
+            ?: run {
+                notificationOcrVersions.remove(source.key)
+                return
+            }
+        notificationOcrVersions.remove(source.key)
+        val candidate = classifyCandidate(active, ocrText = ocrText)
+        AppDiagnostics.verbose(
+            this,
+            "mirror",
+            "Image text extraction completed; ${active.debugIdentity()}; recognized=${ocrText != null}; " +
+                "candidate=${candidate?.displaySettings?.source ?: "none"}"
         )
         applyClassifiedCandidate(active, candidate)
     }
@@ -863,7 +1245,8 @@ class NotificationMirrorService : NotificationListenerService() {
 
     private fun classifyCandidate(
         sbn: StatusBarNotification,
-        allowStandardProgress: Boolean = true
+        allowStandardProgress: Boolean = true,
+        ocrText: NotificationOcrText? = null
     ): MirrorCandidate? {
         var classification = "no_result"
         val candidate = NotificationClassifier.toCandidate(
@@ -873,6 +1256,7 @@ class NotificationMirrorService : NotificationListenerService() {
             progressDisplaySettings = progressDisplaySettings(),
             allowStandardProgress = allowStandardProgress,
             additionalCategorySettings = ::additionalCategorySettings,
+            ocrText = ocrText,
             debug = { classification = it }
         )
         AppDiagnostics.verbose(

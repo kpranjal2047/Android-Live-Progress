@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 48 48" role="img" aria-label="Live Progress icon">
-  <circle cx="24" cy="24" r="22" fill="#EAF7F0"/>
-  <circle cx="24" cy="24" r="20" fill="#0B6E4F"/>
-  <circle cx="24" cy="24" r="14" fill="#EAF7F0"/>
-  <path d="M24 8a16 16 0 0 1 16 16h-6a10 10 0 0 0-10-10z" fill="#2FA66A"/>
-  <rect x="14" y="22" width="20" height="4" rx="2" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 108 108" role="img" aria-label="Live Progress app icon">
+  <circle cx="54" cy="54" r="54" fill="#F7F9FF"/>
+  <path d="M39 37c-4.1 0-6.8 3-6.8 6.8v5.4L29 52.4h20l-3.2-3.2v-5.4c0-3.8-2.7-6.8-6.8-6.8zM36.5 55h5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5zM53 39h25v4H53zM53 47h18v4H53z" fill="#1958D4"/>
+  <path d="M28 62h52v6H28z" fill="#CBD7F7"/>
+  <path d="M28 62h33v6H28z" fill="#3A7BFF"/>
 </svg>

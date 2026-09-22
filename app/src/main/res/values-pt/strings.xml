@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">Ativar tudo</string>
     <string name="action_turn_all_off">Desativar tudo</string>
     <string name="action_refresh_categories_shizuku">Atualizar categorias com Shizuku</string>
+    <string name="category_refresh_confirmation_title">Atualizar categorias de notificações?</string>
+    <string name="category_refresh_confirmation_message">Isto pode levar vários minutos, dependendo do número de apps instaladas. Não pode ser cancelado depois de começar.</string>
+    <string name="category_refresh_confirm_action">Atualizar</string>
+    <string name="category_refresh_preparing">A preparar a atualização das categorias de notificações…</string>
+    <string name="category_refresh_progress">A analisar apps: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">Nenhum app encontrado para atualizar.</string>
-    <string name="category_refresh_starting">Atualizando todas as categorias de notificação dos apps com Shizuku</string>
     <string name="category_refresh_complete">Atualização concluída: %1$d novas categorias encontradas</string>
     <string name="category_refresh_complete_with_failures">Atualização concluída: %1$d novas categorias encontradas, %2$d apps não puderam ser verificados</string>
     <string name="category_refresh_failed">Falha na atualização com Shizuku: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">Configuração de bloqueio de progresso alterada</string>
     <string name="diagnostic_progress_suppression_changed">Configuração de ocultação da notificação original alterada</string>
     <string name="diagnostic_progress_category_selection_changed">Seleção de categoria de progresso alterada</string>
-    <string name="diagnostic_category_shizuku_refresh">Atualização de categorias com Shizuku concluída</string>
     <string name="diagnostic_media_settings_changed">Configurações de mídia alteradas</string>
     <string name="diagnostic_language_setting_changed">Idioma alterado</string>
     <string name="diagnostic_notification_permission_required">A permissão para postar notificações é necessária antes de publicar um teste ao vivo.</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">O Android diz que a notificação de teste é promovível.</string>
     <string name="diagnostic_opened_promoted_settings">Configurações de notificações promovidas abertas.</string>
     <string name="diagnostic_promoted_settings_unavailable">As configurações de notificações promovidas não estão disponíveis nesta compilação; as configurações de notificação do aplicativo foram abertas.</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">Chegou</string>
+    <string name="dominos_delivery_delivered">Entregue</string>
+    <string name="where_is_my_train_reaching">Chega %1$s</string>
 </resources>

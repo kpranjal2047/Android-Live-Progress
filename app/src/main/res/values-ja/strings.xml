@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">すべて有効</string>
     <string name="action_turn_all_off">すべて無効</string>
     <string name="action_refresh_categories_shizuku">Shizukuでカテゴリを更新</string>
+    <string name="category_refresh_confirmation_title">通知カテゴリを更新しますか？</string>
+    <string name="category_refresh_confirmation_message">インストール済みアプリの数によっては数分かかることがあります。開始後はキャンセルできません。</string>
+    <string name="category_refresh_confirm_action">更新</string>
+    <string name="category_refresh_preparing">通知カテゴリの更新を準備しています…</string>
+    <string name="category_refresh_progress">アプリをスキャン中: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">更新するアプリが見つかりません。</string>
-    <string name="category_refresh_starting">Shizuku ですべてのアプリ通知カテゴリを更新しています</string>
     <string name="category_refresh_complete">更新完了: 新しいカテゴリが%1$d件見つかりました</string>
     <string name="category_refresh_complete_with_failures">更新完了: 新しいカテゴリが%1$d件見つかりました。%2$d個のアプリは確認できませんでした</string>
     <string name="category_refresh_failed">Shizuku更新に失敗しました: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">進行状況ロック画面設定を変更しました</string>
     <string name="diagnostic_progress_suppression_changed">進行状況の元通知非表示設定を変更しました</string>
     <string name="diagnostic_progress_category_selection_changed">進行状況カテゴリの選択を変更しました</string>
-    <string name="diagnostic_category_shizuku_refresh">Shizukuでのカテゴリ更新が完了しました</string>
     <string name="diagnostic_media_settings_changed">メディア設定を変更しました</string>
     <string name="diagnostic_language_setting_changed">言語を変更しました</string>
     <string name="diagnostic_notification_permission_required">リアルタイムテストを送信する前に通知送信の許可が必要です。</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">Android はテスト通知を優先表示できると判断しました。</string>
     <string name="diagnostic_opened_promoted_settings">優先通知設定を開きました。</string>
     <string name="diagnostic_promoted_settings_unavailable">このビルドでは優先通知設定を利用できないため、アプリ通知設定を開きました。</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">到着</string>
+    <string name="dominos_delivery_delivered">配達済み</string>
+    <string name="where_is_my_train_reaching">%1$s着</string>
 </resources>

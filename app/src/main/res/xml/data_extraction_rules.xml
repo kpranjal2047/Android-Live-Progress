@@ -13,6 +13,12 @@
         <exclude
             domain="sharedpref"
             path="android_live_progress_suppression_state.xml" />
+        <exclude
+            domain="sharedpref"
+            path="live_progress_notification_categories.xml" />
+        <exclude
+            domain="sharedpref"
+            path="live_progress_first_run_setup.xml" />
     </cloud-backup>
     <device-transfer>
         <include
@@ -27,5 +33,11 @@
         <exclude
             domain="sharedpref"
             path="android_live_progress_suppression_state.xml" />
+        <exclude
+            domain="sharedpref"
+            path="live_progress_notification_categories.xml" />
+        <exclude
+            domain="sharedpref"
+            path="live_progress_first_run_setup.xml" />
     </device-transfer>
 </data-extraction-rules>

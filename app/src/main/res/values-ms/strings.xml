@@ -46,8 +46,13 @@
     <string name="action_turn_all_on">Hidupkan semua</string>
     <string name="action_turn_all_off">Matikan semua</string>
     <string name="action_refresh_categories_shizuku">Segar semula kategori dengan Shizuku</string>
+    <string name="category_refresh_confirmation_title">Segar semula kategori pemberitahuan?</string>
+    <string name="category_refresh_confirmation_message">Ini mungkin mengambil beberapa minit, bergantung pada bilangan aplikasi yang dipasang. Ia tidak boleh dibatalkan selepas bermula.</string>
+    <string name="category_refresh_confirm_action">Segar semula</string>
+    <string name="category_refresh_preparing">Menyediakan penyegaran kategori pemberitahuan…</string>
+    <string name="category_refresh_progress">Mengimbas aplikasi: %1$d / %2$d (%3$d%%)</string>
+    <string name="category_refresh_percentage">%1$d%%</string>
     <string name="category_refresh_no_apps">Tiada aplikasi ditemui untuk disegar semula.</string>
-    <string name="category_refresh_starting">Menyegar semula semua kategori notifikasi aplikasi dengan Shizuku</string>
     <string name="category_refresh_complete">Segar semula selesai: %1$d kategori baharu ditemui</string>
     <string name="category_refresh_complete_with_failures">Segar semula selesai: %1$d kategori baharu ditemui, %2$d aplikasi tidak dapat diimbas</string>
     <string name="category_refresh_failed">Segar semula Shizuku gagal: %1$s</string>
@@ -110,7 +115,6 @@
     <string name="diagnostic_progress_lock_changed">Tetapan skrin kunci kemajuan berubah</string>
     <string name="diagnostic_progress_suppression_changed">Tetapan sembunyikan pemberitahuan kemajuan asal berubah</string>
     <string name="diagnostic_progress_category_selection_changed">Pilihan kategori kemajuan berubah</string>
-    <string name="diagnostic_category_shizuku_refresh">Segar semula kategori dengan Shizuku selesai</string>
     <string name="diagnostic_media_settings_changed">Tetapan media berubah</string>
     <string name="diagnostic_language_setting_changed">Bahasa berubah</string>
     <string name="diagnostic_notification_permission_required">Kebenaran menyiarkan pemberitahuan diperlukan sebelum menyiarkan ujian langsung.</string>
@@ -120,4 +124,18 @@
     <string name="diagnostic_test_promotable">Android menyatakan pemberitahuan ujian boleh diutamakan.</string>
     <string name="diagnostic_opened_promoted_settings">Tetapan pemberitahuan utama dibuka.</string>
     <string name="diagnostic_promoted_settings_unavailable">Tetapan pemberitahuan utama tidak tersedia pada binaan ini; tetapan pemberitahuan aplikasi dibuka.</string>
++    <string name="setup_automatic_title">Set up Live Progress automatically</string>
+    <string name="setup_automatic_reason">Live Progress can use your approved Shizuku connection to enable the missing Android access below. These changes are persistent and affect only Live Progress.</string>
+    <string name="setup_automatic_action">Grant automatically</string>
+    <string name="setup_manual_action">Grant manually</string>
+    <string name="setup_automatic_progress_title">Setting up Live Progress</string>
+    <string name="setup_automatic_progress_message">Applying Android access settings and verifying them…</string>
+    <string name="setup_item_notifications">Notifications</string>
+    <string name="setup_item_promoted_notifications">Live notification access</string>
+    <string name="setup_item_notification_listener">Notification listener</string>
+    <string name="setup_item_accessibility">Quick Settings detection</string>
+    <string name="setup_category_refresh_title">Finding notification categories</string>
+    <string name="dominos_delivery_reached">Telah tiba</string>
+    <string name="dominos_delivery_delivered">Telah dihantar</string>
+    <string name="where_is_my_train_reaching">Tiba %1$s</string>
 </resources>

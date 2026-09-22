@@ -65,7 +65,14 @@ object MediaTextFormatter {
         if (!scrollTitle || trimmed.length <= PILL_LENGTH) {
             return trimmed.truncateWithEllipsis(PILL_LENGTH)
         }
-        return scrollingWindow(trimmed, titleElapsedMs)
+        return scrollingPillText(trimmed, titleElapsedMs)
+    }
+
+    /** Returns a moving seven-character window suitable for Android's promoted status-bar chip. */
+    fun scrollingPillText(text: String, elapsedMs: Long): String {
+        val trimmed = text.trim()
+        if (trimmed.length <= PILL_LENGTH) return trimmed
+        return scrollingWindow(trimmed, elapsedMs)
     }
 
     private fun timelineText(

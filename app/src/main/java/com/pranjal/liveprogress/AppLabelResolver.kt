@@ -50,14 +50,14 @@ object AppLabelResolver {
     fun icon(
         context: Context,
         packageName: String,
-        uid: Int? = null,
+        userId: Int? = null,
         sourceDir: String? = null
     ): Drawable? {
         val packageManager = context.packageManager
         packageManagerApplicationInfo(context, packageName)?.let { appInfo ->
             runCatching { appInfo.loadIcon(packageManager) }.getOrNull()?.let { return it }
         }
-        launcherIcon(context, packageName, uid)?.let { return it }
+        launcherIcon(context, packageName, userId)?.let { return it }
         archiveIcon(context, sourceDir)?.let { return it }
         return packageContextApplicationInfo(context, packageName)?.let { appInfo ->
             runCatching {
@@ -104,9 +104,11 @@ object AppLabelResolver {
         }.getOrNull()
     }
 
-    private fun launcherIcon(context: Context, packageName: String, uid: Int?): Drawable? {
+    private fun launcherIcon(context: Context, packageName: String, userId: Int?): Drawable? {
         val launcherApps = context.getSystemService(LauncherApps::class.java) ?: return null
-        val user = uid?.let(UserHandle::getUserHandleForUid) ?: Process.myUserHandle()
+        val user = userId?.let { profileId ->
+            UserHandle.getUserHandleForUid(profileId * ANDROID_UIDS_PER_USER)
+        } ?: Process.myUserHandle()
         return runCatching {
             launcherApps.getActivityList(packageName, user)
                 .firstOrNull()
@@ -170,3 +172,5 @@ object AppLabelResolver {
         return normalized.takeIf { it.isNotEmpty() && it != packageName }
     }
 }
+
+private const val ANDROID_UIDS_PER_USER = 100_000

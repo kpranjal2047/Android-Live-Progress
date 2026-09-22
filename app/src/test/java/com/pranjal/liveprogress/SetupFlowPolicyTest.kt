@@ -1,80 +1,75 @@
 package com.pranjal.liveprogress
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SetupFlowPolicyTest {
     @Test
-    fun accessibilityIsOptionalButRequiredWhenAVisibilitySettingIsOn() {
-        assertEquals(
-            SetupRequirementKind.ACCESSIBILITY,
-            readyState(
-                hideWhenQuickSettingsExpanded = true,
-                accessibilityEnabled = false
-            )
+    fun ungrantedShizukuPrecedesEveryOtherSetupRequirement() {
+        val state = state(
+            notificationsReady = false,
+            promotedNotificationsReady = false,
+            notificationListenerReady = false,
+            accessibilityEnabled = false,
+            accessibilityRequired = true,
+            shizukuAvailable = true,
+            shizukuGranted = false
         )
-        assertNull(
-            readyState(
-                hideWhenQuickSettingsExpanded = false,
-                accessibilityEnabled = false
-            )
-        )
+
+        assertTrue(SetupFlowPolicy.shouldRequestShizukuFirst(state, shizukuDeferred = false))
+        assertFalse(SetupFlowPolicy.shouldRequestShizukuFirst(state, shizukuDeferred = true))
+    }
+
+    @Test
+    fun automaticSetupIncludesEveryMissingRequiredAccess() {
         assertEquals(
-            SetupRequirementKind.ACCESSIBILITY,
-            readyState(
-                hideWhenSourceAppInForeground = true,
-                accessibilityEnabled = false
+            listOf(
+                AutomaticSetupItem.NOTIFICATIONS,
+                AutomaticSetupItem.PROMOTED_NOTIFICATIONS,
+                AutomaticSetupItem.NOTIFICATION_LISTENER,
+                AutomaticSetupItem.ACCESSIBILITY
+            ),
+            SetupFlowPolicy.automaticItemsMissing(
+                state(
+                    notificationsReady = false,
+                    promotedNotificationsReady = false,
+                    notificationListenerReady = false,
+                    accessibilityEnabled = false,
+                    accessibilityRequired = true
+                )
             )
         )
     }
 
     @Test
-    fun shizukuIsOptionalUntilSuppressionIsEnabledAndAvailable() {
-        assertNull(
-            readyState(
-                progressEnabled = true,
-                suppressOriginalNotification = true,
-                shizukuAvailable = false,
-                shizukuGranted = false
-            )
-        )
-        assertEquals(
-            SetupRequirementKind.SHIZUKU,
-            readyState(
-                progressEnabled = true,
-                suppressOriginalNotification = true,
-                shizukuAvailable = true,
-                shizukuGranted = false
-            )
-        )
-        assertNull(
-            readyState(
-                progressEnabled = true,
-                suppressOriginalNotification = false,
-                shizukuAvailable = true,
-                shizukuGranted = false
-            )
-        )
+    fun optionalAccessibilityIsNotIncludedInAutomaticSetup() {
+        val state = state(accessibilityEnabled = false, accessibilityRequired = false)
+        assertFalse(SetupFlowPolicy.automaticItemsMissing(state).contains(AutomaticSetupItem.ACCESSIBILITY))
+        assertNull(SetupFlowPolicy.firstMissingManualRequirement(state))
     }
 
     @Test
-    fun requiredSetupPrecedesOptionalSetup() {
+    fun manualFlowKeepsTheExistingRequirementOrder() {
         assertEquals(
             SetupRequirementKind.NOTIFICATIONS,
-            readyState(
-                notificationsReady = false,
-                hideWhenQuickSettingsExpanded = true,
-                accessibilityEnabled = false
-            )
+            SetupFlowPolicy.firstMissingManualRequirement(state(notificationsReady = false))
         )
         assertEquals(
             SetupRequirementKind.PROMOTED_NOTIFICATIONS,
-            readyState(promotedNotificationsReady = false)
+            SetupFlowPolicy.firstMissingManualRequirement(state(promotedNotificationsReady = false))
         )
         assertEquals(
             SetupRequirementKind.NOTIFICATION_LISTENER,
-            readyState(notificationListenerReady = false)
+            SetupFlowPolicy.firstMissingManualRequirement(state(notificationListenerReady = false))
+        )
+        assertEquals(
+            SetupRequirementKind.ACCESSIBILITY,
+            SetupFlowPolicy.firstMissingManualRequirement(
+                state(accessibilityEnabled = false, accessibilityRequired = true)
+            )
         )
     }
 
@@ -82,54 +77,33 @@ class SetupFlowPolicyTest {
     fun progressSuppressionToggleStateFollowsShizukuAvailability() {
         assertEquals(
             ToggleState(checked = false, enabled = false),
-            SetupFlowPolicy.progressSuppressionToggleState(
-                progressEnabled = true,
-                suppressOriginalNotification = true,
-                shizukuAvailable = false,
-                shizukuGranted = false
-            )
+            SetupFlowPolicy.progressSuppressionToggleState(true, true, false, false)
         )
         assertEquals(
             ToggleState(checked = false, enabled = true),
-            SetupFlowPolicy.progressSuppressionToggleState(
-                progressEnabled = true,
-                suppressOriginalNotification = true,
-                shizukuAvailable = true,
-                shizukuGranted = false
-            )
+            SetupFlowPolicy.progressSuppressionToggleState(true, true, true, false)
         )
         assertEquals(
             ToggleState(checked = true, enabled = true),
-            SetupFlowPolicy.progressSuppressionToggleState(
-                progressEnabled = true,
-                suppressOriginalNotification = true,
-                shizukuAvailable = true,
-                shizukuGranted = true
-            )
+            SetupFlowPolicy.progressSuppressionToggleState(true, true, true, true)
         )
     }
 
-    private fun readyState(
+    private fun state(
         notificationsReady: Boolean = true,
         promotedNotificationsReady: Boolean = true,
         notificationListenerReady: Boolean = true,
-        progressEnabled: Boolean = true,
-        hideWhenQuickSettingsExpanded: Boolean = false,
-        hideWhenSourceAppInForeground: Boolean = false,
         accessibilityEnabled: Boolean = true,
-        suppressOriginalNotification: Boolean = false,
+        accessibilityRequired: Boolean = false,
         shizukuAvailable: Boolean = false,
         shizukuGranted: Boolean = false
-    ): SetupRequirementKind? {
-        return SetupFlowPolicy.firstMissingRequirement(
+    ): SetupAccessState {
+        return SetupAccessState(
             notificationsReady = notificationsReady,
             promotedNotificationsReady = promotedNotificationsReady,
             notificationListenerReady = notificationListenerReady,
-            progressEnabled = progressEnabled,
-            hideWhenQuickSettingsExpanded = hideWhenQuickSettingsExpanded,
-            hideWhenSourceAppInForeground = hideWhenSourceAppInForeground,
             accessibilityEnabled = accessibilityEnabled,
-            suppressOriginalNotification = suppressOriginalNotification,
+            accessibilityRequired = accessibilityRequired,
             shizukuAvailable = shizukuAvailable,
             shizukuGranted = shizukuGranted
         )

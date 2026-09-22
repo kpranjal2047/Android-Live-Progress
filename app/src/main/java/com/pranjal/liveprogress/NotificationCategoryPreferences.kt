@@ -4,11 +4,11 @@ import android.content.Context
 
 data class NotificationCategoryKey(
     val packageName: String,
-    val uid: Int,
+    val userId: Int,
     val channelId: String
 ) {
     fun encode(): String {
-        return listOf(packageName.cleanField(), uid.toString(), channelId.cleanField())
+        return listOf(packageName.cleanField(), userId.toString(), channelId.cleanField())
             .joinToString(FIELD_SEPARATOR)
     }
 
@@ -16,12 +16,34 @@ data class NotificationCategoryKey(
         fun parse(value: String): NotificationCategoryKey? {
             val parts = value.split(FIELD_SEPARATOR)
             if (parts.size != 3) return null
-            return NotificationCategoryKey(
+            return fromStoredValues(
                 packageName = parts[0],
-                uid = parts[1].toIntOrNull() ?: return null,
+                userId = parts[1].toIntOrNull() ?: return null,
                 channelId = parts[2]
             )
         }
+
+        internal fun fromRuntimeUid(
+            packageName: String,
+            uid: Int,
+            channelId: String
+        ): NotificationCategoryKey {
+            return NotificationCategoryKey(
+                packageName = packageName,
+                userId = uid / ANDROID_UIDS_PER_USER,
+                channelId = channelId
+            )
+        }
+
+        internal fun fromStoredValues(
+            packageName: String,
+            userId: Int,
+            channelId: String
+        ): NotificationCategoryKey? {
+            if (packageName.isBlank() || userId < 0 || channelId.isBlank()) return null
+            return NotificationCategoryKey(packageName, userId, channelId)
+        }
+
     }
 }
 
@@ -39,7 +61,7 @@ data class ObservedNotificationCategory(
     fun encode(): String {
         return listOf(
             key.packageName.cleanField(),
-            key.uid.toString(),
+            key.userId.toString(),
             key.channelId.cleanField(),
             appLabel.cleanField(),
             channelName.orEmpty().cleanField(),
@@ -52,19 +74,19 @@ data class ObservedNotificationCategory(
     companion object {
         fun parse(value: String): ObservedNotificationCategory? {
             val parts = value.split(FIELD_SEPARATOR)
-            if (parts.size !in 6..8) return null
-            val key = NotificationCategoryKey(
+            if (parts.size != 8) return null
+            val key = NotificationCategoryKey.fromStoredValues(
                 packageName = parts[0],
-                uid = parts[1].toIntOrNull() ?: return null,
+                userId = parts[1].toIntOrNull() ?: return null,
                 channelId = parts[2]
-            )
+            ) ?: return null
             return ObservedNotificationCategory(
                 key = key,
                 appLabel = parts[3],
                 channelName = parts[4].takeIf { it.isNotBlank() },
                 lastSeenMillis = parts[5].toLongOrNull() ?: return null,
-                isSystemApp = parts.getOrNull(6)?.toBooleanStrictOrNull() ?: false,
-                sourceDir = parts.getOrNull(7)?.takeIf { it.isNotBlank() }
+                isSystemApp = parts[6].toBooleanStrictOrNull() ?: return null,
+                sourceDir = parts[7].takeIf { it.isNotBlank() }
             )
         }
     }
@@ -85,7 +107,7 @@ data class NotificationCategorySettings(
     fun encode(key: NotificationCategoryKey): String {
         return listOf(
             key.packageName.cleanField(),
-            key.uid.toString(),
+            key.userId.toString(),
             key.channelId.cleanField(),
             enabled.toString(),
             showOnAod.toString(),
@@ -98,18 +120,18 @@ data class NotificationCategorySettings(
     companion object {
         fun parse(value: String): Pair<NotificationCategoryKey, NotificationCategorySettings>? {
             val parts = value.split(FIELD_SEPARATOR)
-            if (parts.size != 7 && parts.size != 8) return null
-            val key = NotificationCategoryKey(
+            if (parts.size != 8) return null
+            val key = NotificationCategoryKey.fromStoredValues(
                 packageName = parts[0],
-                uid = parts[1].toIntOrNull() ?: return null,
+                userId = parts[1].toIntOrNull() ?: return null,
                 channelId = parts[2]
-            )
+            ) ?: return null
             return key to NotificationCategorySettings(
                 enabled = parts[3].toBooleanStrictOrNull() ?: return null,
                 showOnAod = parts[4].toBooleanStrictOrNull() ?: return null,
                 showOnLockScreen = parts[5].toBooleanStrictOrNull() ?: return null,
                 hideOriginalNotification = parts[6].toBooleanStrictOrNull() ?: return null,
-                keepAfterOriginalDismissed = parts.getOrNull(7)?.toBooleanStrictOrNull() ?: false
+                keepAfterOriginalDismissed = parts[7].toBooleanStrictOrNull() ?: return null
             )
         }
 
@@ -131,18 +153,19 @@ data class NotificationCategorySettings(
 
 class NotificationCategoryPreferences(context: Context) {
     private val appContext = context.applicationContext
-    private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val observedPrefs = appContext.getSharedPreferences(OBSERVED_PREFS, Context.MODE_PRIVATE)
+    private val selectedPrefs = appContext.getSharedPreferences(SELECTED_PREFS, Context.MODE_PRIVATE)
 
     var autoEnableNewCategories: Boolean
-        get() = prefs.getBoolean(KEY_AUTO_ENABLE_NEW_CATEGORIES, false)
-        set(value) = prefs.edit().putBoolean(KEY_AUTO_ENABLE_NEW_CATEGORIES, value).apply()
+        get() = selectedPrefs.getBoolean(KEY_AUTO_ENABLE_NEW_CATEGORIES, false)
+        set(value) = selectedPrefs.edit().putBoolean(KEY_AUTO_ENABLE_NEW_CATEGORIES, value).apply()
 
     var showSystemApps: Boolean
-        get() = prefs.getBoolean(KEY_SHOW_SYSTEM_APPS, false)
-        set(value) = prefs.edit().putBoolean(KEY_SHOW_SYSTEM_APPS, value).apply()
+        get() = observedPrefs.getBoolean(KEY_SHOW_SYSTEM_APPS, false)
+        set(value) = observedPrefs.edit().putBoolean(KEY_SHOW_SYSTEM_APPS, value).apply()
 
     fun observedCategories(includeSystemApps: Boolean = true): List<ObservedNotificationCategory> {
-        return observedByKey().values
+        return allCategoriesByKey().values
             .filter { includeSystemApps || !it.isSystemApp }
             .sortedWith(compareBy<ObservedNotificationCategory> { it.appLabel.lowercase() }
                 .thenBy { it.displayName.lowercase() }
@@ -168,10 +191,11 @@ class NotificationCategoryPreferences(context: Context) {
         nowMillis: Long = System.currentTimeMillis()
     ): Boolean {
         val cleanChannelId = channelId?.takeIf { it.isNotBlank() } ?: return false
-        val key = NotificationCategoryKey(packageName, uid, cleanChannelId)
-        val existing = observedByKey()
-        val current = existing[key]
-        val firstObservation = current == null
+        val key = NotificationCategoryKey.fromRuntimeUid(packageName, uid, cleanChannelId)
+        val observed = observedByKey()
+        val selectedMetadata = selectedCategoriesByKey()
+        val current = observed[key] ?: selectedMetadata[key]
+        val firstObservation = key !in observed
         val next = ObservedNotificationCategory(
             key = key,
             appLabel = appLabel,
@@ -187,20 +211,17 @@ class NotificationCategoryPreferences(context: Context) {
                 current.lastSeenMillis
             }
         )
-        if (current == next) return false
-        existing[key] = next
-        val editor = prefs.edit()
-            .putStringSet(KEY_OBSERVED, existing.values.map { it.encode() }.toSet())
+        if (observed[key] == next) return false
+        observed[key] = next
+        observedPrefs.edit()
+            .putStringSet(KEY_OBSERVED, observed.values.map { it.encode() }.toSet())
+            .apply()
         val existingSettings = settingsByKey()
         if (firstObservation && autoEnableNewCategories && key !in existingSettings) {
-            editor.putStringSet(
-                KEY_CATEGORY_SETTINGS,
-                (existingSettings + (key to progressDefaultEnabledSettings()))
-                    .map { (settingsKey, settings) -> settings.encode(settingsKey) }
-                    .toSet()
+            saveSelectedCategories(
+                existingSettings + (key to progressDefaultEnabledSettings())
             )
         }
-        editor.apply()
         return true
     }
 
@@ -214,11 +235,11 @@ class NotificationCategoryPreferences(context: Context) {
         channelId: String?
     ): NotificationCategorySettings {
         val cleanChannelId = channelId?.takeIf { it.isNotBlank() } ?: return NotificationCategorySettings()
-        return settingsFor(NotificationCategoryKey(packageName, uid, cleanChannelId))
+        return settingsFor(NotificationCategoryKey.fromRuntimeUid(packageName, uid, cleanChannelId))
     }
 
     fun settingsFor(key: NotificationCategoryKey): NotificationCategorySettings {
-        return settingsByKey()[key] ?: migratedSelectedSettings(key)
+        return settingsByKey()[key] ?: NotificationCategorySettings()
     }
 
     fun setSelected(key: NotificationCategoryKey, selected: Boolean) {
@@ -231,7 +252,7 @@ class NotificationCategoryPreferences(context: Context) {
     ) {
         val next = settingsByKey().toMutableMap()
         next[key] = transform(next[key] ?: NotificationCategorySettings())
-        saveSettings(next)
+        saveSelectedCategories(next)
     }
 
     fun setObservedEnabled(
@@ -243,12 +264,12 @@ class NotificationCategoryPreferences(context: Context) {
 
     fun setAppEnabled(
         packageName: String,
-        uid: Int,
+        userId: Int,
         enabled: Boolean
     ) {
         setEnabled(
             observedCategories()
-                .filter { it.key.packageName == packageName && it.key.uid == uid }
+                .filter { it.key.packageName == packageName && it.key.userId == userId }
                 .map { it.key },
             enabled
         )
@@ -261,41 +282,54 @@ class NotificationCategoryPreferences(context: Context) {
         val next = settingsByKey().toMutableMap()
         keys.forEach { key ->
             val current = next[key] ?: NotificationCategorySettings()
-            next[key] = if (enabled && !current.enabled) {
-                progressDefaultEnabledSettings()
+            if (enabled) {
+                next[key] = if (current.enabled) current else progressDefaultEnabledSettings()
             } else {
-                current.copy(enabled = enabled)
+                next.remove(key)
             }
         }
-        saveSettings(next)
+        saveSelectedCategories(next)
     }
 
     private fun observedByKey(): LinkedHashMap<NotificationCategoryKey, ObservedNotificationCategory> {
         val map = linkedMapOf<NotificationCategoryKey, ObservedNotificationCategory>()
-        prefs.getStringSet(KEY_OBSERVED, emptySet()).orEmpty()
+        observedPrefs.getStringSet(KEY_OBSERVED, emptySet()).orEmpty()
             .mapNotNull(ObservedNotificationCategory::parse)
-            .forEach { map[it.key] = it }
+            .forEach { observed ->
+                val current = map[observed.key]
+                map[observed.key] = if (current == null) {
+                    observed
+                } else {
+                    mergeObservedCategories(current, observed)
+                }
+            }
+        return map
+    }
+
+    private fun allCategoriesByKey(): LinkedHashMap<NotificationCategoryKey, ObservedNotificationCategory> {
+        val categories = selectedCategoriesByKey()
+        observedByKey().forEach { (key, observed) ->
+            categories[key] = categories[key]?.let { mergeObservedCategories(it, observed) } ?: observed
+        }
+        return categories
+    }
+
+    private fun selectedCategoriesByKey(): LinkedHashMap<NotificationCategoryKey, ObservedNotificationCategory> {
+        val map = linkedMapOf<NotificationCategoryKey, ObservedNotificationCategory>()
+        selectedPrefs.getStringSet(KEY_SELECTED_CATEGORY_METADATA, emptySet()).orEmpty()
+            .mapNotNull(ObservedNotificationCategory::parse)
+            .forEach { category -> map[category.key] = category }
         return map
     }
 
     private fun settingsByKey(): Map<NotificationCategoryKey, NotificationCategorySettings> {
-        val stored = prefs.getStringSet(KEY_CATEGORY_SETTINGS, emptySet()).orEmpty()
+        return selectedPrefs.getStringSet(KEY_SELECTED_CATEGORY_SETTINGS, emptySet()).orEmpty()
             .mapNotNull(NotificationCategorySettings::parse)
-            .toMap()
-            .toMutableMap()
-        selectedKeys().forEach { selected ->
-            val key = NotificationCategoryKey.parse(selected) ?: return@forEach
-            if (key !in stored) stored[key] = progressDefaultEnabledSettings()
-        }
-        return stored
-    }
-
-    private fun migratedSelectedSettings(key: NotificationCategoryKey): NotificationCategorySettings {
-        return if (key.encode() in selectedKeys()) {
-            progressDefaultEnabledSettings()
-        } else {
-            NotificationCategorySettings()
-        }
+            .fold(linkedMapOf()) { settings, (key, value) ->
+                val merged = settings[key]?.let { mergeSettings(it, value) } ?: value
+                if (merged.enabled) settings[key] = merged
+                settings
+            }
     }
 
     private fun progressDefaultEnabledSettings(): NotificationCategorySettings {
@@ -307,24 +341,61 @@ class NotificationCategoryPreferences(context: Context) {
         )
     }
 
-    private fun saveSettings(settings: Map<NotificationCategoryKey, NotificationCategorySettings>) {
-        prefs.edit()
+    private fun saveSelectedCategories(settings: Map<NotificationCategoryKey, NotificationCategorySettings>) {
+        val enabledSettings = settings.filterValues(NotificationCategorySettings::enabled)
+        val knownCategories = allCategoriesByKey()
+        val existingMetadata = selectedCategoriesByKey()
+        val selectedMetadata = enabledSettings.keys.map { key ->
+            knownCategories[key] ?: existingMetadata[key] ?: ObservedNotificationCategory(
+                key = key,
+                appLabel = key.packageName,
+                channelName = null,
+                lastSeenMillis = 0L
+            )
+        }
+        selectedPrefs.edit()
             .putStringSet(
-                KEY_CATEGORY_SETTINGS,
-                settings.map { (key, value) -> value.encode(key) }.toSet()
+                KEY_SELECTED_CATEGORY_SETTINGS,
+                enabledSettings.map { (key, value) -> value.encode(key) }.toSet()
+            )
+            .putStringSet(
+                KEY_SELECTED_CATEGORY_METADATA,
+                selectedMetadata.map(ObservedNotificationCategory::encode).toSet()
             )
             .apply()
     }
 
-    private fun selectedKeys(): Set<String> {
-        return prefs.getStringSet(KEY_SELECTED, emptySet()).orEmpty().toSet()
+    private fun mergeObservedCategories(
+        first: ObservedNotificationCategory,
+        second: ObservedNotificationCategory
+    ): ObservedNotificationCategory {
+        val newer = if (second.lastSeenMillis >= first.lastSeenMillis) second else first
+        val older = if (newer === second) first else second
+        return newer.copy(
+            appLabel = newer.appLabel.ifBlank { older.appLabel },
+            channelName = newer.channelName ?: older.channelName,
+            isSystemApp = newer.isSystemApp || older.isSystemApp,
+            sourceDir = newer.sourceDir ?: older.sourceDir
+        )
+    }
+
+    private fun mergeSettings(
+        first: NotificationCategorySettings,
+        second: NotificationCategorySettings
+    ): NotificationCategorySettings {
+        return when {
+            first.enabled && !second.enabled -> first
+            second.enabled && !first.enabled -> second
+            else -> second
+        }
     }
 
     companion object {
-        private const val PREFS = "live_progress_notification_categories"
+        private const val OBSERVED_PREFS = "live_progress_notification_categories"
+        private const val SELECTED_PREFS = "live_progress_selected_notification_categories"
         private const val KEY_OBSERVED = "observed_categories"
-        private const val KEY_SELECTED = "selected_categories"
-        private const val KEY_CATEGORY_SETTINGS = "category_settings"
+        private const val KEY_SELECTED_CATEGORY_SETTINGS = "selected_category_settings"
+        private const val KEY_SELECTED_CATEGORY_METADATA = "selected_category_metadata"
         private const val KEY_AUTO_ENABLE_NEW_CATEGORIES = "auto_enable_new_categories"
         private const val KEY_SHOW_SYSTEM_APPS = "show_system_apps"
         private const val LAST_SEEN_WRITE_INTERVAL_MS = 60L * 60L * 1000L
@@ -332,6 +403,7 @@ class NotificationCategoryPreferences(context: Context) {
 }
 
 private const val FIELD_SEPARATOR = "\u001F"
+private const val ANDROID_UIDS_PER_USER = 100_000
 
 private fun String.cleanField(): String {
     return replace(FIELD_SEPARATOR, " ").trim()
