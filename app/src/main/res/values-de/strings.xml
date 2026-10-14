@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Live-Benachrichtigungen auf AOD anzeigen</string>
     <string name="setting_show_media_lock_screen">Live-Benachrichtigungen auf Sperrbildschirm anzeigen</string>
     <string name="setting_status_bar_text">Statusleistentext</string>
-    <string name="setting_scroll_title_status_bar">Titel in Statusleiste scrollen</string>
     <string name="media_pill_title">Titel</string>
     <string name="media_pill_elapsed">Vergangen</string>
     <string name="media_pill_remaining">Verbleibend</string>

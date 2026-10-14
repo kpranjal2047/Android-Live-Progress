@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Mostra notifiche in tempo reale su AOD</string>
     <string name="setting_show_media_lock_screen">Mostra notifiche in tempo reale nella schermata di blocco</string>
     <string name="setting_status_bar_text">Testo barra di stato</string>
-    <string name="setting_scroll_title_status_bar">Scorri titolo nella barra di stato</string>
     <string name="media_pill_title">Titolo</string>
     <string name="media_pill_elapsed">Trascorso</string>
     <string name="media_pill_remaining">Rimanente</string>

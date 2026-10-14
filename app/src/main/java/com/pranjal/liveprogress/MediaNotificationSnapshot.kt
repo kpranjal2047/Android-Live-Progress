@@ -19,9 +19,8 @@ data class MediaNotificationSnapshot(
         fun from(
             state: MediaState,
             source: MediaNotificationSource?,
-            preferences: MediaPreferences,
             appLabel: String,
-            titleElapsedMs: Long,
+            shortCriticalText: String?,
             aodVisible: Boolean,
             showShortCriticalText: Boolean,
             priorityMode: MirrorPriorityMode
@@ -47,20 +46,6 @@ data class MediaNotificationSnapshot(
                     durationMs = state.durationMs
                 )
             }
-            val shortCriticalText = if (showShortCriticalText) {
-                MediaTextFormatter.shortCriticalText(
-                    title = state.title,
-                    positionMs = state.positionMs,
-                    durationMs = state.durationMs,
-                    isPlaying = state.isPlaying,
-                    mode = preferences.pillMode,
-                    scrollTitle = preferences.scrollTitle,
-                    titleElapsedMs = titleElapsedMs
-                )
-            } else {
-                null
-            }
-
             return MediaNotificationSnapshot(
                 title = state.title,
                 contentText = contentText,

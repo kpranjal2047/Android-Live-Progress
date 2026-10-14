@@ -6,6 +6,19 @@ import org.junit.Test
 
 class ProgressMirrorSnapshotTest {
     @Test
+    fun scrollingOnlyRepostsChangedWindowsAndPreservesContent() {
+        val scroller = PillTextScroller()
+        val source = "Reaching 9:43 PM"
+        val original = snapshot()
+        val first = original.copy(shortText = scroller.render(source, source, 0))
+        val held = original.copy(shortText = scroller.render(source, source, 500))
+        val moved = original.copy(shortText = scroller.render(source, source, 1_500))
+        assertEquals(first, held)
+        assertNotEquals(first, moved)
+        assertEquals(first, moved.copy(shortText = first.shortText))
+    }
+
+    @Test
     fun identicalSnapshotsCompareEqual() {
         val snapshot = snapshot()
 

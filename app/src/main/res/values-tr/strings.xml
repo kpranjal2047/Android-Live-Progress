@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD üzerinde canlı bildirimleri göster</string>
     <string name="setting_show_media_lock_screen">Kilit ekranında canlı bildirimleri göster</string>
     <string name="setting_status_bar_text">Durum çubuğu metni</string>
-    <string name="setting_scroll_title_status_bar">Başlığı durum çubuğunda kaydır</string>
     <string name="media_pill_title">Başlık</string>
     <string name="media_pill_elapsed">Geçen</string>
     <string name="media_pill_remaining">Kalan</string>

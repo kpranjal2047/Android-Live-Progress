@@ -26,7 +26,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private val dominosExtractionVersions = mutableMapOf<String, Int>()
     private val whereIsMyTrainExtractionVersions = mutableMapOf<String, Int>()
     private val notificationOcrVersions = mutableMapOf<String, Int>()
-    private val scrollingCriticalTextStartedAt = mutableMapOf<String, Long>()
+    private val pillScrollers = mutableMapOf<String, PillTextScroller>()
     private val dominosCountdownRunnable = Runnable { refreshDominosCountdowns() }
     private val scrollingCriticalTextRunnable = Runnable { refreshScrollingCriticalTexts() }
     private val visibilityListener = { reconcileVisibility() }
@@ -126,7 +126,7 @@ class NotificationMirrorService : NotificationListenerService() {
         dominosExtractionVersions.clear()
         whereIsMyTrainExtractionVersions.clear()
         notificationOcrVersions.clear()
-        scrollingCriticalTextStartedAt.clear()
+        pillScrollers.clear()
         mainHandler.removeCallbacksAndMessages(null)
         uberExtractionExecutor.shutdownNow()
         dominosExtractionExecutor.shutdownNow()
@@ -300,9 +300,6 @@ class NotificationMirrorService : NotificationListenerService() {
         removeRetainedMirrorsForReplacement(candidate)
         retainedAfterSourceRemovedKeys.remove(candidate.key)
         val isNewCandidate = candidate.key !in candidates
-        if (candidates[candidate.key]?.scrollingShortCriticalText != candidate.scrollingShortCriticalText) {
-            scrollingCriticalTextStartedAt.remove(candidate.key)
-        }
         candidates[candidate.key] = candidate
         if (isNewCandidate) {
             AppDiagnostics.note(
@@ -665,21 +662,18 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     private fun refreshScrollingCriticalText(candidate: MirrorCandidate): MirrorCandidate {
-        val sourceText = candidate.scrollingShortCriticalText?.trim().orEmpty()
-        if (sourceText.isBlank()) return candidate
-        val startedAt = scrollingCriticalTextStartedAt.getOrPut(candidate.key) {
-            SystemClock.elapsedRealtime()
-        }
-        val text = MediaTextFormatter.scrollingPillText(
+        val sourceText = candidate.shortCriticalText ?: candidate.progress.shortText
+        val scroller = pillScrollers.getOrPut(candidate.key) { PillTextScroller() }
+        val text = scroller.render(
             sourceText,
-            (SystemClock.elapsedRealtime() - startedAt).coerceAtLeast(0L)
+            listOf(
+                candidate.title?.toString(),
+                if (candidate.countdownDeadlineElapsedRealtime != null) "countdown" else sourceText
+            ),
+            SystemClock.elapsedRealtime()
         )
-        if (candidate.shortCriticalText == text) return candidate
-        val updated = candidate.copy(shortCriticalText = text)
-        if (candidates[candidate.key] != null) {
-            candidates[candidate.key] = updated
-        }
-        return updated
+        // Only this render copy contains the window; tracked candidates retain the full text.
+        return candidate.copy(shortCriticalText = text)
     }
 
     private fun refreshDominosCountdowns() {
@@ -716,7 +710,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun refreshScrollingCriticalTexts() {
         val visibleCandidates = candidates.values
             .filter { candidate ->
-                !candidate.scrollingShortCriticalText.isNullOrBlank() &&
+                PillTextScroller.needsScrolling(candidate.shortCriticalText ?: candidate.progress.shortText) &&
                     mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
             }
             .toList()
@@ -726,13 +720,13 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun scheduleScrollingCriticalTextRefresh() {
         mainHandler.removeCallbacks(scrollingCriticalTextRunnable)
         val hasVisibleScrollingText = candidates.values.any { candidate ->
-            !candidate.scrollingShortCriticalText.isNullOrBlank() &&
+            PillTextScroller.needsScrolling(candidate.shortCriticalText ?: candidate.progress.shortText) &&
                 mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
         }
         if (hasVisibleScrollingText) {
             mainHandler.postDelayed(
                 scrollingCriticalTextRunnable,
-                MediaUpdateScheduler.SCROLL_UPDATE_MS
+                PillTextScroller.UPDATE_MS
             )
         }
     }
@@ -839,7 +833,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun clearProgressSnapshot(key: String) {
         progressSnapshotsByKey.remove(key)
         progressUseSourceIconByKey.remove(key)
-        scrollingCriticalTextStartedAt.remove(key)
+        pillScrollers.remove(key)
     }
 
     private fun shouldExtractUber(sbn: StatusBarNotification): Boolean {

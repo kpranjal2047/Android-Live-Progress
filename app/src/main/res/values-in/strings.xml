@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Tampilkan notifikasi langsung di AOD</string>
     <string name="setting_show_media_lock_screen">Tampilkan notifikasi langsung di layar kunci</string>
     <string name="setting_status_bar_text">Teks bilah status</string>
-    <string name="setting_scroll_title_status_bar">Gulir judul di bilah status</string>
     <string name="media_pill_title">Judul</string>
     <string name="media_pill_elapsed">Berjalan</string>
     <string name="media_pill_remaining">Tersisa</string>

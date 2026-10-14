@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Mostrar notificações ao vivo no AOD</string>
     <string name="setting_show_media_lock_screen">Mostrar notificações ao vivo na tela de bloqueio</string>
     <string name="setting_status_bar_text">Texto da barra de estado</string>
-    <string name="setting_scroll_title_status_bar">Rolar título na barra de estado</string>
     <string name="media_pill_title">Título</string>
     <string name="media_pill_elapsed">Decorrido</string>
     <string name="media_pill_remaining">Restante</string>

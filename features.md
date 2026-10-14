@@ -66,11 +66,10 @@ Defaults for Progress are enabled, lock-screen mirroring off, AOD mirroring on, 
 
 - **Enable media live notifications**: master switch for media-session mirrors.
 - **Status-bar text**: selects Title, Elapsed, or Remaining for the short critical text while the device is unlocked.
-- **Scroll title in status bar**: enables scrolling for title mode; it is editable only when Title is selected.
 - **Show live notifications on lock screen**: enables a Media mirror on the lock screen.
 - **Show live notifications on AOD**: enables a Media mirror while the screen is off.
 
-Defaults for Media are enabled, Title text, scrolling title enabled, lock-screen mirroring off, and AOD mirroring on.
+Defaults for Media are enabled, Title text, lock-screen mirroring off, and AOD mirroring on. All pill text longer than seven user-visible characters scrolls automatically; there is no scrolling setting.
 
 ### 3.4 Additional Live Notifications
 
@@ -216,7 +215,7 @@ The expanded live notification uses a three-line hierarchy designed for Android'
 2. Main title: current status plus delay/ahead-of-schedule state.
 3. Content: destination, remaining distance, and `Reaching <time>`.
 
-The status-bar critical text uses the compact reaching time. It scrolls through a seven-character window when necessary, using the same efficient scheduling approach as media title scrolling. ETA does not become a progress percentage. A train that is ahead of schedule is represented as schedule status alongside the current train state.
+The status-bar critical text uses the compact reaching time. Like all Progress, Media, and Additional critical text, it automatically scrolls through a seven-character window when longer than seven characters. ETA does not become a progress percentage. A train that is ahead of schedule is represented as schedule status alongside the current train state.
 
 Optical character recognition is used only as a text fallback for route imagery. It does not infer progress or manufacture missing ETA data. Failed layout/OCR extraction falls back only to an enabled Additional Live Notifications category.
 
@@ -247,11 +246,13 @@ Playback actions are delivered through the app's non-exported `MediaControlRecei
 
 While unlocked, the chosen media pill mode controls the short critical text:
 
-- **Title**: track title, optionally scrolling in seven-character windows.
+- **Title**: track title.
 - **Elapsed**: elapsed playback time.
 - **Remaining**: remaining playback time.
 
-Unknown values are hidden instead of represented by placeholder ellipses. Known text that overflows uses ellipsis or controlled scrolling as appropriate.
+Unknown values are hidden instead of represented by placeholder ellipses. Pill text in every mode scrolls automatically if it exceeds seven user-visible characters. Shorter text stays static, including text exactly seven characters long. Detail text elsewhere retains its existing overflow behavior.
+
+The shared `PillTextScroller` keeps Unicode character clusters intact, advances every 500 ms, and pauses at the beginning and end. Each mirror has its own animation state. A source/title/status or media-mode change resets the animation; ordinary time/countdown changes update the full text without repeatedly restarting it. Full source text stays separate from the displayed window, which is computed once for both snapshot comparison and notification posting. No new critical text is invented for notifications without it. Lock-screen/AOD body formatting is unchanged.
 
 On AOD, media text always uses elapsed/total duration when duration is known. It is independent of the status-bar pill setting. Album art is intentionally omitted from AOD mirrors.
 
@@ -272,7 +273,7 @@ The global Progress-priority rule avoids competing media and progress live prese
 
 - No periodic media tick runs while the mirror is hidden.
 - A one-second update is used only when visible elapsed/remaining/AOD time must change.
-- A 500 ms update is used only for enabled title scrolling.
+- A 500 ms update is used only when a visible critical-text field needs scrolling, including paused media titles and time modes with long text.
 - Media notification work is coalesced so that only one build runs at a time and newer requests replace stale queued work.
 - A snapshot prevents reposting an unchanged media notification.
 - Album-art decoding and repeated action/content-intent reconstruction are avoided when source content has not changed.

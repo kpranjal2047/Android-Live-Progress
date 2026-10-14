@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD にライブ通知を表示</string>
     <string name="setting_show_media_lock_screen">ロック画面にライブ通知を表示</string>
     <string name="setting_status_bar_text">ステータスバーのテキスト</string>
-    <string name="setting_scroll_title_status_bar">ステータスバーでタイトルをスクロール</string>
     <string name="media_pill_title">タイトル</string>
     <string name="media_pill_elapsed">経過</string>
     <string name="media_pill_remaining">残り</string>

@@ -6,15 +6,52 @@ import org.junit.Test
 
 class MediaUpdateSchedulerTest {
     @Test
-    fun titleModeWithoutScrollingTicksWhenExpandedTimelineIsVisible() {
+    fun pausedLongTitleStillScrollsButHiddenTextNeverTicks() {
+        assertEquals(PillTextScroller.UPDATE_MS, MediaUpdateScheduler.nextDelayMs(
+            showMirror = true, isPlaying = false, criticalText = "Long paused title",
+            timePillVisible = false, aodVisible = false, showShortCriticalText = true
+        ))
+        assertNull(MediaUpdateScheduler.nextDelayMs(
+            showMirror = false, isPlaying = true, criticalText = "Long hidden title",
+            timePillVisible = false, aodVisible = false, showShortCriticalText = true
+        ))
+        assertNull(MediaUpdateScheduler.nextDelayMs(
+            showMirror = true, isPlaying = false, criticalText = "Long hidden title",
+            timePillVisible = false, aodVisible = false, showShortCriticalText = false
+        ))
+    }
+
+    @Test
+    fun longTimesAndUnknownDurationTitleFallbackScroll() {
+        for (mode in MediaPillMode.entries) {
+            val text = MediaTextFormatter.shortCriticalText(
+                title = "Long fallback title", positionMs = 0, durationMs = 0,
+                isPlaying = true, mode = mode
+            )
+            assertEquals(PillTextScroller.UPDATE_MS, MediaUpdateScheduler.nextDelayMs(
+                showMirror = true, isPlaying = true, criticalText = text,
+                timePillVisible = false, aodVisible = false, showShortCriticalText = true
+            ))
+        }
+        assertEquals(PillTextScroller.UPDATE_MS, MediaUpdateScheduler.nextDelayMs(
+            showMirror = true, isPlaying = true, criticalText = "-10:00:00",
+            timePillVisible = true, aodVisible = false, showShortCriticalText = true
+        ))
+        assertEquals(MediaUpdateScheduler.TIME_UPDATE_MS, MediaUpdateScheduler.nextDelayMs(
+            showMirror = true, isPlaying = true, criticalText = "1:00:00",
+            timePillVisible = true, aodVisible = false, showShortCriticalText = true
+        ))
+    }
+
+    @Test
+    fun shortTitleTicksWhenExpandedTimelineIsVisible() {
         assertEquals(
             MediaUpdateScheduler.TIME_UPDATE_MS,
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = true,
-                title = "Track",
-                pillMode = MediaPillMode.TITLE,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = false,
                 aodVisible = false,
                 showShortCriticalText = true,
                 expandedTimelineVisible = true
@@ -23,14 +60,13 @@ class MediaUpdateSchedulerTest {
     }
 
     @Test
-    fun titleModeWithoutScrollingDoesNotTickWhenNoTimeTextIsVisible() {
+    fun shortTitleDoesNotTickWhenNoTimeTextIsVisible() {
         assertNull(
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = true,
-                title = "Track",
-                pillMode = MediaPillMode.TITLE,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = false,
                 aodVisible = false,
                 showShortCriticalText = true
             )
@@ -44,9 +80,8 @@ class MediaUpdateSchedulerTest {
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = true,
-                title = "Track",
-                pillMode = MediaPillMode.ELAPSED,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = true,
                 aodVisible = false,
                 showShortCriticalText = true
             )
@@ -56,9 +91,8 @@ class MediaUpdateSchedulerTest {
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = true,
-                title = "Track",
-                pillMode = MediaPillMode.REMAINING,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = true,
                 aodVisible = false,
                 showShortCriticalText = true
             )
@@ -72,9 +106,8 @@ class MediaUpdateSchedulerTest {
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = true,
-                title = "Track",
-                pillMode = MediaPillMode.TITLE,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = false,
                 aodVisible = true,
                 showShortCriticalText = true
             )
@@ -84,13 +117,12 @@ class MediaUpdateSchedulerTest {
     @Test
     fun scrollingTitleTicksAtScrollCadence() {
         assertEquals(
-            MediaUpdateScheduler.SCROLL_UPDATE_MS,
+            PillTextScroller.UPDATE_MS,
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = true,
-                title = "Very Long Track",
-                pillMode = MediaPillMode.TITLE,
-                scrollTitle = true,
+                criticalText = "Very Long Track",
+                timePillVisible = false,
                 aodVisible = false,
                 showShortCriticalText = true
             )
@@ -98,14 +130,13 @@ class MediaUpdateSchedulerTest {
     }
 
     @Test
-    fun hiddenOrPausedMediaDoesNotTick() {
+    fun hiddenOrPausedShortTextDoesNotTick() {
         assertNull(
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = false,
                 isPlaying = true,
-                title = "Track",
-                pillMode = MediaPillMode.ELAPSED,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = true,
                 aodVisible = false,
                 showShortCriticalText = true
             )
@@ -114,9 +145,8 @@ class MediaUpdateSchedulerTest {
             MediaUpdateScheduler.nextDelayMs(
                 showMirror = true,
                 isPlaying = false,
-                title = "Track",
-                pillMode = MediaPillMode.ELAPSED,
-                scrollTitle = false,
+                criticalText = "Track",
+                timePillVisible = true,
                 aodVisible = false,
                 showShortCriticalText = true
             )

@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD پر لائیو نوٹیفکیشنز دکھائیں</string>
     <string name="setting_show_media_lock_screen">لاک اسکرین پر لائیو نوٹیفکیشنز دکھائیں</string>
     <string name="setting_status_bar_text">اسٹیٹس بار ٹیکسٹ</string>
-    <string name="setting_scroll_title_status_bar">اسٹیٹس بار میں عنوان scroll کریں</string>
     <string name="media_pill_title">عنوان</string>
     <string name="media_pill_elapsed">گزرا ہوا</string>
     <string name="media_pill_remaining">باقی</string>

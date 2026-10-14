@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Показывать живые уведомления на AOD</string>
     <string name="setting_show_media_lock_screen">Показывать живые уведомления на экране блокировки</string>
     <string name="setting_status_bar_text">Текст строки состояния</string>
-    <string name="setting_scroll_title_status_bar">Прокручивать название в строке состояния</string>
     <string name="media_pill_title">Название</string>
     <string name="media_pill_elapsed">Прошло</string>
     <string name="media_pill_remaining">Осталось</string>

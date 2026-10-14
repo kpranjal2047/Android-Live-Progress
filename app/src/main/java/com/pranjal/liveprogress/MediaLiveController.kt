@@ -6,6 +6,7 @@ import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import java.util.concurrent.Executors
 
@@ -30,7 +31,7 @@ class MediaLiveController(
     private var notificationDismissed = false
     private var programmaticCancelPending = false
     private var progressMirrorActive = false
-    private var titleStartTime = 0L
+    private val pillScroller = PillTextScroller()
     private var lastTitle: String? = null
     private var buildVersion = 0
     private var mediaMirrorPosted = false
@@ -153,7 +154,7 @@ class MediaLiveController(
         AppDiagnostics.verbose(
             service,
             "media",
-            "Media preferences changed; enabled=${preferences.enabled}; aod=${preferences.showOnAod}; lock=${preferences.showOnLockScreen}; pill=${preferences.pillMode}; scroll=${preferences.scrollTitle}"
+            "Media preferences changed; enabled=${preferences.enabled}; aod=${preferences.showOnAod}; lock=${preferences.showOnLockScreen}; pill=${preferences.pillMode}"
         )
         updateFromController()
     }
@@ -271,7 +272,6 @@ class MediaLiveController(
 
         if (state.title != lastTitle) {
             lastTitle = state.title
-            titleStartTime = System.currentTimeMillis()
             notificationDismissed = false
             AppDiagnostics.verbose(service, "media", "Media title changed; title=${state.title}; package=${state.packageName}")
         }
@@ -333,14 +333,25 @@ class MediaLiveController(
 
         val source = activeSource
         val appLabel = appLabelFor(state, source)
-        val titleElapsedMs = System.currentTimeMillis() - titleStartTime
+        val criticalText = criticalTextFor(state)
+        val timePillVisible = state.isPlaying && state.durationMs > 0L &&
+            preferences.pillMode != MediaPillMode.TITLE
+        val shortCriticalText = if (decision.showShortCriticalText) {
+            pillScroller.render(
+                criticalText,
+                listOf(
+                    state.packageName, source?.original?.key, activeController?.sessionToken,
+                    state.title, preferences.pillMode, timePillVisible
+                ),
+                SystemClock.elapsedRealtime()
+            )
+        } else null
         val priorityMode = MirrorPriorityPolicy.forSurface(locked = VisibilityState.locked)
         val snapshot = MediaNotificationSnapshot.from(
             state = state,
             source = source,
-            preferences = preferences,
             appLabel = appLabel,
-            titleElapsedMs = titleElapsedMs,
+            shortCriticalText = shortCriticalText,
             aodVisible = decision.aodVisible,
             showShortCriticalText = decision.showShortCriticalText,
             priorityMode = priorityMode
@@ -364,7 +375,6 @@ class MediaLiveController(
             snapshot = snapshot,
             state = state,
             source = source,
-            titleElapsedMs = titleElapsedMs,
             aodVisible = decision.aodVisible,
             showShortCriticalText = decision.showShortCriticalText,
             appLabel = appLabel,
@@ -388,10 +398,8 @@ class MediaLiveController(
                     context = service,
                     state = request.state,
                     source = request.source,
-                    preferences = preferences,
-                    titleElapsedMs = request.titleElapsedMs,
+                    shortCriticalText = request.snapshot.shortCriticalText,
                     aodVisible = request.aodVisible,
-                    showShortCriticalText = request.showShortCriticalText,
                     appLabelOverride = request.appLabel,
                     priorityMode = request.priorityMode
                 )
@@ -494,7 +502,6 @@ class MediaLiveController(
         val snapshot: MediaNotificationSnapshot,
         val state: MediaState,
         val source: MediaNotificationSource?,
-        val titleElapsedMs: Long,
         val aodVisible: Boolean,
         val showShortCriticalText: Boolean,
         val appLabel: String,
@@ -557,14 +564,21 @@ class MediaLiveController(
             ?: state.packageName
     }
 
+    private fun criticalTextFor(state: MediaState): String = MediaTextFormatter.shortCriticalText(
+        title = state.title,
+        positionMs = state.positionMs,
+        durationMs = state.durationMs,
+        isPlaying = state.isPlaying,
+        mode = preferences.pillMode
+    )
+
     private fun scheduleNext(state: MediaState, decision: MediaVisibilityDecision) {
         mainHandler.removeCallbacks(updateRunnable)
         val delay = MediaUpdateScheduler.nextDelayMs(
             showMirror = decision.showMirror,
             isPlaying = state.isPlaying,
-            title = state.title,
-            pillMode = preferences.pillMode,
-            scrollTitle = preferences.scrollTitle,
+            criticalText = criticalTextFor(state),
+            timePillVisible = preferences.pillMode != MediaPillMode.TITLE && state.durationMs > 0L,
             aodVisible = decision.aodVisible,
             showShortCriticalText = decision.showShortCriticalText,
             expandedTimelineVisible = state.durationMs > 0L
@@ -572,7 +586,7 @@ class MediaLiveController(
         AppDiagnostics.verbose(
             service,
             "media",
-            "Media next update delay=${delay?.toString() ?: "none"}; title=${state.title}; playing=${state.isPlaying}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; pill=${preferences.pillMode}; scroll=${preferences.scrollTitle}; expandedTimeline=${state.durationMs > 0L}"
+            "Media next update delay=${delay?.toString() ?: "none"}; title=${state.title}; playing=${state.isPlaying}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; pill=${preferences.pillMode}; expandedTimeline=${state.durationMs > 0L}"
         )
         if (delay != null) {
             mainHandler.postDelayed(updateRunnable, delay)

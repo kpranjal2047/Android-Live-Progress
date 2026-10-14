@@ -14,9 +14,7 @@ class MediaTextFormatterTest {
                 positionMs = 65_000,
                 durationMs = 180_000,
                 isPlaying = true,
-                mode = MediaPillMode.ELAPSED,
-                scrollTitle = false,
-                titleElapsedMs = 0
+                mode = MediaPillMode.ELAPSED
             )
         )
         assertEquals(
@@ -26,9 +24,7 @@ class MediaTextFormatterTest {
                 positionMs = 65_000,
                 durationMs = 180_000,
                 isPlaying = true,
-                mode = MediaPillMode.REMAINING,
-                scrollTitle = false,
-                titleElapsedMs = 0
+                mode = MediaPillMode.REMAINING
             )
         )
     }
@@ -36,21 +32,19 @@ class MediaTextFormatterTest {
     @Test
     fun fallsBackToTitleWhenTimeIsUnavailable() {
         assertEquals(
-            "Long...",
+            "Long Track",
             MediaTextFormatter.shortCriticalText(
                 title = "Long Track",
                 positionMs = 0,
                 durationMs = 0,
                 isPlaying = true,
-                mode = MediaPillMode.ELAPSED,
-                scrollTitle = false,
-                titleElapsedMs = 0
+                mode = MediaPillMode.ELAPSED
             )
         )
     }
 
     @Test
-    fun addsEllipsisOnlyForOverflowingTitlePill() {
+    fun preservesFullTitleForSharedScroller() {
         assertEquals(
             "Track",
             MediaTextFormatter.shortCriticalText(
@@ -58,21 +52,17 @@ class MediaTextFormatterTest {
                 positionMs = 0,
                 durationMs = 0,
                 isPlaying = false,
-                mode = MediaPillMode.TITLE,
-                scrollTitle = false,
-                titleElapsedMs = 0
+                mode = MediaPillMode.TITLE
             )
         )
         assertEquals(
-            "Very...",
+            "Very Long Track",
             MediaTextFormatter.shortCriticalText(
                 title = "Very Long Track",
                 positionMs = 0,
                 durationMs = 0,
                 isPlaying = false,
-                mode = MediaPillMode.TITLE,
-                scrollTitle = false,
-                titleElapsedMs = 0
+                mode = MediaPillMode.TITLE
             )
         )
     }
@@ -98,37 +88,27 @@ class MediaTextFormatterTest {
     }
 
     @Test
-    fun scrollsTitleWindow() {
+    fun longTimeModesKeepFullTextForSharedScroller() {
         assertEquals(
-            "Very Lo",
+            "10:00:00",
             MediaTextFormatter.shortCriticalText(
-                title = "Very Long Track",
-                positionMs = 0,
-                durationMs = 0,
-                isPlaying = false,
-                mode = MediaPillMode.TITLE,
-                scrollTitle = true,
-                titleElapsedMs = 0
+                title = "Track",
+                positionMs = 36_000_000,
+                durationMs = 72_000_000,
+                isPlaying = true,
+                mode = MediaPillMode.ELAPSED
             )
         )
         assertEquals(
-            "ery Lon",
+            "-10:00:00",
             MediaTextFormatter.shortCriticalText(
-                title = "Very Long Track",
-                positionMs = 0,
-                durationMs = 0,
-                isPlaying = false,
-                mode = MediaPillMode.TITLE,
-                scrollTitle = true,
-                titleElapsedMs = 1_500
+                title = "Track",
+                positionMs = 36_000_000,
+                durationMs = 72_000_000,
+                isPlaying = true,
+                mode = MediaPillMode.REMAINING
             )
         )
-    }
-
-    @Test
-    fun scrollsGenericCriticalTextWindow() {
-        assertEquals("Reachin", MediaTextFormatter.scrollingPillText("Reaching 9:43 PM", 0))
-        assertEquals("aching ", MediaTextFormatter.scrollingPillText("Reaching 9:43 PM", 2_000))
     }
 
     @Test

@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">إظهار الإشعارات المباشرة على AOD</string>
     <string name="setting_show_media_lock_screen">إظهار الإشعارات المباشرة على شاشة القفل</string>
     <string name="setting_status_bar_text">نص شريط الحالة</string>
-    <string name="setting_scroll_title_status_bar">تمرير العنوان في شريط الحالة</string>
     <string name="media_pill_title">العنوان</string>
     <string name="media_pill_elapsed">المنقضي</string>
     <string name="media_pill_remaining">المتبقي</string>

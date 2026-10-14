@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD-இல் நேரடி அறிவிப்புகளை காட்டு</string>
     <string name="setting_show_media_lock_screen">லாக் ஸ்கிரீனில் நேரடி அறிவிப்புகளை காட்டு</string>
     <string name="setting_status_bar_text">நிலைப்பட்டி உரை</string>
-    <string name="setting_scroll_title_status_bar">நிலைப்பட்டியில் தலைப்பை உருட்டு</string>
     <string name="media_pill_title">தலைப்பு</string>
     <string name="media_pill_elapsed">கடந்தது</string>
     <string name="media_pill_remaining">மீதமுள்ளது</string>

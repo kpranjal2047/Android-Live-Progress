@@ -106,7 +106,6 @@
     <string name="setting_show_media_aod">Show live notifications on AOD</string>
     <string name="setting_show_media_lock_screen">Show live notifications on lock screen</string>
     <string name="setting_status_bar_text">Status bar text</string>
-    <string name="setting_scroll_title_status_bar">Scroll title in status bar</string>
     <string name="media_pill_title">Title</string>
     <string name="media_pill_elapsed">Elapsed</string>
     <string name="media_pill_remaining">Remaining</string>

@@ -3,7 +3,6 @@ package com.pranjal.liveprogress
 import java.util.Locale
 
 object MediaTextFormatter {
-    private const val PILL_LENGTH = 7
     private const val UNKNOWN_ARTIST = "Unknown Artist"
     private const val UNKNOWN_ALBUM = "Unknown Album"
     private const val MAX_DETAIL_LENGTH = 70
@@ -51,9 +50,7 @@ object MediaTextFormatter {
         positionMs: Long,
         durationMs: Long,
         isPlaying: Boolean,
-        mode: MediaPillMode,
-        scrollTitle: Boolean,
-        titleElapsedMs: Long
+        mode: MediaPillMode
     ): String {
         val canShowTime = isPlaying && durationMs > 0L
         if (mode == MediaPillMode.ELAPSED && canShowTime) return formatTime(positionMs)
@@ -61,18 +58,7 @@ object MediaTextFormatter {
             return "-${formatTime((durationMs - positionMs).coerceAtLeast(0L))}"
         }
 
-        val trimmed = title.trim().ifBlank { "Media" }
-        if (!scrollTitle || trimmed.length <= PILL_LENGTH) {
-            return trimmed.truncateWithEllipsis(PILL_LENGTH)
-        }
-        return scrollingPillText(trimmed, titleElapsedMs)
-    }
-
-    /** Returns a moving seven-character window suitable for Android's promoted status-bar chip. */
-    fun scrollingPillText(text: String, elapsedMs: Long): String {
-        val trimmed = text.trim()
-        if (trimmed.length <= PILL_LENGTH) return trimmed
-        return scrollingWindow(trimmed, elapsedMs)
+        return title.trim().ifBlank { "Media" }
     }
 
     private fun timelineText(
@@ -94,20 +80,6 @@ object MediaTextFormatter {
         } else {
             String.format(Locale.US, "%d:%02d", minutes, seconds)
         }
-    }
-
-    private fun scrollingWindow(title: String, titleElapsedMs: Long): String {
-        val scrollRange = title.length - PILL_LENGTH
-        val waitAtStartSteps = 2
-        val waitAtEndSteps = 2
-        val cycleSteps = waitAtStartSteps + scrollRange + waitAtEndSteps
-        val step = ((titleElapsedMs / 500L) % cycleSteps).toInt()
-        val offset = when {
-            step < waitAtStartSteps -> 0
-            step < waitAtStartSteps + scrollRange -> step - waitAtStartSteps
-            else -> scrollRange
-        }
-        return title.substring(offset, offset + PILL_LENGTH)
     }
 
     private fun String.isUseful(unknownValue: String): Boolean {

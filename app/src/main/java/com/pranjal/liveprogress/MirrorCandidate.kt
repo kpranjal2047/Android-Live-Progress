@@ -48,7 +48,6 @@ data class MirrorCandidate(
     val actions: List<Notification.Action>,
     val progress: ProgressInfo,
     val shortCriticalText: String? = null,
-    val scrollingShortCriticalText: String? = null,
     val showProgressText: Boolean = true,
     val countdownDeadlineElapsedRealtime: Long? = null,
     val visualPayloadKey: String? = null,

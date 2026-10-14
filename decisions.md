@@ -288,11 +288,11 @@ This document records the current product and engineering decisions in Live Prog
 
 ### Short scrolling window
 
-**Decision:** Use a compact seven-character window and 500 ms scheduler for optional scrolling critical text.
+**Decision:** Automatically scroll every critical-text value longer than seven user-visible characters in a seven-character window at 500 ms intervals. Remove the Media scrolling preference and toggle. Apply this rule to Progress, Media, and Additional mirrors, with pauses at the start and end and Unicode-safe boundaries.
 
 **Why:** Android status-pill width is constrained. Short deterministic windows make long titles/ETAs readable without assuming a particular device width.
 
-**Consequence:** Scrolling is limited to settings that need it and stops while hidden to preserve battery.
+**Consequence:** Short and exactly-seven-character text stays static. Long titles, time values, localized statuses, and train ETAs share one formatter. Scrolling stops while hidden; paused media can still scroll its title. Complete text remains separate from displayed windows, and the same computed frame is used by the builder and deduplication snapshot. Changing source/title/status or mode restarts the animation, while changing countdown/time digits preserves its phase. Previously saved toggle values are ignored without migration.
 
 ## 7. Additional-category discovery decisions
 
@@ -434,7 +434,7 @@ This document records the current product and engineering decisions in Live Prog
 
 **Why:** Background ticking while hidden cannot change user-visible output and drains battery.
 
-**Consequence:** Title mode without scrolling has no needless one-second tick; hidden mirrors have no periodic update loop.
+**Consequence:** Short title text alone does not require recurring updates; visible clocks still receive time updates, and long critical text receives scrolling updates. Hidden mirrors have no periodic update loop.
 
 ### Off-callback custom rendering/OCR
 

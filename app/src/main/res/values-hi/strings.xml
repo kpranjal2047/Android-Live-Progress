@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD पर लाइव नोटिफिकेशन दिखाएं</string>
     <string name="setting_show_media_lock_screen">लॉक स्क्रीन पर लाइव नोटिफिकेशन दिखाएं</string>
     <string name="setting_status_bar_text">स्टेटस बार टेक्स्ट</string>
-    <string name="setting_scroll_title_status_bar">स्टेटस बार में शीर्षक स्क्रॉल करें</string>
     <string name="media_pill_title">शीर्षक</string>
     <string name="media_pill_elapsed">बीता समय</string>
     <string name="media_pill_remaining">बाकी</string>

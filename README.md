@@ -20,6 +20,7 @@ Live Progress turns supported notifications into easy-to-glance live updates. It
 - Follow supported Uber trips, Domino's deliveries, and Where Is My Train updates.
 - Keep selected notifications visible as live updates, even when an app does not provide a progress bar.
 - Choose where updates appear: status bar, lock screen, and always-on display.
+- Status-bar text longer than seven characters scrolls automatically for all live notifications.
 
 ## Highlights
 
@@ -90,7 +91,6 @@ Some optional features request access only when you enable them. For example, hi
 
 - Enable media live notifications
 - Choose status-bar text
-- Scroll long song titles
 - Show updates on the lock screen and always-on display
 
 ### Additional Live Notifications

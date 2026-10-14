@@ -958,15 +958,6 @@ class MainActivity : Activity() {
             mediaPreferences.pillMode = it
             mediaChanged()
         })
-        val titlePillSelected = mediaPreferences.pillMode == MediaPillMode.TITLE
-        settingsContainer.addView(settingToggle(
-            label = getString(R.string.setting_scroll_title_status_bar),
-            checked = mediaPreferences.scrollTitle && titlePillSelected,
-            enabled = mediaPreferences.enabled && titlePillSelected
-        ) {
-            mediaPreferences.scrollTitle = it
-            mediaChanged()
-        })
 
         settingsContainer.addView(sectionTitle(getString(R.string.section_additional_live_notifications)))
         settingsContainer.addView(settingToggle(

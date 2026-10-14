@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">แสดงการแจ้งเตือนแบบสดบน AOD</string>
     <string name="setting_show_media_lock_screen">แสดงการแจ้งเตือนแบบสดบนหน้าจอล็อก</string>
     <string name="setting_status_bar_text">ข้อความแถบสถานะ</string>
-    <string name="setting_scroll_title_status_bar">เลื่อนชื่อเรื่องในแถบสถานะ</string>
     <string name="media_pill_title">ชื่อเรื่อง</string>
     <string name="media_pill_elapsed">ผ่านไป</string>
     <string name="media_pill_remaining">เหลือ</string>

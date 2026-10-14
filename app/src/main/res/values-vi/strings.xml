@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Hiển thị thông báo trực tiếp trên AOD</string>
     <string name="setting_show_media_lock_screen">Hiển thị thông báo trực tiếp trên màn hình khóa</string>
     <string name="setting_status_bar_text">Văn bản thanh trạng thái</string>
-    <string name="setting_scroll_title_status_bar">Cuộn tiêu đề trên thanh trạng thái</string>
     <string name="media_pill_title">Tiêu đề</string>
     <string name="media_pill_elapsed">Đã qua</string>
     <string name="media_pill_remaining">Còn lại</string>

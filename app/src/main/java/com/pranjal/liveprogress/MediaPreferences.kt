@@ -15,10 +15,6 @@ class MediaPreferences(context: Context) {
         get() = prefs.getBoolean(KEY_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
-    var scrollTitle: Boolean
-        get() = prefs.getBoolean(KEY_SCROLL_TITLE, true)
-        set(value) = prefs.edit().putBoolean(KEY_SCROLL_TITLE, value).apply()
-
     var showOnAod: Boolean
         get() = prefs.getBoolean(KEY_SHOW_ON_AOD, true)
         set(value) = prefs.edit().putBoolean(KEY_SHOW_ON_AOD, value).apply()
@@ -42,7 +38,6 @@ class MediaPreferences(context: Context) {
     companion object {
         private const val PREFS = "live_progress_media_preferences"
         private const val KEY_ENABLED = "enabled"
-        private const val KEY_SCROLL_TITLE = "scroll_title"
         private const val KEY_SHOW_ON_AOD = "show_on_aod"
         private const val KEY_SHOW_ON_LOCK_SCREEN = "show_on_lock_screen"
         private const val KEY_PILL_MODE = "pill_mode"

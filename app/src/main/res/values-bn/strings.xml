@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD-তে লাইভ নোটিফিকেশন দেখান</string>
     <string name="setting_show_media_lock_screen">লক স্ক্রিনে লাইভ নোটিফিকেশন দেখান</string>
     <string name="setting_status_bar_text">স্ট্যাটাস বার টেক্সট</string>
-    <string name="setting_scroll_title_status_bar">স্ট্যাটাস বারে শিরোনাম স্ক্রল করুন</string>
     <string name="media_pill_title">শিরোনাম</string>
     <string name="media_pill_elapsed">অতিবাহিত</string>
     <string name="media_pill_remaining">বাকি</string>

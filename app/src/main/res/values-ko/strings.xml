@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">AOD에 실시간 알림 표시</string>
     <string name="setting_show_media_lock_screen">잠금 화면에 실시간 알림 표시</string>
     <string name="setting_status_bar_text">상태 표시줄 텍스트</string>
-    <string name="setting_scroll_title_status_bar">상태 표시줄에서 제목 스크롤</string>
     <string name="media_pill_title">제목</string>
     <string name="media_pill_elapsed">경과</string>
     <string name="media_pill_remaining">남음</string>

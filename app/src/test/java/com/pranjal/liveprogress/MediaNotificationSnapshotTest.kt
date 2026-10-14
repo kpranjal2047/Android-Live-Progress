@@ -7,6 +7,19 @@ import org.junit.Test
 
 class MediaNotificationSnapshotTest {
     @Test
+    fun scrollingFramesKeepBodyAndAodTextStable() {
+        val scroller = PillTextScroller()
+        val title = "Long paused title"
+        val original = snapshot().copy(isPlaying = false)
+        val first = original.copy(shortCriticalText = scroller.render(title, title, 0))
+        val held = original.copy(shortCriticalText = scroller.render(title, title, 500))
+        val moved = original.copy(shortCriticalText = scroller.render(title, title, 1_500))
+        assertEquals(first, held)
+        assertNotEquals(first, moved)
+        assertEquals(first, moved.copy(shortCriticalText = first.shortCriticalText))
+    }
+
+    @Test
     fun identicalVisiblePayloadsCompareEqual() {
         val snapshot = snapshot()
 

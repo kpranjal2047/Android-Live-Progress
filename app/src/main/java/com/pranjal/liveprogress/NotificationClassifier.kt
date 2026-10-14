@@ -268,7 +268,7 @@ object NotificationClassifier {
             ) ?: (notification.`when` > 0L),
             actions = actions,
             progress = data.progress,
-            scrollingShortCriticalText = reachingText,
+            shortCriticalText = reachingText,
             showProgressText = false,
             displaySettings = progressDisplaySettings
         )

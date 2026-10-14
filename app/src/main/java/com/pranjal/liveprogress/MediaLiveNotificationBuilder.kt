@@ -41,10 +41,8 @@ object MediaLiveNotificationBuilder {
         context: Context,
         state: MediaState,
         source: MediaNotificationSource?,
-        preferences: MediaPreferences,
-        titleElapsedMs: Long,
+        shortCriticalText: String?,
         aodVisible: Boolean,
-        showShortCriticalText: Boolean,
         appLabelOverride: String? = null,
         priorityMode: MirrorPriorityMode = MirrorPriorityMode.DEFAULT
     ): Notification {
@@ -62,19 +60,6 @@ object MediaLiveNotificationBuilder {
         val appLabel = appLabelOverride
             ?: source?.original?.appLabel
             ?: AppLabelResolver.label(context, state.packageName)
-        val shortCriticalText = if (showShortCriticalText) {
-            MediaTextFormatter.shortCriticalText(
-                title = state.title,
-                positionMs = state.positionMs,
-                durationMs = state.durationMs,
-                isPlaying = state.isPlaying,
-                mode = preferences.pillMode,
-                scrollTitle = preferences.scrollTitle,
-                titleElapsedMs = titleElapsedMs
-            )
-        } else {
-            null
-        }
         val contentText = MediaTextFormatter.detailText(
             artist = state.artist,
             album = state.album,

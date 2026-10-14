@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">اعلان‌های زنده را روی AOD نشان بده</string>
     <string name="setting_show_media_lock_screen">اعلان‌های زنده را روی صفحه قفل نشان بده</string>
     <string name="setting_status_bar_text">متن نوار وضعیت</string>
-    <string name="setting_scroll_title_status_bar">عنوان را در نوار وضعیت حرکت بده</string>
     <string name="media_pill_title">عنوان</string>
     <string name="media_pill_elapsed">سپری‌شده</string>
     <string name="media_pill_remaining">باقی‌مانده</string>

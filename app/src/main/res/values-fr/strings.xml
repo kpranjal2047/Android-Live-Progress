@@ -95,7 +95,6 @@
     <string name="setting_show_media_aod">Afficher les notifications en direct sur AOD</string>
     <string name="setting_show_media_lock_screen">Afficher les notifications en direct sur l’écran de verrouillage</string>
     <string name="setting_status_bar_text">Texte de la barre d’état</string>
-    <string name="setting_scroll_title_status_bar">Faire défiler le titre dans la barre d’état</string>
     <string name="media_pill_title">Titre</string>
     <string name="media_pill_elapsed">Écoulé</string>
     <string name="media_pill_remaining">Restant</string>
