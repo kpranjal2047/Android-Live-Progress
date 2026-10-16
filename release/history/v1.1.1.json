@@ -1,0 +1,12 @@
+{
+  "versionName": "1.1.1",
+  "versionCode": 3,
+  "sourceCommit": "1e4e79aa8288fb147a5e7767c4133fa4b60ac7bc",
+  "changes": [
+    {
+      "type": "patch",
+      "summary": "Improve reliable delivery of signed app downloads after an interrupted release.",
+      "file": ".changes/release-draft-recovery.json"
+    }
+  ]
+}

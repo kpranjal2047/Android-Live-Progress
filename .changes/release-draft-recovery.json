@@ -1,4 +1,0 @@
-{
-  "type": "patch",
-  "summary": "Improve reliable delivery of signed app downloads after an interrupted release."
-}
