@@ -42,11 +42,13 @@ Enable GitHub Actions and allow the release workflow's `contents: write` permiss
 
 For an authenticated GitHub CLI session with repository administration access, `python3 scripts/configure_github_signing.py` uploads the four existing local values directly through stdin to encrypted repository secrets. It does not create a key, print passwords, or change the repository's permissions.
 
-`Checks` builds debug, runs unit tests/lint, and validates new change records. `Signed APK Release` serializes main pushes, checks out the latest main, and includes all unpublished app changes; rapid pushes may be combined. It runs release-script tests, restores signing secrets, calculates versions, then builds/tests/lints and verifies the signed release APK. Failures never advance the remote version.
+`Checks` builds debug, runs unit tests/lint, and validates new change records. `Signed APK Release` serializes main pushes, checks out the latest main, and includes all unpublished app changes; rapid pushes may be combined. It runs release-script tests, restores signing secrets, calculates versions, then builds/tests/lints and verifies the signed release APK. Build or validation failures never advance the remote version; publishing failures after the atomic push resume the already allocated version.
 
 After validation it commits only the version file, release history, and consumed records. That commit and its annotated version tag are pushed atomically without force; if main advanced during the build, the push is refused. Rerun against current main. All publishing happens in the same job because a tag pushed using `GITHUB_TOKEN` does not normally trigger another workflow.
 
 The job creates a draft Release, uploads `Live-Progress-vX.Y.Z.apk` and its `.sha256` checksum, then publishes it as Latest. Notes group features, fixes, and breaking changes. GitHub's source archives correspond to the tagged release commit, including its version metadata.
+
+Release lookup uses the GitHub CLI's draft-aware lookup rather than the REST published-release-by-tag endpoint, so a newly created or interrupted draft is found and resumed instead of duplicated. Authentication and network failures stop the job rather than being mistaken for a missing release.
 
 If upload/publishing fails after the tag push, rerun `Signed APK Release` from Actions > Run workflow on main. It recovers tagged unfinished releases before calculating anything new, reuses uploaded APK assets, verifies checksums, and does not change already published releases. Never move/delete a published tag or replace its APK. A published release with missing assets fails for manual investigation rather than silently rewriting it. Release history is retained in `release/history/`.
 

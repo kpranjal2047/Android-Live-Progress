@@ -156,13 +156,16 @@ def build(manifest):
 
 
 def github_release(tag):
-    result = subprocess.run(["gh", "api", f"repos/{REPOSITORY}/releases/tags/{tag}"],
+    # The REST tag endpoint excludes drafts; the CLI also searches draft releases.
+    result = subprocess.run(["gh", "release", "view", tag, "--repo", REPOSITORY,
+                             "--json", "isDraft,assets"],
                             text=True, capture_output=True, cwd=ROOT)
     if result.returncode:
-        if "HTTP 404" in result.stderr:
+        if result.stderr.strip() == "release not found":
             return None
         raise RuntimeError("Unable to read GitHub release metadata: " + result.stderr)
-    return json.loads(result.stdout)
+    item = json.loads(result.stdout)
+    return {"draft": item["isDraft"], "assets": item["assets"]}
 
 
 def asset_names(manifest):
@@ -193,6 +196,8 @@ def publish(manifest, apk):
             run("gh", "release", "create", tag, "--repo", REPOSITORY, "--verify-tag", "--draft",
                 "--title", "Live Progress " + manifest["versionName"], "--notes-file", str(notes_file))
             release = github_release(tag)
+            if release is None:
+                raise RuntimeError("Created draft is not yet readable; retry to resume this release")
         apk_name, checksum_name = asset_names(manifest)
         existing = {asset["name"] for asset in release["assets"]}
         output = directory / apk_name

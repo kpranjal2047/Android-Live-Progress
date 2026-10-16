@@ -670,6 +670,8 @@ This document records the current product and engineering decisions in Live Prog
 
 **Why:** Failed builds must not consume published versions; failed uploads must not create duplicate releases or rewrite an existing binary. Keeping publishing in one workflow also avoids relying on token-created tags to trigger other workflows.
 
+**Decision:** Look up releases using the GitHub CLI's draft-aware command and fail on authentication/network errors. The published-release REST tag endpoint does not find drafts, so using it would strand the first upload and break retry recovery.
+
 **Decision:** Generate one non-overwritten permanent key and use it for owner debug/release builds and trusted GitHub releases. Private material is ignored locally, uploaded only as encrypted Actions secrets, excluded from pull requests/artifacts, and removed from runners afterward.
 
 **Why:** Stable signatures permit future upgrades while preventing unrelated public builders from replacing the owner's APK. A release must fail rather than silently switch to a debug key. Existing differently signed device installs require explicit one-time replacement, never automatic data deletion.

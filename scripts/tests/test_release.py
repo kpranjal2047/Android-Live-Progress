@@ -12,6 +12,34 @@ SPEC.loader.exec_module(release)
 
 
 class VersionTests(unittest.TestCase):
+    def test_release_lookup_includes_drafts(self):
+        result = subprocess.CompletedProcess([], 0, '{"isDraft":true,"assets":[]}', "")
+        with patch.object(release.subprocess, "run", return_value=result) as command:
+            self.assertEqual({"draft": True, "assets": []}, release.github_release("v1.1.0"))
+            self.assertEqual(["gh", "release", "view", "v1.1.0"], command.call_args.args[0][:4])
+
+    def test_release_lookup_only_treats_missing_release_as_absent(self):
+        for message in ("release not found\n", "authentication failed", "network unavailable"):
+            result = subprocess.CompletedProcess([], 1, "", message)
+            with patch.object(release.subprocess, "run", return_value=result):
+                if message.strip() == "release not found":
+                    self.assertIsNone(release.github_release("v1.1.0"))
+                else:
+                    with self.assertRaises(RuntimeError):
+                        release.github_release("v1.1.0")
+
+    def test_publish_resumes_existing_draft_without_creating_another(self):
+        manifest = {"versionName": "1.1.0", "changes": []}
+        with tempfile.TemporaryDirectory() as temp:
+            apk = Path(temp) / "test.apk"
+            apk.write_bytes(b"test apk")
+            with patch.object(release, "github_release", return_value={"draft": True, "assets": []}), \
+                    patch.object(release, "run") as command:
+                release.publish(manifest, apk)
+                calls = [call.args[:3] for call in command.call_args_list]
+                self.assertEqual([("gh", "release", "upload"), ("gh", "release", "upload"),
+                                  ("gh", "release", "edit")], calls)
+
     def test_bumps_and_highest_impact(self):
         for kind, expected in (("patch", "1.2.4"), ("minor", "1.3.0"), ("major", "2.0.0")):
             self.assertEqual((expected, 8), release.next_version("1.2.3", 7, [{"type": kind}]))

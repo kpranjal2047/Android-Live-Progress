@@ -577,6 +577,7 @@ Manual verification on Android 16 remains important because promoted/live-notifi
 - App/build changes include reviewed `.changes/*.json` records: patch for fixes/maintenance, minor for compatible features, and major for explicit breaking changes. The highest pending impact wins. Documentation/test-only changes do not produce releases.
 - Main-branch automation validates records, runs script tests, builds debug/release, runs unit tests/lint, and verifies the final APK package/version/private certificate before publishing.
 - Validated release metadata and its annotated tag are pushed atomically without overwriting concurrent main changes. Interrupted publications are recovered under the existing version; uploaded APKs and published releases are not silently replaced.
+- Draft-aware release lookup resumes incomplete uploads; authentication and network errors remain explicit failures rather than triggering duplicate drafts.
 - One permanent private key signs both the owner's local debug builds and GitHub release builds. Keys/passwords remain ignored locally and encrypted in GitHub Actions secrets. Other builders retain their own debug signing; releases fail without private signing.
 - GitHub jobs are restricted to the original repository/main; pull-request checks have no signing secrets and read-only permissions. Runner key files are cleaned after every release attempt.
 - Technical setup, recovery, and secure key-backup instructions are in `docs/releases.md`.
