@@ -1,0 +1,17 @@
+{
+  "versionName": "1.1.0",
+  "versionCode": 2,
+  "sourceCommit": "455e747c652efbcd615d10ec66c44a35b14f5e11",
+  "changes": [
+    {
+      "type": "patch",
+      "summary": "Provide consistently signed APK downloads with matching app versions and release notes.",
+      "file": ".changes/signed-releases.json"
+    },
+    {
+      "type": "minor",
+      "summary": "Support current Uber trip notifications with arrival time in the status bar, destination details, and driver and vehicle artwork.",
+      "file": ".changes/uber-trip-eta.json"
+    }
+  ]
+}
