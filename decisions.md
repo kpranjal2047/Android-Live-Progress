@@ -96,6 +96,22 @@ This document records the current product and engineering decisions in Live Prog
 
 **Consequence:** Uber produces a richer Progress mirror when extraction succeeds. The source small icon and live-notification frame remain native, while driver/vehicle imagery becomes optional large artwork.
 
+### Current Uber trip layout
+
+**Decision:** Recognize the current `ub__ooa_layout_rider_trip_expanded` layout alongside the existing rich layout. Scope shared text IDs to their header/body containers, use the current driver/vehicle IDs, and read only visible progress elements. Use Uber's expanded edge-distance resource for the visual-bar calculation; accept the dedicated simple progress widget only with a valid determinate range.
+
+**Why:** On-device inspection showed that Uber replaced the outer layout and text/artwork IDs while retaining a padding-based progress bar. Header and body share the same child ID, and hidden decorative progress widgets contain unrelated zero values. A global text lookup or arbitrary progress-widget search would capture incorrect data.
+
+**Consequence:** The existing Progress controls remain unchanged. Missing artwork does not prevent valid text/progress from being mirrored. PIN and vehicle registration are not copied into the mirror. Unknown custom layouts fail closed to the opt-in Additional path rather than using placeholder extras. Diagnostic failure reasons identify layout/read failures without storing trip text.
+
+### Uber ETA instead of percentage text
+
+**Decision:** Keep Uber's determinate progress bar, disable appended percentage text, and use a source-header ETA for short critical text. Accept valid clock times and English hour/minute durations; use an explicit empty override if ETA cannot be read.
+
+**Why:** Arrival time is more useful than trip percentage for this notification. An empty override prevents the generic builder from falling back to percentage. Restricting extraction to the trip header avoids interpreting destination numbers as an ETA.
+
+**Consequence:** The current `Drop-off at 4:12 PM` header produces a `4:12 PM` pill. Source updates replace that value; no ETA is inferred from bar progress and no independent countdown is introduced. Longer ETA strings scroll using the existing shared formatter. Other progress-notification types keep their existing percentage behavior.
+
 ### Uber does not fall back to raw extras for a failed custom trip layout
 
 **Decision:** When a notification is recognized as Uber's custom trip layout but cannot be extracted, do not reinterpret raw extras as progress.
@@ -640,7 +656,25 @@ This document records the current product and engineering decisions in Live Prog
 ./gradlew --no-daemon --console=plain --no-watch-fs assembleDebug testDebugUnitTest lintDebug
 ```
 
-## 14. Known tradeoffs accepted by design
+## 14. Release automation decisions
+
+**Decision:** Use reviewed per-change records instead of inferring versions from commit wording or sending code to an AI service. Agent/contributor instructions require classification from the actual request and diff.
+
+**Why:** GitHub cannot read the development chat, and a diff alone does not reliably identify compatibility breaks. Records make the intended impact explicit and testable while permitting ordinary commit messages.
+
+**Decision:** Maintain a single version file consumed by Gradle and the existing home-screen `BuildConfig.VERSION_NAME` display. Increment the integer code once per release and choose the highest pending semantic impact.
+
+**Why:** APK metadata, displayed version, tag, and release must agree. Independent version codes ensure Android upgrade ordering without fragile semantic-number arithmetic.
+
+**Decision:** Publish only after tests, lint, signed assembly, and certificate/version validation. Push release metadata and tag atomically, reject concurrent changes, and recover unfinished drafts before calculating a new version.
+
+**Why:** Failed builds must not consume published versions; failed uploads must not create duplicate releases or rewrite an existing binary. Keeping publishing in one workflow also avoids relying on token-created tags to trigger other workflows.
+
+**Decision:** Generate one non-overwritten permanent key and use it for owner debug/release builds and trusted GitHub releases. Private material is ignored locally, uploaded only as encrypted Actions secrets, excluded from pull requests/artifacts, and removed from runners afterward.
+
+**Why:** Stable signatures permit future upgrades while preventing unrelated public builders from replacing the owner's APK. A release must fail rather than silently switch to a debug key. Existing differently signed device installs require explicit one-time replacement, never automatic data deletion.
+
+## 15. Known tradeoffs accepted by design
 
 1. Original-notification suppression is not guaranteed because it depends on Android/OEM assistant and channel behavior; the app favors non-destructive source continuity over forced cancellation.
 2. Custom app support is layout-sensitive; safe failure and an explicit Additional-category fallback are preferred over permissive but inaccurate parsing.

@@ -912,7 +912,9 @@ class NotificationMirrorService : NotificationListenerService() {
         AppDiagnostics.verbose(
             this,
             "mirror",
-            "Uber extraction completed; ${active.debugIdentity()}; result=${extraction.javaClass.simpleName}; route=$route; candidate=${candidate?.displaySettings?.source ?: "none"}"
+            "Uber extraction completed; ${active.debugIdentity()}; result=${extraction.javaClass.simpleName}; " +
+                "reason=${(extraction as? UberExtractionResult.UnreadableUberRichNotification)?.reason.orEmpty()}; " +
+                "route=$route; candidate=${candidate?.displaySettings?.source ?: "none"}"
         )
         applyClassifiedCandidate(active, candidate)
     }

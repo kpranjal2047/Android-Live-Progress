@@ -168,9 +168,15 @@ When Progress live notifications are enabled, the Uber extractor reads a recogni
 - driver and vehicle artwork; and
 - source context used to keep mirror updates tied to the original source key.
 
-The visual bar fraction maps to clamped determinate progress from 0 to 1000. Driver and vehicle imagery are composed into a square large image for the live mirror. The standard Android template still supplies the mirror structure, source icon, actions, and progress bar.
+Recognized expanded layouts include `ub__rich_notification_custom_big` and the current `ub__ooa_layout_rider_trip_expanded`. In the current layout, header and body each contain a child named `ub__ooa_element_text`; they are read within their respective containers so destination text is not mistaken for the title. Only visible elements with visible ancestors are used. Vehicle plate, PIN, and other accessory text are not added to the mirror.
 
-If the recognized custom layout cannot be rendered or does not produce valid progress, the source does not get a guessed Progress mirror. It can still appear only through an enabled Additional Live Notifications category. A genuine native Android Progress notification from Uber continues to use the normal standard-progress path.
+The visual bar fraction maps to clamped determinate progress from 0 to 1000. Its denominator uses Uber's expanded-bar edge-distance resource and display width. The dedicated simple `ProgressBar` variant is also supported when visible, determinate, and given a valid maximum; hidden decorative animation bars are ignored. These values come from the rendered custom view, never placeholder notification extras. The bar remains visible, but percentage text is not appended to the notification body or used in the pill.
+
+The pill reads ETA from the trip header: a valid 12/24-hour clock time (preserving source digits and AM/PM), or a source-provided English hour/minute duration. For example, `Drop-off at 4:12 PM` produces `4:12 PM`. Missing/unrecognized ETA leaves the pill text empty, never a percentage. ETA is updated from each source update, not estimated from progress or converted into a local countdown. ETA longer than seven visible characters uses the shared automatic scrolling behavior. Destination/body text is not searched for times.
+
+Driver and vehicle imagery are composed into a square large image for the live mirror when both are available. One available image is used on its own, and absent artwork does not invalidate otherwise readable trip text/progress. The standard Android template still supplies the mirror structure, source icon, actions, and progress bar.
+
+If a custom layout is unknown, cannot be rendered, or does not produce valid progress, the source does not get a guessed Progress mirror. It can still appear only through an enabled Additional Live Notifications category. A genuine native Android Progress notification from Uber without custom content views continues to use the normal standard-progress path. Verbose diagnostics include a content-free extraction failure reason.
 
 Uber extraction is coalesced by source key, runs away from the listener callback, verifies the source is still active before posting, and never routes an Uber trip notification into Media handling.
 
@@ -564,7 +570,18 @@ Standard project verification is:
 
 Manual verification on Android 16 remains important because promoted/live-notification presentation, AOD behavior, lock screen layout, notification assistant behavior, and OEM service policy are ultimately controlled by the installed system image.
 
-## 18. Important limits
+## 18. Release downloads and versioning
+
+- GitHub Releases provides the signed APK, SHA-256 checksum, version, and categorized change notes.
+- `version.properties` supplies the APK version and generated `BuildConfig.VERSION_NAME` shown on the home screen's inline About section; Android's integer version code increases independently on each release.
+- App/build changes include reviewed `.changes/*.json` records: patch for fixes/maintenance, minor for compatible features, and major for explicit breaking changes. The highest pending impact wins. Documentation/test-only changes do not produce releases.
+- Main-branch automation validates records, runs script tests, builds debug/release, runs unit tests/lint, and verifies the final APK package/version/private certificate before publishing.
+- Validated release metadata and its annotated tag are pushed atomically without overwriting concurrent main changes. Interrupted publications are recovered under the existing version; uploaded APKs and published releases are not silently replaced.
+- One permanent private key signs both the owner's local debug builds and GitHub release builds. Keys/passwords remain ignored locally and encrypted in GitHub Actions secrets. Other builders retain their own debug signing; releases fail without private signing.
+- GitHub jobs are restricted to the original repository/main; pull-request checks have no signing secrets and read-only permissions. Runner key files are cleaned after every release attempt.
+- Technical setup, recovery, and secure key-backup instructions are in `docs/releases.md`.
+
+## 19. Important limits
 
 - Android and OEM System UI decide whether a requested promoted notification is rendered as a live pill/card.
 - Other apps' custom RemoteViews cannot be cloned wholesale into a promoted live notification; Live Progress uses the native ProgressStyle template for eligibility and stability.

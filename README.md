@@ -30,7 +30,7 @@ Live Progress turns supported notifications into easy-to-glance live updates. It
 - Shows a percentage only when the original notification supplies genuine progress.
 - Keeps the expanded update current as the original notification changes.
 - Supports multiple active progress updates.
-- Can show supported Uber trip progress, including driver and vehicle artwork.
+- Follow supported Uber trips with arrival time in the status bar, destination text, a progress bar without percentage text, and available driver and vehicle artwork.
 - Can show Domino's order progress, delivery time, and reached/delivered status.
 - Can show Where Is My Train progress, route, destination, distance, schedule information, and expected reaching time.
 
@@ -64,6 +64,8 @@ Choose notification categories from your apps that should always appear as live 
 | Source app open | Optionally hide the duplicate status-bar update while using the original app. |
 
 ## Getting Started
+
+Download the latest APK from [GitHub Releases](https://github.com/kpranjal2047/Android-Live-Progress/releases/latest). Each release includes its version and a summary of what changed. The same version appears in the app's About section.
 
 1. Install and open **Live Progress**.
 2. Follow the guided permission setup.

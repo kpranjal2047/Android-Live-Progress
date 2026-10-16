@@ -35,6 +35,10 @@ externalNativeBuild/
 *.pfx
 keystore.properties
 **/keystore.properties
+.signing/
+*.jks.base64
+*.keystore.base64
+__pycache__/
 
 # Logs, heap dumps, and OS metadata
 *.log

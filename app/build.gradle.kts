@@ -5,6 +5,14 @@ plugins {
     id("com.android.application")
 }
 
+val appVersion = Properties().apply {
+    rootProject.file("version.properties").inputStream().use(::load)
+}
+val releaseVersionName = requireNotNull(appVersion.getProperty("versionName"))
+val releaseVersionCode = requireNotNull(appVersion.getProperty("versionCode")).toInt()
+require(releaseVersionName.matches(Regex("(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)")))
+require(releaseVersionCode in 1..2_100_000_000)
+
 val privateSigningPropertiesFile = rootProject.file("keystore.properties")
 val privateSigningProperties = Properties().apply {
     if (privateSigningPropertiesFile.isFile) {
@@ -34,8 +42,8 @@ android {
         applicationId = "com.pranjal.liveprogress"
         minSdk = 36
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
     }
 
     compileOptions {
@@ -68,12 +76,20 @@ android {
         }
 
         release {
-            signingConfig = signingConfigs.getByName("debug")
-            if (privateSigningConfig != null) {
-                signingConfig = privateSigningConfig
-            }
+            signingConfig = privateSigningConfig
         }
     }
+}
+
+val requireReleaseSigning by tasks.registering {
+    doLast {
+        check(privateSigningConfigured) {
+            "Release builds require the permanent private key in keystore.properties. See docs/releases.md."
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(requireReleaseSigning)
 }
 
 kotlin {

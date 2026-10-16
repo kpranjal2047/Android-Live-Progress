@@ -156,6 +156,9 @@ object NotificationClassifier {
             showWhen = extras.getBoolean(Notification.EXTRA_SHOW_WHEN, notification.`when` > 0L),
             actions = actions,
             progress = data.progress,
+            // Empty ETA deliberately suppresses the normal percentage fallback.
+            shortCriticalText = UberNotificationSupport.etaText(data.title),
+            showProgressText = false,
             visualPayloadKey = data.visualPayloadKey,
             displaySettings = progressDisplaySettings
         )
