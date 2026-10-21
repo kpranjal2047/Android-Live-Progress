@@ -200,10 +200,10 @@ object DominosDeliveryTime {
         return nowElapsedRealtime + (deadline - nowWallTimeMillis)
     }
 
-    fun remainingText(deadlineElapsedRealtime: Long, nowElapsedRealtime: Long): String {
+    fun remainingText(deadlineElapsedRealtime: Long, nowElapsedRealtime: Long, strings: NotificationText): String {
         val remainingMillis = (deadlineElapsedRealtime - nowElapsedRealtime).coerceAtLeast(0L)
         val minutes = ceil(remainingMillis.toDouble() / MINUTE_MILLIS.toDouble()).toLong()
-        return "$minutes min"
+        return strings.get(R.string.notification_minutes_short, minutes)
     }
 
     fun nextUpdateDelayMillis(deadlineElapsedRealtime: Long, nowElapsedRealtime: Long): Long? {

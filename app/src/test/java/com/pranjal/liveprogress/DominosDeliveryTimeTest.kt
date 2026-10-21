@@ -94,9 +94,9 @@ class DominosDeliveryTimeTest {
     fun formatsAndSchedulesCountdownAtMinuteBoundary() {
         val deadline = nowElapsedRealtime + 18L * 60_000L
 
-        assertEquals("18 min", DominosDeliveryTime.remainingText(deadline, nowElapsedRealtime))
-        assertEquals("18 min", DominosDeliveryTime.remainingText(deadline, nowElapsedRealtime + 1L))
-        assertEquals("0 min", DominosDeliveryTime.remainingText(nowElapsedRealtime, nowElapsedRealtime))
+        assertEquals("18 min", DominosDeliveryTime.remainingText(deadline, nowElapsedRealtime, TestNotificationText.english))
+        assertEquals("18 min", DominosDeliveryTime.remainingText(deadline, nowElapsedRealtime + 1L, TestNotificationText.english))
+        assertEquals("0 min", DominosDeliveryTime.remainingText(nowElapsedRealtime, nowElapsedRealtime, TestNotificationText.english))
         assertEquals(60_000L, DominosDeliveryTime.nextUpdateDelayMillis(deadline, nowElapsedRealtime))
         assertEquals(59_999L, DominosDeliveryTime.nextUpdateDelayMillis(deadline, nowElapsedRealtime + 1L))
         assertNull(DominosDeliveryTime.nextUpdateDelayMillis(nowElapsedRealtime, nowElapsedRealtime))

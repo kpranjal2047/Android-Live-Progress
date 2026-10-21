@@ -137,4 +137,16 @@
     <string name="dominos_delivery_reached">வந்துவிட்டது</string>
     <string name="dominos_delivery_delivered">டெலிவரி செய்யப்பட்டது</string>
     <string name="where_is_my_train_reaching">%1$sக்கு சேரும்</string>
+    <!-- App-generated notification text. Keep compact units short; source app text is preserved. -->
+    <string name="notification_minutes_short">%1$d நிமி.</string>
+    <string name="notification_hours_short">%1$dமணி</string>
+    <string name="notification_hours_minutes_short">%1$dமணி %2$dநி.</string>
+    <string name="notification_under_minute">&lt;1 நிமி.</string>
+    <string name="train_arrived">வந்தடைந்தது</string>
+    <string name="notification_distance_km">%1$s கி.மீ.</string>
+    <string name="train_distance_remaining">மீதம் %1$s</string>
+    <string name="train_behind_minutes">%1$d நிமி. தாமதம்</string>
+    <string name="train_early_minutes">%1$d நிமி. முன்னதாக</string>
+    <string name="train_ahead_minutes">%1$d நிமி. முன்னே</string>
+    <string name="media_unknown_title">தெரியாத தலைப்பு</string>
 </resources>

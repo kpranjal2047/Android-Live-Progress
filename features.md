@@ -215,15 +215,21 @@ The WIMT extractor reads the current custom notification representation and uses
 - ETA; and
 - visual route-progress fraction.
 
+The recognized route card is parsed by OCR element coordinates, scaled to the bitmap size, rather than OCR block order or a guessed destination from the train name. The header supplies a numeric train number, arbitrary train-name text (including truncation), and a separate last-update time. The first row supplies source and destination station labels; the third supplies current status; the fourth supplies destination, distance, and arrival ETA; the fifth supplies schedule status. The text-free second row remains the visual progress bar. Source station and update time are retained as separate extracted fields.
+
+The first-row destination is preferred, with the fourth-row label used when the first is missing or truncated and the fourth is complete. Train names are never treated as station names. Header update time is never used as ETA. Both clocks require a valid 1–12 hour, 00–59 minute, and AM/PM; whitespace and AM/PM case are normalized. Distance accepts spaced/unspaced km and decimal values, normalized with a space before km. Missing fields remain missing rather than borrowing unrelated text. Direct collapsed-view status/schedule text takes priority over the corresponding OCR regions.
+
 The expanded live notification uses a three-line hierarchy designed for Android's `ProgressStyle` template:
 
-1. Header/subtext: train number and route/name.
-2. Main title: current status plus delay/ahead-of-schedule state.
-3. Content: destination, remaining distance, and `Reaching <time>`.
+1. Header/subtext: `Reaching <ETA>`, omitted when ETA is unavailable.
+2. Main title: train number and name (readable status remains the fallback if the train header is unavailable).
+3. Content: current status, remaining distance formatted as `<distance> remaining`, and available ahead/behind information, separated by middle dots. Blank fields and `On time` are omitted; delays read `Behind by <n> min`. Destination is still extracted but is not included in this content line.
 
-The status-bar critical text uses the compact reaching time. Like all Progress, Media, and Additional critical text, it automatically scrolls through a seven-character window when longer than seven characters. ETA does not become a progress percentage. A train that is ahead of schedule is represented as schedule status alongside the current train state.
+The status-bar pill shows time until arrival: `18 min`, `1h 12m`, or `<1 min`. Exact hours use `1h`. English values fit the seven-character pill without scrolling; longer translations use the shared Unicode-safe scroller. A fresh source status explicitly naming the destination as arrived/reached shows `Arrived`; reaching zero never implies arrival. The header retains the exact reaching time and ahead/behind information stays in the content line.
 
-Optical character recognition is used only as a text fallback for route imagery. It does not infer progress or manufacture missing ETA data. Failed layout/OCR extraction falls back only to an enabled Additional Live Notifications category.
+Countdowns use a fixed monotonic deadline derived from the ETA and source last-update clock, dated against the source notification post time in the device time zone. Overnight arrivals are resolved relative to that snapshot only when the ETA clock is more than 12 hours behind the update clock, never rolled forward when a mirror is reread. Later same-day arrivals can be more than 12 hours away. Missing/invalid update clocks, past or ambiguous date-less ETAs, and source updates at least 30 minutes old leave the pill empty. Freshness expires 30 minutes after the source update even when the ETA is farther away. Both countdown and confirmed-arrival pills expire. The shared delivery/train scheduler updates only visible mirrors at text boundaries or expiry; it does not rerun OCR or poll the source for countdown ticks.
+
+Optical character recognition is used only as a text fallback for route imagery. It does not infer progress or manufacture missing ETA data. Missing OCR fields can still produce a partial mirror from readable status text; missing visual progress uses an indeterminate bar. A rejected custom notification can fall back to an enabled Additional Live Notifications category. A missing ETA leaves the pill text empty unless a fresh destination-arrival status is confirmed.
 
 ## 6. Media live notifications
 
@@ -492,6 +498,8 @@ The app supports Automatic plus these app-specific languages:
 - Tamil
 
 Language names in the selector use native-language names. Automatic clears the app-specific locale and follows the system locale. App-specific selection uses Android's native `LocaleManager.applicationLocales` API and recreates the UI immediately.
+
+All app-generated notification wording uses translated string resources in every supported language: countdown units, under-one-minute text, arrival, remaining distance, schedule variance, and missing media titles. Number placeholders use the selected resource locale. Source titles, station names, and unknown source status text stay as supplied; localization does not expand the language coverage of source parsers or OCR. Language changes invalidate notification snapshots and refresh active and retained notification wording. Countdown ticks resolve the current language without resetting the deadline. Resource tests check every supported locale for matching keys and format placeholders.
 
 ### 14.2 RTL and dynamic appearance
 

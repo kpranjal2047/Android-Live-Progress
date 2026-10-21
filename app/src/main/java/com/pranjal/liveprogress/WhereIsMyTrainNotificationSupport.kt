@@ -26,7 +26,11 @@ data class WhereIsMyTrainNotificationData(
     val distance: CharSequence?,
     val eta: CharSequence?,
     val scheduleStatus: CharSequence?,
-    val progress: ProgressInfo
+    val progress: ProgressInfo,
+    val trainNumber: String? = null,
+    val trainName: String? = null,
+    val lastUpdatedTime: String? = null,
+    val sourceStation: String? = null
 )
 
 enum class WhereIsMyTrainMirrorRoute {
@@ -58,19 +62,10 @@ object WhereIsMyTrainNotificationSupport {
     private const val COLLAPSED_LAYOUT = "spot_notification_collapse"
     private const val EXPANDED_LAYOUT = "notification_expanded"
     private const val TITLE = "collapse_notification_title"
-    private const val ETA = "collapse_notification_eta"
     private const val SCHEDULE_STATUS = "collapse_notification_delayed_by"
     private const val TRAIN_PROGRESS_IMAGE = "trainProgressImage"
     private const val PROGRESS_MAX = 1_000
     private const val MIN_ROUTE_WIDTH_RATIO = 0.45
-    private val fullTrainRoute = Regex("""\b\d{3,6}\s*[-–]\s*[^\n]+?\s*[-–]\s*[^\n]+""")
-    private val trainLabel = Regex("""\b\d{3,6}\s*[-–]\s*[^\n]+""")
-    private val destinationDetail = Regex(
-        """(?i)\b([A-Za-z][A-Za-z .'-]{1,})\s+(\d+(?:\.\d+)?\s*km)\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)\b"""
-    )
-    private val distancePattern = Regex("""(?i)\b(\d+(?:\.\d+)?\s*km)\b""")
-    private val timeOfDay = Regex("""(?i)\b\d{1,2}:\d{2}\s*(?:am|pm)\b""")
-    private val trailingTimeOfDay = Regex("""(?i)\s+\d{1,2}:\d{2}\s*(?:am|pm)\s*$""")
 
     fun isWhereIsMyTrain(sbn: StatusBarNotification): Boolean = sbn.packageName == PACKAGE_NAME
 
@@ -101,13 +96,11 @@ object WhereIsMyTrainNotificationSupport {
                 ?: return WhereIsMyTrainExtractionResult.UnreadableLiveStatusNotification(
                     "collapsed view unavailable"
                 )
-            val currentStatus = collapsedView.textFor(sourceContext, TITLE)
-                ?: return WhereIsMyTrainExtractionResult.UnreadableLiveStatusNotification(
-                    "title unavailable"
-                )
+            val collapsedStatus = collapsedView.textFor(sourceContext, TITLE)
             val routeBitmap = expandedRouteBitmap(sourceContext, notification)
             val ocrData = routeBitmap?.let(::recognizedRouteData)
-            val compactEta = collapsedView.textFor(sourceContext, ETA)
+            val currentStatus = collapsedStatus ?: ocrData?.currentStatus
+                ?: return WhereIsMyTrainExtractionResult.UnreadableLiveStatusNotification("title unavailable")
             val trainTitle = ocrData?.trainTitle ?: currentStatus
             WhereIsMyTrainExtractionResult.Extracted(
                 WhereIsMyTrainNotificationData(
@@ -115,8 +108,12 @@ object WhereIsMyTrainNotificationSupport {
                     currentStatus = currentStatus,
                     destination = ocrData?.destination,
                     distance = ocrData?.distance,
-                    eta = ocrData?.eta ?: compactEta,
-                    scheduleStatus = collapsedView.textFor(sourceContext, SCHEDULE_STATUS),
+                    eta = ocrData?.eta,
+                    scheduleStatus = collapsedView.textFor(sourceContext, SCHEDULE_STATUS) ?: ocrData?.scheduleStatus,
+                    trainNumber = ocrData?.trainNumber,
+                    trainName = ocrData?.trainName,
+                    lastUpdatedTime = ocrData?.lastUpdatedTime,
+                    sourceStation = ocrData?.sourceStation,
                     progress = routeBitmap?.let(::progressInfoFromRouteBitmap)
                         ?: ProgressInfo(progress = 0, max = 0, indeterminate = true)
                 )
@@ -126,47 +123,6 @@ object WhereIsMyTrainNotificationSupport {
                 "remote view rendering failed"
             )
         }
-    }
-
-    internal fun destinationFromTitle(title: String): String? {
-        val routeEnd = title.split(" - ").lastOrNull()?.trim().orEmpty()
-        if (routeEnd.isBlank() || routeEnd == title.trim()) return null
-        return routeEnd.replace(Regex("\\s+(?:MMTS|EXPRESS|SUPERFAST|MAIL|PASSENGER)$", RegexOption.IGNORE_CASE), "")
-            .trim()
-            .takeIf { it.isNotBlank() }
-    }
-
-    internal fun normalizeTrainTitle(title: String): String {
-        return title.replace(trailingTimeOfDay, "").trim()
-    }
-
-    internal fun parseRecognizedRouteText(text: String): WhereIsMyTrainOcrData? {
-        val lines = text.lineSequence().map(String::trim).filter(String::isNotEmpty).toList()
-        val routeTitle = lines.firstNotNullOfOrNull { line ->
-            fullTrainRoute.find(line)?.value
-                ?: trainLabel.find(line)?.value
-        }?.let(::normalizeTrainTitle)
-        val detail = lines.asSequence()
-            .mapNotNull { line -> destinationDetail.find(line) }
-            .lastOrNull()
-        val destination = detail?.groupValues?.getOrNull(1)?.trim()?.takeIf { it.isNotEmpty() }
-            ?: routeTitle?.let(::destinationFromTitle)
-        val distance = detail?.groupValues?.getOrNull(2)
-            ?: lines.asSequence()
-                .flatMap { line -> distancePattern.findAll(line).asSequence() }
-                .lastOrNull()
-                ?.groupValues
-                ?.getOrNull(1)
-        val normalizedDistance = distance?.replace(Regex("\\s+"), " ")
-        val eta = detail?.groupValues?.getOrNull(3)?.uppercase()
-            ?: lines.asSequence().flatMap { line -> timeOfDay.findAll(line).asSequence() }.lastOrNull()?.value?.uppercase()
-        if (routeTitle == null && destination == null && eta == null) return null
-        return WhereIsMyTrainOcrData(
-            trainTitle = routeTitle,
-            destination = destination,
-            distance = normalizedDistance,
-            eta = eta
-        )
     }
 
     internal fun progressInfoFromRouteBitmap(bitmap: Bitmap): ProgressInfo? {
@@ -212,8 +168,8 @@ object WhereIsMyTrainNotificationSupport {
             ?.toBitmap()
     }
 
-    private fun recognizedRouteData(bitmap: Bitmap): WhereIsMyTrainOcrData? {
-        return NotificationImageOcr.recognizeBitmap(bitmap)?.let(::parseRecognizedRouteText)
+    private fun recognizedRouteData(bitmap: Bitmap): WhereIsMyTrainRouteData? {
+        return NotificationImageOcr.recognizeBitmapLayout(bitmap)?.let(WhereIsMyTrainRouteParser::parse)
     }
 
     private fun railRow(bitmap: Bitmap, y: Int, minimumWidth: Int): RailRow? {
@@ -304,46 +260,40 @@ object WhereIsMyTrainNotificationSupport {
     )
 }
 
-data class WhereIsMyTrainOcrData(
-    val trainTitle: String?,
-    val destination: String?,
-    val distance: String?,
-    val eta: String?
-)
-
 object WhereIsMyTrainText {
-    fun statusText(
+    fun reachingText(eta: CharSequence?, strings: NotificationText): String? =
+        eta?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            ?.let { strings.get(R.string.where_is_my_train_reaching, it) }
+
+    fun additionalText(
+        strings: NotificationText,
         currentStatus: CharSequence?,
+        distance: CharSequence?,
         scheduleStatus: CharSequence?
     ): CharSequence? {
         val current = currentStatus?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+        val remaining = distance?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            ?.let { value ->
+                val kilometers = Regex("""^(\p{Nd}+(?:[.,]\p{Nd}+)?) km$""").matchEntire(value)
+                val distanceText = kilometers?.let { strings.get(R.string.notification_distance_km, it.groupValues[1]) }
+                    ?: value
+                strings.get(R.string.train_distance_remaining, distanceText)
+            }
         val schedule = scheduleStatus?.toString()?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let(::compactScheduleStatus)
-        return listOfNotNull(current, schedule)
-            .joinToString(" - ")
+            ?.takeIf { it.isNotEmpty() && !it.equals("On time", ignoreCase = true) }
+            ?.let { compactScheduleStatus(it, strings) }
+        return listOfNotNull(current, remaining, schedule)
+            .joinToString(" · ")
             .takeIf { it.isNotEmpty() }
     }
 
-    fun destinationText(
-        destination: CharSequence?,
-        distance: CharSequence?,
-        reachingText: String?
-    ): CharSequence? {
-        return listOfNotNull(
-            destination?.toString()?.trim()?.takeIf { it.isNotEmpty() },
-            distance?.toString()?.trim()?.takeIf { it.isNotEmpty() },
-            reachingText
-        ).joinToString(" · ").takeIf { it.isNotEmpty() }
-    }
-
-    internal fun compactScheduleStatus(status: String): String {
-        val delayed = Regex("""(?i)^delayed by (\d+) minutes?$""").matchEntire(status)
-        if (delayed != null) return "+${delayed.groupValues[1]} min"
+    internal fun compactScheduleStatus(status: String, strings: NotificationText): String {
+        val delayed = Regex("""(?i)^(?:delayed|behind) by (\d+) minutes?$""").matchEntire(status)
+        delayed?.groupValues?.get(1)?.toLongOrNull()?.let { return strings.get(R.string.train_behind_minutes, it) }
         val early = Regex("""(?i)^(\d+) minutes? early$""").matchEntire(status)
-        if (early != null) return "${early.groupValues[1]} min early"
+        early?.groupValues?.get(1)?.toLongOrNull()?.let { return strings.get(R.string.train_early_minutes, it) }
         val ahead = Regex("""(?i)^ahead by (\d+) minutes?$""").matchEntire(status)
-        if (ahead != null) return "Ahead by ${ahead.groupValues[1]} min"
+        ahead?.groupValues?.get(1)?.toLongOrNull()?.let { return strings.get(R.string.train_ahead_minutes, it) }
         return status
     }
 }

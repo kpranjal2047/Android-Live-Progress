@@ -137,4 +137,16 @@
     <string name="dominos_delivery_reached">Reached</string>
     <string name="dominos_delivery_delivered">Delivered</string>
     <string name="where_is_my_train_reaching">Reaching %1$s</string>
+    <!-- App-generated notification text. Keep compact units short; source app text is preserved. -->
+    <string name="notification_minutes_short">%1$d min</string>
+    <string name="notification_hours_short">%1$dh</string>
+    <string name="notification_hours_minutes_short">%1$dh %2$dm</string>
+    <string name="notification_under_minute">&lt;1 min</string>
+    <string name="train_arrived">Arrived</string>
+    <string name="notification_distance_km">%1$s km</string>
+    <string name="train_distance_remaining">%1$s remaining</string>
+    <string name="train_behind_minutes">Behind by %1$d min</string>
+    <string name="train_early_minutes">%1$d min early</string>
+    <string name="train_ahead_minutes">Ahead by %1$d min</string>
+    <string name="media_unknown_title">Unknown title</string>
 </resources>

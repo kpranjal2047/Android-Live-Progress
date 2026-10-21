@@ -137,4 +137,16 @@
     <string name="dominos_delivery_reached">Đã đến</string>
     <string name="dominos_delivery_delivered">Đã giao</string>
     <string name="where_is_my_train_reaching">Đến lúc %1$s</string>
+    <!-- App-generated notification text. Keep compact units short; source app text is preserved. -->
+    <string name="notification_minutes_short">%1$d phút</string>
+    <string name="notification_hours_short">%1$dgiờ</string>
+    <string name="notification_hours_minutes_short">%1$dgiờ %2$dph</string>
+    <string name="notification_under_minute">&lt;1 phút</string>
+    <string name="train_arrived">Đã đến</string>
+    <string name="notification_distance_km">%1$s km</string>
+    <string name="train_distance_remaining">Còn %1$s</string>
+    <string name="train_behind_minutes">Trễ %1$d phút</string>
+    <string name="train_early_minutes">Sớm %1$d phút</string>
+    <string name="train_ahead_minutes">Sớm hơn %1$d phút</string>
+    <string name="media_unknown_title">Tiêu đề không rõ</string>
 </resources>

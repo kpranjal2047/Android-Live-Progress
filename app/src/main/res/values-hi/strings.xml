@@ -137,4 +137,16 @@
     <string name="dominos_delivery_reached">पहुंच गया</string>
     <string name="dominos_delivery_delivered">वितरित</string>
     <string name="where_is_my_train_reaching">पहुंचेगी %1$s</string>
+    <!-- App-generated notification text. Keep compact units short; source app text is preserved. -->
+    <string name="notification_minutes_short">%1$d मि.</string>
+    <string name="notification_hours_short">%1$dघं.</string>
+    <string name="notification_hours_minutes_short">%1$dघं. %2$dमि.</string>
+    <string name="notification_under_minute">&lt;1 मि.</string>
+    <string name="train_arrived">पहुँच गई</string>
+    <string name="notification_distance_km">%1$s किमी</string>
+    <string name="train_distance_remaining">%1$s बाकी</string>
+    <string name="train_behind_minutes">%1$d मि. की देरी</string>
+    <string name="train_early_minutes">%1$d मि. पहले</string>
+    <string name="train_ahead_minutes">%1$d मि. आगे</string>
+    <string name="media_unknown_title">अज्ञात शीर्षक</string>
 </resources>

@@ -1,0 +1,4 @@
+{
+  "type": "patch",
+  "summary": "Read train notification fields by position and keep update times, arrival times, and station names distinct."
+}

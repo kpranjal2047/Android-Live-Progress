@@ -50,6 +50,9 @@ data class MirrorCandidate(
     val shortCriticalText: String? = null,
     val showProgressText: Boolean = true,
     val countdownDeadlineElapsedRealtime: Long? = null,
+    val trainArrivalPill: TrainArrivalPill? = null,
+    val trainDisplayData: WhereIsMyTrainNotificationData? = null,
+    val deliveryStatus: DominosDeliveryStatus? = null,
     val visualPayloadKey: String? = null,
     val displaySettings: MirrorCandidateDisplaySettings
 )

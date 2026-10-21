@@ -50,7 +50,8 @@ object MediaTextFormatter {
         positionMs: Long,
         durationMs: Long,
         isPlaying: Boolean,
-        mode: MediaPillMode
+        mode: MediaPillMode,
+        fallbackTitle: String
     ): String {
         val canShowTime = isPlaying && durationMs > 0L
         if (mode == MediaPillMode.ELAPSED && canShowTime) return formatTime(positionMs)
@@ -58,7 +59,7 @@ object MediaTextFormatter {
             return "-${formatTime((durationMs - positionMs).coerceAtLeast(0L))}"
         }
 
-        return title.trim().ifBlank { "Media" }
+        return title.trim().ifBlank { fallbackTitle }
     }
 
     private fun timelineText(

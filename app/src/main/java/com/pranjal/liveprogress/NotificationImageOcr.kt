@@ -22,6 +22,22 @@ data class NotificationOcrText(
     val text: CharSequence?
 )
 
+// Keep coordinates for custom layouts whose fields share rows or arrive in OCR block order.
+data class NotificationOcrElement(
+    val text: String,
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int
+)
+
+data class NotificationOcrLayout(
+    val text: String,
+    val width: Int,
+    val height: Int,
+    val elements: List<NotificationOcrElement>
+)
+
 object NotificationImageOcr {
     private const val OCR_TIMEOUT_SECONDS = 3L
     private const val MINIMUM_IMAGE_WIDTH = 96
@@ -41,13 +57,32 @@ object NotificationImageOcr {
     }
 
     internal fun recognizeBitmap(bitmap: Bitmap): String? {
+        return recognizeBitmapLayout(bitmap)?.text
+    }
+
+    internal fun recognizeBitmapLayout(bitmap: Bitmap): NotificationOcrLayout? {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         return try {
-            Tasks.await(
+            val result = Tasks.await(
                 recognizer.process(InputImage.fromBitmap(bitmap, 0)),
                 OCR_TIMEOUT_SECONDS,
                 TimeUnit.SECONDS
-            ).text.trim().takeIf { it.isNotEmpty() }
+            )
+            val text = result.text.trim().takeIf { it.isNotEmpty() } ?: return null
+            NotificationOcrLayout(
+                text = text,
+                width = bitmap.width,
+                height = bitmap.height,
+                elements = result.textBlocks.flatMap { block ->
+                    block.lines.flatMap { line ->
+                        line.elements.mapNotNull { element ->
+                            element.boundingBox?.let { bounds ->
+                                NotificationOcrElement(element.text, bounds.left, bounds.top, bounds.right, bounds.bottom)
+                            }
+                        }
+                    }
+                }
+            )
         } catch (_: Exception) {
             null
         } finally {

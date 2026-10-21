@@ -31,7 +31,7 @@ class MediaLiveController(
     private var notificationDismissed = false
     private var programmaticCancelPending = false
     private var progressMirrorActive = false
-    private val pillScroller = PillTextScroller()
+    private var pillScroller = PillTextScroller()
     private var lastTitle: String? = null
     private var buildVersion = 0
     private var mediaMirrorPosted = false
@@ -136,6 +136,15 @@ class MediaLiveController(
             )
             updateFromController()
         }
+    }
+
+    fun onLanguageChanged() {
+        nextBuildVersion()
+        buildCoalescer.cancelQueued()
+        pendingSnapshot = null
+        lastPostedSnapshot = null
+        pillScroller = PillTextScroller()
+        updateFromController()
     }
 
     fun onVisibilityChanged() {
@@ -569,7 +578,8 @@ class MediaLiveController(
         positionMs = state.positionMs,
         durationMs = state.durationMs,
         isPlaying = state.isPlaying,
-        mode = preferences.pillMode
+        mode = preferences.pillMode,
+        fallbackTitle = service.getString(R.string.media_unknown_title)
     )
 
     private fun scheduleNext(state: MediaState, decision: MediaVisibilityDecision) {

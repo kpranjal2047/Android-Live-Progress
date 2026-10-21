@@ -3,6 +3,7 @@ package com.pranjal.liveprogress
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -27,7 +28,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private val whereIsMyTrainExtractionVersions = mutableMapOf<String, Int>()
     private val notificationOcrVersions = mutableMapOf<String, Int>()
     private val pillScrollers = mutableMapOf<String, PillTextScroller>()
-    private val dominosCountdownRunnable = Runnable { refreshDominosCountdowns() }
+    private val countdownRunnable = Runnable { refreshCountdowns() }
     private val scrollingCriticalTextRunnable = Runnable { refreshScrollingCriticalTexts() }
     private val visibilityListener = { reconcileVisibility() }
     private lateinit var notificationManager: NotificationManager
@@ -35,6 +36,7 @@ class NotificationMirrorService : NotificationListenerService() {
     private lateinit var progressPreferences: ProgressPreferences
     private lateinit var categoryPreferences: NotificationCategoryPreferences
     private lateinit var visibilityPreferences: VisibilityPreferences
+    private var notificationLocaleTags = ""
     private var progressMirrorActive = false
     private var lastRefreshUptimeMs = 0L
     private var nextUberExtractionVersion = 0
@@ -100,6 +102,7 @@ class NotificationMirrorService : NotificationListenerService() {
 
     override fun onCreate() {
         super.onCreate()
+        notificationLocaleTags = resources.configuration.locales.toLanguageTags()
         notificationManager = getSystemService(NotificationManager::class.java)
         progressPreferences = ProgressPreferences(this)
         categoryPreferences = NotificationCategoryPreferences(this)
@@ -117,6 +120,20 @@ class NotificationMirrorService : NotificationListenerService() {
             SERVICE_STARTUP_REFRESH_DELAY_MS
         )
         AppDiagnostics.verbose(this, "listener", "Notification mirror service created")
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val localeTags = newConfig.locales.toLanguageTags()
+        if (localeTags != notificationLocaleTags) {
+            notificationLocaleTags = localeTags
+            MirrorNotificationBuilder.ensureChannel(this)
+            MediaLiveNotificationBuilder.ensureChannel(this)
+            progressSnapshotsByKey.clear()
+            pillScrollers.clear()
+            refreshActiveNotifications("app language changed")
+            mediaLiveController.onLanguageChanged()
+        }
     }
 
     override fun onDestroy() {
@@ -540,9 +557,9 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     private fun applyVisibility(candidate: MirrorCandidate) {
-        val currentCandidate = refreshScrollingCriticalText(refreshDominosCountdownText(candidate))
+        val currentCandidate = refreshScrollingCriticalText(refreshCountdownText(localizeCandidate(candidate)))
         applyVisibilityInternal(currentCandidate)
-        scheduleDominosCountdownRefresh()
+        scheduleCountdownRefresh()
         scheduleScrollingCriticalTextRefresh()
     }
 
@@ -650,9 +667,31 @@ class NotificationMirrorService : NotificationListenerService() {
         }
     }
 
-    private fun refreshDominosCountdownText(candidate: MirrorCandidate): MirrorCandidate {
-        val deadline = candidate.countdownDeadlineElapsedRealtime ?: return candidate
-        val shortText = DominosDeliveryTime.remainingText(deadline, SystemClock.elapsedRealtime())
+    private fun localizeCandidate(candidate: MirrorCandidate): MirrorCandidate {
+        val strings = NotificationText.from(this)
+        candidate.trainDisplayData?.let { data ->
+            return candidate.copy(
+                subText = WhereIsMyTrainText.reachingText(data.eta, strings).orEmpty(),
+                text = WhereIsMyTrainText.additionalText(strings, data.currentStatus, data.distance, data.scheduleStatus)
+            )
+        }
+        val statusText = when (candidate.deliveryStatus) {
+            DominosDeliveryStatus.DELIVERED -> getString(R.string.dominos_delivery_delivered)
+            DominosDeliveryStatus.REACHED -> getString(R.string.dominos_delivery_reached)
+            else -> return candidate
+        }
+        return candidate.copy(shortCriticalText = statusText)
+    }
+
+    private fun MirrorCandidate.hasCountdown(): Boolean =
+        countdownDeadlineElapsedRealtime != null || trainArrivalPill != null
+
+    private fun refreshCountdownText(candidate: MirrorCandidate): MirrorCandidate {
+        val now = SystemClock.elapsedRealtime()
+        val shortText = candidate.trainArrivalPill?.text(now, NotificationText.from(this)) ?: run {
+            val deadline = candidate.countdownDeadlineElapsedRealtime ?: return candidate
+            DominosDeliveryTime.remainingText(deadline, now, NotificationText.from(this))
+        }
         if (candidate.shortCriticalText == shortText) return candidate
         val updated = candidate.copy(shortCriticalText = shortText)
         if (candidates[candidate.key] != null) {
@@ -668,7 +707,7 @@ class NotificationMirrorService : NotificationListenerService() {
             sourceText,
             listOf(
                 candidate.title?.toString(),
-                if (candidate.countdownDeadlineElapsedRealtime != null) "countdown" else sourceText
+                if (candidate.hasCountdown()) "countdown" else sourceText
             ),
             SystemClock.elapsedRealtime()
         )
@@ -676,35 +715,35 @@ class NotificationMirrorService : NotificationListenerService() {
         return candidate.copy(shortCriticalText = text)
     }
 
-    private fun refreshDominosCountdowns() {
+    private fun refreshCountdowns() {
         val visibleCandidates = candidates.values
             .filter { candidate ->
-                candidate.countdownDeadlineElapsedRealtime != null &&
+                candidate.hasCountdown() &&
                     mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
             }
             .toList()
         visibleCandidates.forEach(::applyVisibility)
-        scheduleDominosCountdownRefresh()
+        scheduleCountdownRefresh()
     }
 
-    private fun scheduleDominosCountdownRefresh() {
-        mainHandler.removeCallbacks(dominosCountdownRunnable)
+    private fun scheduleCountdownRefresh() {
+        mainHandler.removeCallbacks(countdownRunnable)
         val nowElapsedRealtime = SystemClock.elapsedRealtime()
         val delay = candidates.values
             .asSequence()
             .filter { candidate ->
-                candidate.countdownDeadlineElapsedRealtime != null &&
+                candidate.hasCountdown() &&
                     mirrorVisibilityByKey[candidate.key]?.startsWith("shown:") == true
             }
             .mapNotNull { candidate ->
-                DominosDeliveryTime.nextUpdateDelayMillis(
-                    candidate.countdownDeadlineElapsedRealtime ?: return@mapNotNull null,
-                    nowElapsedRealtime
-                )
+                candidate.trainArrivalPill?.let { it.nextUpdateDelayMillis(nowElapsedRealtime) }
+                    ?: candidate.countdownDeadlineElapsedRealtime?.let {
+                        DominosDeliveryTime.nextUpdateDelayMillis(it, nowElapsedRealtime)
+                    }
             }
             .minOrNull()
             ?: return
-        mainHandler.postDelayed(dominosCountdownRunnable, delay)
+        mainHandler.postDelayed(countdownRunnable, delay)
     }
 
     private fun refreshScrollingCriticalTexts() {

@@ -138,19 +138,27 @@ This document records the current product and engineering decisions in Live Prog
 
 ### WIMT line hierarchy
 
-**Decision:** Map WIMT's train header to mirror subtext, status/schedule to title, and destination/distance/ETA to content text.
+**Decision:** Map WIMT arrival ETA to `Reaching <ETA>` subtext, train number/name to title, and current status, remaining distance, and ahead/behind information to content text. Label the distance as `<distance> remaining` so its meaning is explicit. Omit missing fields and on-time schedule text.
 
 **Why:** Android's promoted ProgressStyle card has a stable header, title, and content hierarchy. Long custom layouts cannot be copied, and newline-heavy content is frequently clipped by System UI.
 
-**Consequence:** The train route/name remains visible as the header; the current operating state gets the most prominent title placement; destination, distance, and `Reaching` time remain together in the content line.
+**Consequence:** Arrival time is visible in the header and the train identity gets the prominent title placement. Operational details share one middle-dot-separated content line. Missing ETA leaves the header empty; destination remains extracted but is not displayed in the content line.
 
-### WIMT ETA, not schedule variance, in the status pill
+### WIMT time until arrival in the status pill
 
-**Decision:** Use compact `Reaching <time>` information for the WIMT critical text, with controlled scrolling if required.
+**Decision:** Show compact time until arrival in the train pill while keeping `Reaching <ETA>` in the header. Use ceiling minutes, compact hours/minutes, and `<1 min` below one minute. Only a fresh source status that explicitly names the complete destination as arrived/reached may produce `Arrived`.
 
-**Why:** Arrival time is more actionable in the limited status-bar pill than a delay/ahead variance alone. A train may also be ahead of schedule, which should remain contextual status rather than the primary time signal.
+**Why:** Time until arrival answers the immediate travel question and uses compact localized units. Longer translations use the shared scroller. Delay/ahead variance remains contextual information. A passed prediction is not proof of arrival.
 
-**Consequence:** The live card contains both state and schedule variance while the pill focuses on the expected reaching time.
+**Consequence:** Date the clocks against the source post and last-update time, convert to a fixed monotonic deadline, and reuse the visible-only countdown scheduler. Clear the pill at ETA expiry or 30 minutes after the source update. Require a valid update clock. Later same-day ETAs are accepted; an earlier ETA clock wraps to the next day only when it is more than 12 hours behind the update clock. Resolve midnight relative to the source snapshot so expired ETAs cannot become tomorrow's arrival. Fresh source updates replace the snapshot; display ticks never refresh its age or repeat OCR. Delivery countdown behavior remains unchanged.
+
+### WIMT fields follow the route-card layout
+
+**Decision:** Preserve OCR element bounds and parse the recognized route image using normalized row/column regions. Keep numeric train number, arbitrary train name, last-update time, source, destination, current status, distance, ETA, and schedule status separate. Validate 12-hour clock ranges and normalize distance spacing. Prefer a complete station label from the two destination positions; never infer stations from train-name wording or ETA from header time. Use direct collapsed status/schedule text before image text. Missing ETA explicitly suppresses percentage fallback in the pill.
+
+**Why:** OCR block order can differ from visual row order, and the train header may be truncated while station labels remain complete. The header clock is last update, not arrival. Row and column positions carry the field semantics even when names contain numbers, punctuation, or multiple dashes.
+
+**Consequence:** OCR remains enabled and runs once per route image. Its geometry drives field assignment for the supported layout, while bitmap colors still drive progress. Incomplete recognition leaves fields absent instead of guessing. Presentation is independent of parsing; source and update time are available separately in the extracted data.
 
 ### OCR is generic text recovery only
 
@@ -582,7 +590,7 @@ This document records the current product and engineering decisions in Live Prog
 
 **Why:** User-facing content should be readable in the selected language; machine-generated/debug data must remain exact for diagnosis.
 
-**Consequence:** Locale resource keys must stay synchronized, while old log records may remain in the language used when they were written.
+**Consequence:** Locale resource keys and formatting arguments must stay synchronized; unit tests enforce parity across all supported locales. Resolve countdown, distance, schedule, arrival, and missing-title wording through resources at render time. Preserve raw train fields and delivery states so retained notifications can be translated again after a language change. Invalidate posted snapshots and in-flight media builds on language changes. Source app wording and parser recognition rules remain separate from output localization, while old log records may remain in the language used when they were written.
 
 ## 12. Dependency and security decisions
 

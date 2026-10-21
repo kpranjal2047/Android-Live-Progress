@@ -25,6 +25,7 @@ class MediaUpdateSchedulerTest {
     fun longTimesAndUnknownDurationTitleFallbackScroll() {
         for (mode in MediaPillMode.entries) {
             val text = MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Long fallback title", positionMs = 0, durationMs = 0,
                 isPlaying = true, mode = mode
             )

@@ -10,6 +10,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "1:05",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Track",
                 positionMs = 65_000,
                 durationMs = 180_000,
@@ -20,6 +21,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "-1:55",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Track",
                 positionMs = 65_000,
                 durationMs = 180_000,
@@ -34,6 +36,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "Long Track",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Long Track",
                 positionMs = 0,
                 durationMs = 0,
@@ -48,6 +51,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "Track",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Track",
                 positionMs = 0,
                 durationMs = 0,
@@ -58,6 +62,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "Very Long Track",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Very Long Track",
                 positionMs = 0,
                 durationMs = 0,
@@ -92,6 +97,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "10:00:00",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Track",
                 positionMs = 36_000_000,
                 durationMs = 72_000_000,
@@ -102,6 +108,7 @@ class MediaTextFormatterTest {
         assertEquals(
             "-10:00:00",
             MediaTextFormatter.shortCriticalText(
+                fallbackTitle = "Media",
                 title = "Track",
                 positionMs = 36_000_000,
                 durationMs = 72_000_000,

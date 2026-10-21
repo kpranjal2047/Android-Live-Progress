@@ -90,7 +90,7 @@ object MediaLiveNotificationBuilder {
                     setSmallIcon(R.drawable.ic_notification_empty)
                 }
             }
-            .setContentTitle(state.title)
+            .setContentTitle(state.title.ifBlank { context.getString(R.string.media_unknown_title) })
             .setContentText(contentText)
             .setSubText(subText)
             .setContentIntent(source?.contentIntent ?: launchIntent(context, state.packageName))

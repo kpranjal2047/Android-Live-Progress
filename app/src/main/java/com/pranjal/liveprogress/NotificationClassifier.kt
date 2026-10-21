@@ -210,12 +210,14 @@ object NotificationClassifier {
                 }
                 deadline != null -> DominosDeliveryTime.remainingText(
                     deadline,
-                    SystemClock.elapsedRealtime()
+                    SystemClock.elapsedRealtime(),
+                    NotificationText.from(context)
                 )
                 else -> null
             },
             showProgressText = data.deliveryStatus == DominosDeliveryStatus.NONE,
             countdownDeadlineElapsedRealtime = deadline,
+            deliveryStatus = data.deliveryStatus,
             displaySettings = progressDisplaySettings
         )
     }
@@ -232,11 +234,17 @@ object NotificationClassifier {
             ?.filter { it.actionIntent != null && it.remoteInputs.isNullOrEmpty() && !it.isAuthenticationRequired }
             ?.take(MAX_ACTIONS)
             ?: emptyList()
-        val reachingText = data.eta
-            ?.toString()
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { eta -> context.getString(R.string.where_is_my_train_reaching, eta) }
+        val reachingText = WhereIsMyTrainText.reachingText(data.eta, NotificationText.from(context))
+        val nowElapsedRealtime = SystemClock.elapsedRealtime()
+        val arrivalPill = TrainArrivalTime.create(
+            eta = data.eta,
+            lastUpdatedTime = data.lastUpdatedTime,
+            currentStatus = data.currentStatus,
+            destination = data.destination,
+            sourcePostTimeMillis = sbn.postTime,
+            nowWallTimeMillis = System.currentTimeMillis(),
+            nowElapsedRealtime = nowElapsedRealtime
+        )
         return MirrorCandidate(
             key = sbn.key,
             packageName = sbn.packageName,
@@ -247,19 +255,14 @@ object NotificationClassifier {
             channelId = notification.channelId,
             notificationId = mirrorIdFor(sbn.key),
             appLabel = AppLabelResolver.label(context, sbn.packageName, notification),
-            title = WhereIsMyTrainText.statusText(
+            title = data.title,
+            text = WhereIsMyTrainText.additionalText(
+                strings = NotificationText.from(context),
                 currentStatus = data.currentStatus,
-                scheduleStatus = data.scheduleStatus
-            ) ?: data.title,
-            text = WhereIsMyTrainText.destinationText(
-                destination = data.destination,
                 distance = data.distance,
-                reachingText = reachingText
-            ) ?: WhereIsMyTrainText.statusText(
-                currentStatus = data.currentStatus,
                 scheduleStatus = data.scheduleStatus
             ),
-            subText = data.title,
+            subText = reachingText.orEmpty(),
             contentIntent = notification.contentIntent,
             smallIcon = notification.smallIcon,
             largeIcon = notification.getLargeIcon(),
@@ -271,7 +274,9 @@ object NotificationClassifier {
             ) ?: (notification.`when` > 0L),
             actions = actions,
             progress = data.progress,
-            shortCriticalText = reachingText,
+            shortCriticalText = arrivalPill?.text(nowElapsedRealtime, NotificationText.from(context)).orEmpty(),
+            trainArrivalPill = arrivalPill,
+            trainDisplayData = data,
             showProgressText = false,
             displaySettings = progressDisplaySettings
         )

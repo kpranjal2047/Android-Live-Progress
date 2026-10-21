@@ -1,0 +1,4 @@
+{
+  "type": "patch",
+  "summary": "Show full train destination names when arrival details are read on separate lines."
+}

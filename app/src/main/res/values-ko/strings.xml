@@ -137,4 +137,16 @@
     <string name="dominos_delivery_reached">도착</string>
     <string name="dominos_delivery_delivered">배달 완료</string>
     <string name="where_is_my_train_reaching">%1$s 도착</string>
+    <!-- App-generated notification text. Keep compact units short; source app text is preserved. -->
+    <string name="notification_minutes_short">%1$d분</string>
+    <string name="notification_hours_short">%1$d시간</string>
+    <string name="notification_hours_minutes_short">%1$d시간 %2$d분</string>
+    <string name="notification_under_minute">1분 미만</string>
+    <string name="train_arrived">도착</string>
+    <string name="notification_distance_km">%1$s km</string>
+    <string name="train_distance_remaining">%1$s 남음</string>
+    <string name="train_behind_minutes">%1$d분 지연</string>
+    <string name="train_early_minutes">%1$d분 일찍</string>
+    <string name="train_ahead_minutes">%1$d분 빠름</string>
+    <string name="media_unknown_title">알 수 없는 제목</string>
 </resources>

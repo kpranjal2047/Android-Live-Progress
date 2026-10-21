@@ -32,7 +32,9 @@ Live Progress turns supported notifications into easy-to-glance live updates. It
 - Supports multiple active progress updates.
 - Follow supported Uber trips with arrival time in the status bar, destination text, a progress bar without percentage text, and available driver and vehicle artwork.
 - Can show Domino's order progress, delivery time, and reached/delivered status.
-- Can show Where Is My Train progress, route, destination, distance, schedule information, and expected reaching time.
+- Shows Where Is My Train reaching time in the header, train number and name in the title, and current status, distance labeled as “km remaining,” and ahead/behind information below the title.
+- Shows time until train arrival in the status-bar pill, such as `18 min` or `1h 12m`; clears expired or stale estimates and shows `Arrived` only when the source confirms the destination.
+- Reads train details from their positions in the notification, keeping destination names and arrival times separate from shortened train names and last-update times.
 
 ### Media Updates
 
@@ -78,7 +80,7 @@ Some optional features request access only when you enable them. For example, hi
 
 ### General
 
-- App language
+- App language (including train and delivery countdowns, distance labels, and arrival messages)
 - Hide updates while Quick Settings is expanded
 - Hide the status-bar update while the original app is open
 

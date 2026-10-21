@@ -34,12 +34,12 @@ data class MediaState(
             return MediaState(
                 title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE)
                     ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
-                    ?: "Unknown Title",
+                    ?: "",
                 artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)
                     ?: metadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
                     ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE)
-                    ?: "Unknown Artist",
-                album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: "Unknown Album",
+                    ?: "",
+                album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: "",
                 albumArt = metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                     ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)
                     ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON),

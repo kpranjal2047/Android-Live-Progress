@@ -137,4 +137,16 @@
     <string name="dominos_delivery_reached">رسیده</string>
     <string name="dominos_delivery_delivered">تحویل شد</string>
     <string name="where_is_my_train_reaching">رسیدن %1$s</string>
+    <!-- App-generated notification text. Keep compact units short; source app text is preserved. -->
+    <string name="notification_minutes_short">%1$d د</string>
+    <string name="notification_hours_short">%1$d س</string>
+    <string name="notification_hours_minutes_short">%1$d س %2$d د</string>
+    <string name="notification_under_minute">کمتر از یک دقیقه</string>
+    <string name="train_arrived">رسید</string>
+    <string name="notification_distance_km">%1$s کیلومتر</string>
+    <string name="train_distance_remaining">%1$s باقی مانده</string>
+    <string name="train_behind_minutes">%1$d د تأخیر</string>
+    <string name="train_early_minutes">%1$d د زودتر</string>
+    <string name="train_ahead_minutes">%1$d د جلوتر</string>
+    <string name="media_unknown_title">عنوان نامشخص</string>
 </resources>
