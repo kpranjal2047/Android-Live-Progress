@@ -1,4 +1,0 @@
-{
-  "type": "patch",
-  "summary": "Show train arrival time in the header, train identity in the title, and trip status below it."
-}

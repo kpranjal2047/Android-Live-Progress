@@ -1,4 +1,0 @@
-{
-  "type": "minor",
-  "summary": "Show time until train arrival in the status bar, with confirmed arrival and stale-estimate handling."
-}

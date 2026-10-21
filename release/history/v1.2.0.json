@@ -1,0 +1,37 @@
+{
+  "versionName": "1.2.0",
+  "versionCode": 4,
+  "sourceCommit": "af3a2ff207c28a68a69660a75d7fae92927b8435",
+  "changes": [
+    {
+      "type": "patch",
+      "summary": "Translate train and delivery notification labels and keep notification wording in the selected app language.",
+      "file": ".changes/localized-custom-notification-text.json"
+    },
+    {
+      "type": "minor",
+      "summary": "Show time until train arrival in the status bar, with confirmed arrival and stale-estimate handling.",
+      "file": ".changes/train-arrival-countdown.json"
+    },
+    {
+      "type": "patch",
+      "summary": "Show full train destination names when arrival details are read on separate lines.",
+      "file": ".changes/train-destination-label.json"
+    },
+    {
+      "type": "patch",
+      "summary": "Clarify that the distance in train live notifications is the remaining distance.",
+      "file": ".changes/train-distance-remaining-label.json"
+    },
+    {
+      "type": "patch",
+      "summary": "Read train notification fields by position and keep update times, arrival times, and station names distinct.",
+      "file": ".changes/train-layout-fields.json"
+    },
+    {
+      "type": "patch",
+      "summary": "Show train arrival time in the header, train identity in the title, and trip status below it.",
+      "file": ".changes/train-notification-hierarchy.json"
+    }
+  ]
+}
