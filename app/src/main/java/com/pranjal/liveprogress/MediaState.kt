@@ -60,6 +60,7 @@ data class MediaState(
         }
 
         private fun PlaybackState.currentPosition(durationMs: Long): Long {
+            if (position < 0L) return -1L
             val base = position.coerceAtLeast(0L)
             val advanced = if (state == PlaybackState.STATE_PLAYING && lastPositionUpdateTime > 0L) {
                 val delta = SystemClock.elapsedRealtime() - lastPositionUpdateTime

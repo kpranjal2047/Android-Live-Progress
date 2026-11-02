@@ -47,11 +47,10 @@ object MediaLiveNotificationBuilder {
         priorityMode: MirrorPriorityMode = MirrorPriorityMode.DEFAULT
     ): Notification {
         val progress = MediaProgressMapper.map(state.positionMs, state.durationMs)
-        val style = Notification.ProgressStyle()
-            .setStyledByProgress(true)
-            .setProgressIndeterminate(progress.indeterminate)
+        val showProgress = ProgressMath.hasKnownProgress(progress.max, progress.indeterminate)
+        val style = Notification.ProgressStyle().setStyledByProgress(showProgress)
 
-        if (!progress.indeterminate) {
+        if (showProgress) {
             style
                 .setProgressSegments(listOf(Notification.ProgressStyle.Segment(progress.max)))
                 .setProgress(progress.progress)
@@ -83,11 +82,13 @@ object MediaLiveNotificationBuilder {
         }
         val builder = Notification.Builder(context, channelId(priorityMode))
             .apply {
-                val sourceIcon = source?.smallIcon
+                val sourceIcon = source?.smallIcon?.takeIf {
+                    runCatching { it.loadDrawable(context) != null }.getOrDefault(false)
+                }
                 if (sourceIcon != null) {
                     setSmallIcon(sourceIcon)
                 } else {
-                    setSmallIcon(R.drawable.ic_notification_empty)
+                    setSmallIcon(mediaAppIcon(context, state.packageName))
                 }
             }
             .setContentTitle(state.title.ifBlank { context.getString(R.string.media_unknown_title) })
@@ -103,7 +104,7 @@ object MediaLiveNotificationBuilder {
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setColor(SystemColorPalette.primary(context))
-            .setStyle(style)
+            .setStyle(if (showProgress) style else Notification.BigTextStyle().bigText(contentText))
             .apply {
                 if (shortCriticalText != null) {
                     setShortCriticalText(shortCriticalText)
@@ -113,40 +114,8 @@ object MediaLiveNotificationBuilder {
         if (!aodVisible) {
             builder.setLargeIcon(largeIcon(context, state))
         }
-        builder.setProgress(progress.max, progress.progress, progress.indeterminate)
-        builder
-            .addAction(MirrorDismissReceiver.mediaAction(context))
-            .addAction(
-                mediaAction(
-                    context,
-                    android.R.drawable.ic_media_previous,
-                    context.getString(R.string.media_action_previous),
-                    MediaControlReceiver.ACTION_PREVIOUS,
-                    1
-                )
-            )
-            .addAction(
-                mediaAction(
-                    context,
-                    if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                    if (state.isPlaying) {
-                        context.getString(R.string.media_action_pause)
-                    } else {
-                        context.getString(R.string.media_action_play)
-                    },
-                    MediaControlReceiver.ACTION_PLAY_PAUSE,
-                    2
-                )
-            )
-            .addAction(
-                mediaAction(
-                    context,
-                    android.R.drawable.ic_media_next,
-                    context.getString(R.string.media_action_next),
-                    MediaControlReceiver.ACTION_NEXT,
-                    3
-                )
-            )
+        if (showProgress) builder.setProgress(progress.max, progress.progress, false)
+        source?.actions?.forEach { builder.addAction(it) }
 
         return PromotedOngoingCompat.request(builder).build()
     }
@@ -182,25 +151,14 @@ object MediaLiveNotificationBuilder {
         manager.createNotificationChannel(channel)
     }
 
-    private fun mediaAction(
-        context: Context,
-        icon: Int,
-        title: String,
-        action: String,
-        requestCode: Int
-    ): Notification.Action {
-        val intent = Intent(context, MediaControlReceiver::class.java).setAction(action)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        return Notification.Action.Builder(
-            Icon.createWithResource("android", icon),
-            title,
-            pendingIntent
-        ).build()
+    private fun mediaAppIcon(context: Context, packageName: String): Icon {
+        return runCatching {
+            val drawable = context.packageManager.getApplicationIcon(packageName)
+            val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
+            drawable.setBounds(0, 0, 96, 96)
+            drawable.draw(android.graphics.Canvas(bitmap))
+            Icon.createWithBitmap(bitmap)
+        }.getOrElse { Icon.createWithResource(context, R.drawable.ic_notification_empty) }
     }
 
     private fun launchIntent(context: Context, packageName: String): PendingIntent? {

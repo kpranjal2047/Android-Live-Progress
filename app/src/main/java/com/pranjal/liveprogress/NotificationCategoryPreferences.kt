@@ -99,7 +99,6 @@ data class NotificationCategorySnapshot(
 
 data class NotificationCategorySettings(
     val enabled: Boolean = false,
-    val showOnAod: Boolean = true,
     val showOnLockScreen: Boolean = false,
     val hideOriginalNotification: Boolean = false,
     val keepAfterOriginalDismissed: Boolean = false
@@ -110,7 +109,7 @@ data class NotificationCategorySettings(
             key.userId.toString(),
             key.channelId.cleanField(),
             enabled.toString(),
-            showOnAod.toString(),
+            "false", // Reserved field; visibility uses the lock-screen preference only.
             showOnLockScreen.toString(),
             hideOriginalNotification.toString(),
             keepAfterOriginalDismissed.toString()
@@ -128,7 +127,6 @@ data class NotificationCategorySettings(
             ) ?: return null
             return key to NotificationCategorySettings(
                 enabled = parts[3].toBooleanStrictOrNull() ?: return null,
-                showOnAod = parts[4].toBooleanStrictOrNull() ?: return null,
                 showOnLockScreen = parts[5].toBooleanStrictOrNull() ?: return null,
                 hideOriginalNotification = parts[6].toBooleanStrictOrNull() ?: return null,
                 keepAfterOriginalDismissed = parts[7].toBooleanStrictOrNull() ?: return null
@@ -136,13 +134,11 @@ data class NotificationCategorySettings(
         }
 
         fun enabledWithProgressDefaults(
-            showOnAod: Boolean,
             showOnLockScreen: Boolean,
             hideOriginalNotification: Boolean
         ): NotificationCategorySettings {
             return NotificationCategorySettings(
                 enabled = true,
-                showOnAod = showOnAod,
                 showOnLockScreen = showOnLockScreen,
                 hideOriginalNotification = hideOriginalNotification,
                 keepAfterOriginalDismissed = false
@@ -335,7 +331,6 @@ class NotificationCategoryPreferences(context: Context) {
     private fun progressDefaultEnabledSettings(): NotificationCategorySettings {
         val progressPreferences = ProgressPreferences(appContext)
         return NotificationCategorySettings.enabledWithProgressDefaults(
-            showOnAod = progressPreferences.showOnAod,
             showOnLockScreen = progressPreferences.showOnLockScreen,
             hideOriginalNotification = progressPreferences.suppressOriginalNotification
         )

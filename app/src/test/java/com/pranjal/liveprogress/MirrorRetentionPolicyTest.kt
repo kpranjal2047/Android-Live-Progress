@@ -48,7 +48,6 @@ class MirrorRetentionPolicyTest {
     ): MirrorCandidateDisplaySettings {
         return MirrorCandidateDisplaySettings(
             source = MirrorCandidateSource.ADDITIONAL,
-            showOnAod = true,
             showOnLockScreen = true,
             hideOriginalNotification = hideOriginalNotification,
             keepAfterOriginalDismissed = keepAfterOriginalDismissed
@@ -58,7 +57,6 @@ class MirrorRetentionPolicyTest {
     private fun progressSettings(keepAfterOriginalDismissed: Boolean): MirrorCandidateDisplaySettings {
         return MirrorCandidateDisplaySettings(
             source = MirrorCandidateSource.PROGRESS,
-            showOnAod = true,
             showOnLockScreen = true,
             hideOriginalNotification = false,
             keepAfterOriginalDismissed = keepAfterOriginalDismissed

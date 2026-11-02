@@ -8,7 +8,7 @@ data class MediaProgress(
 
 object MediaProgressMapper {
     fun map(positionMs: Long, durationMs: Long): MediaProgress {
-        if (durationMs <= 0L) {
+        if (durationMs <= 0L || positionMs < 0L) {
             return MediaProgress(max = 0, progress = 0, indeterminate = true)
         }
         if (durationMs <= Int.MAX_VALUE) {

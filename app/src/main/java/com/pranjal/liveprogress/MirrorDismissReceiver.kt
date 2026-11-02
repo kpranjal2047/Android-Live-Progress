@@ -1,12 +1,10 @@
 package com.pranjal.liveprogress
 
-import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Icon
 
 class MirrorDismissReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -38,17 +36,6 @@ class MirrorDismissReceiver : BroadcastReceiver() {
         private const val EXTRA_PROGRESS_KEY = "progress_key"
         private const val EXTRA_NOTIFICATION_ID = "notification_id"
 
-        fun progressAction(
-            context: Context,
-            candidate: MirrorCandidate
-        ): Notification.Action {
-            val intent = Intent(context, MirrorDismissReceiver::class.java)
-                .setAction(ACTION_DISMISS_PROGRESS)
-                .putExtra(EXTRA_PROGRESS_KEY, candidate.key)
-                .putExtra(EXTRA_NOTIFICATION_ID, candidate.notificationId)
-            return action(context, progressRequestCode(candidate.notificationId), intent)
-        }
-
         fun progressDeleteIntent(
             context: Context,
             candidate: MirrorCandidate
@@ -60,26 +47,10 @@ class MirrorDismissReceiver : BroadcastReceiver() {
             return broadcast(context, progressRequestCode(candidate.notificationId), intent)
         }
 
-        fun mediaAction(context: Context): Notification.Action {
-            val intent = Intent(context, MirrorDismissReceiver::class.java)
-                .setAction(ACTION_DISMISS_MEDIA)
-            return action(context, MEDIA_REQUEST_CODE, intent)
-        }
-
         fun mediaDeleteIntent(context: Context): PendingIntent {
             val intent = Intent(context, MirrorDismissReceiver::class.java)
                 .setAction(ACTION_DISMISS_MEDIA)
             return broadcast(context, MEDIA_REQUEST_CODE, intent)
-        }
-
-        fun notificationAction(
-            context: Context,
-            notificationId: Int
-        ): Notification.Action {
-            val intent = Intent(context, MirrorDismissReceiver::class.java)
-                .setAction(ACTION_DISMISS_NOTIFICATION)
-                .putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-            return action(context, notificationId, intent)
         }
 
         fun notificationDeleteIntent(
@@ -90,18 +61,6 @@ class MirrorDismissReceiver : BroadcastReceiver() {
                 .setAction(ACTION_DISMISS_NOTIFICATION)
                 .putExtra(EXTRA_NOTIFICATION_ID, notificationId)
             return broadcast(context, notificationId, intent)
-        }
-
-        private fun action(
-            context: Context,
-            requestCode: Int,
-            intent: Intent
-        ): Notification.Action {
-            return Notification.Action.Builder(
-                Icon.createWithResource(context, R.drawable.ic_dismiss),
-                context.getString(R.string.mirror_action_dismiss),
-                broadcast(context, requestCode, intent)
-            ).build()
         }
 
         private fun broadcast(

@@ -32,4 +32,11 @@ class MediaProgressMapperTest {
         assertEquals(Int.MAX_VALUE, progress.max)
         assertEquals(Int.MAX_VALUE / 2, progress.progress)
     }
+    @Test fun unknownPositionDoesNotInventProgressEvenWithKnownDuration() {
+        val unknown = MediaProgressMapper.map(-1, 100_000)
+        assertFalse(ProgressMath.hasKnownProgress(unknown.max, unknown.indeterminate))
+        val start = MediaProgressMapper.map(0, 100_000)
+        assertTrue(ProgressMath.hasKnownProgress(start.max, start.indeterminate))
+        assertEquals(0, start.progress)
+    }
 }

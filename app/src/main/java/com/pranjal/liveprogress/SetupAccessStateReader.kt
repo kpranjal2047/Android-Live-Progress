@@ -22,11 +22,7 @@ object SetupAccessStateReader {
                 "enabled_notification_listeners",
                 ComponentName(appContext, NotificationMirrorService::class.java)
             ),
-            accessibilityEnabled = isEnabled(
-                appContext,
-                "enabled_accessibility_services",
-                ComponentName(appContext, QuickSettingsAccessibilityService::class.java)
-            ),
+            accessibilityEnabled = accessibilityEnabled(appContext),
             accessibilityRequired = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded ||
                 visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
             shizukuAvailable = privileged.shizukuAvailable,
@@ -34,9 +30,13 @@ object SetupAccessStateReader {
         )
     }
 
+    fun accessibilityEnabled(context: Context): Boolean =
+        Settings.Secure.getInt(context.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1 &&
+            isEnabled(context, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                ComponentName(context, QuickSettingsAccessibilityService::class.java))
+
     private fun isEnabled(context: Context, setting: String, component: ComponentName): Boolean {
         val enabled = Settings.Secure.getString(context.contentResolver, setting) ?: return false
-        val componentName = component.flattenToString()
-        return enabled.split(':').any { it.equals(componentName, ignoreCase = true) }
+        return EnabledServiceComponents.contains(enabled, component.packageName, component.className)
     }
 }

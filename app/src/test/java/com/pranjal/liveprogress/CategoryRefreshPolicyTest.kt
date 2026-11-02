@@ -7,18 +7,18 @@ import org.junit.Test
 
 class CategoryRefreshPolicyTest {
     @Test
-    fun hidesRefreshWhenShizukuIsUnavailable() {
+    fun hidesRefreshWhenShizukuIsNotInstalled() {
         assertEquals(
             CategoryRefreshAction.HIDDEN,
-            CategoryRefreshPolicy.actionFor(shizukuAvailable = false, shizukuGranted = false)
+            CategoryRefreshPolicy.actionFor(shizukuInstalled = false, shizukuAvailable = false, shizukuGranted = false)
         )
     }
 
     @Test
-    fun requestsPermissionBeforeConfirmationWhenShizukuIsUngranted() {
+    fun opensSetupBeforeConfirmationWhenShizukuIsUngranted() {
         assertEquals(
-            CategoryRefreshAction.REQUEST_SHIZUKU_PERMISSION,
-            CategoryRefreshPolicy.actionFor(shizukuAvailable = true, shizukuGranted = false)
+            CategoryRefreshAction.OPEN_SHIZUKU_SETUP,
+            CategoryRefreshPolicy.actionFor(shizukuInstalled = true, shizukuAvailable = true, shizukuGranted = false)
         )
     }
 
@@ -26,7 +26,7 @@ class CategoryRefreshPolicyTest {
     fun confirmsOnlyWhenShizukuPermissionIsGranted() {
         assertEquals(
             CategoryRefreshAction.CONFIRM_REFRESH,
-            CategoryRefreshPolicy.actionFor(shizukuAvailable = true, shizukuGranted = true)
+            CategoryRefreshPolicy.actionFor(shizukuInstalled = true, shizukuAvailable = true, shizukuGranted = true)
         )
     }
 
@@ -42,5 +42,17 @@ class CategoryRefreshPolicyTest {
     fun onlyReleasesAssistantWhenTheRefreshStartedIt() {
         assertTrue(CategoryRefreshAssistantReleasePolicy.shouldRelease(false))
         assertFalse(CategoryRefreshAssistantReleasePolicy.shouldRelease(true))
+    }
+    @Test fun installedButStoppedShizukuOpensSetup() {
+        assertEquals(CategoryRefreshAction.OPEN_SHIZUKU_SETUP,
+            CategoryRefreshPolicy.actionFor(true, false, false))
+    }
+    @Test fun uninstallOverridesStaleGrantedState() {
+        assertEquals(CategoryRefreshAction.HIDDEN,
+            CategoryRefreshPolicy.actionFor(false, true, true))
+    }
+    @Test fun accessLostAfterConfirmationReturnsToSetup() {
+        assertEquals(CategoryRefreshAction.CONFIRM_REFRESH, CategoryRefreshPolicy.actionFor(true, true, true))
+        assertEquals(CategoryRefreshAction.OPEN_SHIZUKU_SETUP, CategoryRefreshPolicy.actionFor(true, true, false))
     }
 }

@@ -14,8 +14,7 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -31,8 +30,7 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertTrue(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -48,8 +46,7 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -57,7 +54,7 @@ class MediaVisibilityPolicyTest {
     }
 
     @Test
-    fun lockScreenToggleShowsMirrorWithoutSuppressingOriginalByDefault() {
+    fun aodToggleNeverShowsAwakeLockScreenMirror() {
         val decision = MediaVisibilityPolicy.decide(
             mediaEnabled = true,
             hasActiveMedia = true,
@@ -65,17 +62,16 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = true
+            showOnAod = true
         )
-        assertTrue(decision.showMirror)
+        assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
         assertFalse(decision.aodVisible)
-        assertTrue(decision.showShortCriticalText)
+        assertFalse(decision.showShortCriticalText)
     }
 
     @Test
-    fun lockScreenCanSuppressOriginalWhenRequested() {
+    fun awakeLockScreenNeverSuppressesOriginal() {
         val decision = MediaVisibilityPolicy.decide(
             mediaEnabled = true,
             hasActiveMedia = true,
@@ -84,11 +80,10 @@ class MediaVisibilityPolicyTest {
             quickSettingsExpanded = false,
             progressMirrorActive = false,
             showOnAod = true,
-            showOnLockScreen = true,
             hideOriginalNotification = true
         )
-        assertTrue(decision.showMirror)
-        assertTrue(decision.suppressOriginal)
+        assertFalse(decision.showMirror)
+        assertFalse(decision.suppressOriginal)
         assertFalse(decision.aodVisible)
     }
 
@@ -101,8 +96,7 @@ class MediaVisibilityPolicyTest {
             screenOff = true,
             quickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = true
         )
         assertTrue(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -120,7 +114,6 @@ class MediaVisibilityPolicyTest {
             quickSettingsExpanded = false,
             progressMirrorActive = false,
             showOnAod = true,
-            showOnLockScreen = false,
             hideOriginalNotification = true
         )
         assertTrue(decision.showMirror)
@@ -137,8 +130,7 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = true,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -155,8 +147,7 @@ class MediaVisibilityPolicyTest {
             quickSettingsExpanded = true,
             hideWhenQuickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertTrue(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -173,8 +164,7 @@ class MediaVisibilityPolicyTest {
             quickSettingsExpanded = false,
             sourceAppInForeground = true,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -192,8 +182,7 @@ class MediaVisibilityPolicyTest {
             hideWhenSourceAppInForeground = false,
             sourceAppInForeground = true,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertTrue(decision.showMirror)
         assertTrue(decision.showShortCriticalText)
@@ -209,8 +198,7 @@ class MediaVisibilityPolicyTest {
             quickSettingsExpanded = false,
             sourceAppInForeground = true,
             progressMirrorActive = false,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = true
         )
         assertTrue(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -227,8 +215,7 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = false,
             progressMirrorActive = true,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -245,8 +232,7 @@ class MediaVisibilityPolicyTest {
             screenOff = true,
             quickSettingsExpanded = false,
             progressMirrorActive = true,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -262,8 +248,7 @@ class MediaVisibilityPolicyTest {
             screenOff = false,
             quickSettingsExpanded = true,
             progressMirrorActive = true,
-            showOnAod = true,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
@@ -279,11 +264,42 @@ class MediaVisibilityPolicyTest {
             screenOff = true,
             quickSettingsExpanded = false,
             progressMirrorActive = false,
-            showOnAod = false,
-            showOnLockScreen = false
+            showOnAod = false
         )
         assertFalse(decision.showMirror)
         assertFalse(decision.suppressOriginal)
         assertFalse(decision.showShortCriticalText)
     }
+    @Test
+    fun aodSettingOnlyAffectsScreenOffVisibility() {
+        for (enabled in listOf(false, true)) {
+            for (screenOff in listOf(false, true)) {
+                val decision = MediaVisibilityPolicy.decide(
+                    mediaEnabled = true, hasActiveMedia = true, locked = true,
+                    screenOff = screenOff, quickSettingsExpanded = false,
+                    progressMirrorActive = false, showOnAod = enabled
+                )
+                org.junit.Assert.assertEquals(enabled && screenOff, decision.showMirror)
+            }
+        }
+    }
+    @Test
+    fun aodToAwakeLockScreenReleasesRequestedSuppression() {
+        for (enabled in listOf(false, true)) {
+            for (locked in listOf(false, true)) {
+                for (screenOff in listOf(false, true)) {
+                    val decision = MediaVisibilityPolicy.decide(
+                        mediaEnabled = true, hasActiveMedia = true, locked = locked,
+                        screenOff = screenOff, quickSettingsExpanded = false,
+                        progressMirrorActive = false, showOnAod = enabled,
+                        hideOriginalNotification = true
+                    )
+                    org.junit.Assert.assertEquals(if (screenOff) enabled else !locked, decision.showMirror)
+                    org.junit.Assert.assertEquals(screenOff && enabled, decision.suppressOriginal)
+                    org.junit.Assert.assertEquals(screenOff && enabled, decision.aodVisible)
+                }
+            }
+        }
+    }
+
 }

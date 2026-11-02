@@ -20,7 +20,6 @@ object MediaVisibilityPolicy {
         sourceAppInForeground: Boolean = false,
         progressMirrorActive: Boolean,
         showOnAod: Boolean,
-        showOnLockScreen: Boolean,
         hideOriginalNotification: Boolean = false
     ): MediaVisibilityDecision {
         if (!mediaEnabled) return hidden("media live notifications disabled")
@@ -41,27 +40,15 @@ object MediaVisibilityPolicy {
             )
         }
 
-        if (hideWhenSourceAppInForeground && sourceAppInForeground) {
+        if (!locked && hideWhenSourceAppInForeground && sourceAppInForeground) {
             return hidden("source app foreground")
         }
 
-        if (quickSettingsExpanded && hideWhenQuickSettingsExpanded) {
+        if (!locked && quickSettingsExpanded && hideWhenQuickSettingsExpanded) {
             return hidden("quick settings expanded")
         }
 
-        if (locked && !showOnLockScreen) {
-            return hidden("lock screen original selected")
-        }
-
-        if (locked) {
-            return MediaVisibilityDecision(
-                showMirror = true,
-                suppressOriginal = hideOriginalNotification,
-                aodVisible = false,
-                showShortCriticalText = true,
-                reason = "lock screen mirror selected"
-            )
-        }
+        if (locked) return hidden("awake lock screen uses original media")
 
         return MediaVisibilityDecision(
             showMirror = true,

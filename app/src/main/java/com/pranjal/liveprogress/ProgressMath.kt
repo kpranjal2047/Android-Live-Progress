@@ -3,6 +3,8 @@ package com.pranjal.liveprogress
 import kotlin.math.roundToInt
 
 object ProgressMath {
+    fun hasKnownProgress(max: Int, indeterminate: Boolean): Boolean = !indeterminate && max > 0
+
     fun percent(progress: Int, max: Int, indeterminate: Boolean): Int? {
         if (indeterminate || max <= 0) return null
         return ((progress.coerceIn(0, max).toDouble() / max.toDouble()) * 100.0)

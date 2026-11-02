@@ -29,7 +29,20 @@ data class ToggleState(
     val enabled: Boolean
 )
 
+enum class NotificationPermissionAction { CONTINUE, REQUEST_PERMISSION, OPEN_SETTINGS }
+
 object SetupFlowPolicy {
+    fun notificationAction(permissionGranted: Boolean, notificationsEnabled: Boolean): NotificationPermissionAction = when {
+        !permissionGranted -> NotificationPermissionAction.REQUEST_PERMISSION
+        !notificationsEnabled -> NotificationPermissionAction.OPEN_SETTINGS
+        else -> NotificationPermissionAction.CONTINUE
+    }
+
+    fun remainingAutomaticItems(requested: List<AutomaticSetupItem>, state: SetupAccessState): List<AutomaticSetupItem> {
+        val missing = automaticItemsMissing(state).toSet()
+        return requested.filter { it in missing }
+    }
+
     fun shouldRequestShizukuFirst(
         state: SetupAccessState,
         shizukuDeferred: Boolean
@@ -64,9 +77,7 @@ object SetupFlowPolicy {
         shizukuAvailable: Boolean,
         shizukuGranted: Boolean
     ): ToggleState {
-        return ToggleState(
-            checked = suppressOriginalNotification && shizukuGranted,
-            enabled = progressEnabled && shizukuAvailable
-        )
+        return PrerequisiteTogglePolicy.state(suppressOriginalNotification,
+            shizukuAvailable && shizukuGranted, progressEnabled)
     }
 }

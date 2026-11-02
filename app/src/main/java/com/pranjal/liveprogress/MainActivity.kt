@@ -53,7 +53,10 @@ class MainActivity : Activity() {
     }
 
     private lateinit var settingsContainer: LinearLayout
+    private val prerequisiteHelp by lazy { PrerequisiteHelp(this) }
+    private val shizukuAccessObserver by lazy { PrerequisiteAccessObserver(this, ::renderCurrentScreen) }
     private var manualSetupSelected = false
+    private var accessibilityDeferred = false
     private var shizukuDeferred = false
     private var initialOnboarding = false
     private val shizukuSetupObserver: (ShizukuSetupState) -> Unit = ::onShizukuSetupStateChanged
@@ -64,23 +67,7 @@ class MainActivity : Activity() {
         Tonal
     }
 
-    private data class UiPalette(
-        val background: Int,
-        val surface: Int,
-        val surfaceContainer: Int,
-        val surfaceContainerHigh: Int,
-        val primary: Int,
-        val primaryPressed: Int,
-        val onPrimary: Int,
-        val secondaryContainer: Int,
-        val onSecondaryContainer: Int,
-        val outline: Int,
-        val textPrimary: Int,
-        val textSecondary: Int,
-        val textDisabled: Int,
-        val disabledContainer: Int,
-        val ripple: Int
-    )
+
 
     private data class SetupRequirement(
         val titleRes: Int,
@@ -92,6 +79,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        accessibilityDeferred = savedInstanceState?.getBoolean("accessibility_deferred") ?: false
         manualSetupSelected = savedInstanceState?.getBoolean(STATE_MANUAL_SETUP_SELECTED) ?: false
         shizukuDeferred = savedInstanceState?.getBoolean(STATE_SHIZUKU_DEFERRED) ?: false
         initialOnboarding = savedInstanceState?.getBoolean(STATE_INITIAL_ONBOARDING)
@@ -106,6 +94,7 @@ class MainActivity : Activity() {
         AppUiLifecycleTracker.onActivityStarted()
         ShizukuSetupCoordinator.addObserver(shizukuSetupObserver)
         CategoryRefreshCoordinator.addObserver(categoryRefreshObserver)
+        shizukuAccessObserver.start()
     }
 
     override fun onResume() {
@@ -114,6 +103,8 @@ class MainActivity : Activity() {
     }
 
     override fun onStop() {
+        prerequisiteHelp.close()
+        shizukuAccessObserver.stop()
         ShizukuSetupCoordinator.removeObserver(shizukuSetupObserver)
         CategoryRefreshCoordinator.removeObserver(categoryRefreshObserver)
         AppUiLifecycleTracker.onActivityStopped(this)
@@ -121,6 +112,7 @@ class MainActivity : Activity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("accessibility_deferred", accessibilityDeferred)
         outState.putBoolean(STATE_MANUAL_SETUP_SELECTED, manualSetupSelected)
         outState.putBoolean(STATE_SHIZUKU_DEFERRED, shizukuDeferred)
         outState.putBoolean(STATE_INITIAL_ONBOARDING, initialOnboarding)
@@ -139,6 +131,29 @@ class MainActivity : Activity() {
     }
 
     private fun renderCurrentScreen() {
+        val requestedSetup = intent.getStringExtra(PermissionSetupNavigation.EXTRA_SETUP_TOPIC)
+        if (requestedSetup != null) {
+            val access = SetupAccessStateReader.read(this)
+            val accessibility = requestedSetup == PrerequisiteHelp.Topic.ACCESSIBILITY.name
+            if (!accessibility && !PrivilegedAccess.isShizukuInstalled(this)) {
+                finish()
+                return
+            }
+            if (if (accessibility) access.accessibilityEnabled else access.shizukuAvailable && access.shizukuGranted) {
+                finish()
+                return
+            }
+            val requirement = if (accessibility) SetupRequirement(
+                titleRes = R.string.setup_accessibility_title,
+                reasonRes = R.string.setup_accessibility_reason,
+                actionRes = R.string.setup_accessibility_action,
+                action = ::openAccessibilitySettings,
+                skipAction = { finish() }
+            ) else shizukuSetupRequirement().copy(skipAction = { finish() })
+            setContentView(buildSetupContent(requirement))
+            return
+        }
+
         when (val setupState = ShizukuSetupCoordinator.currentState()) {
             is ShizukuSetupState.Running -> {
                 setContentView(buildAutomaticSetupProgressContent(setupState.items))
@@ -155,8 +170,9 @@ class MainActivity : Activity() {
 
         if (renderInitialCategoryRefreshIfNeeded()) return
 
-        val accessState = SetupAccessStateReader.read(this)
-        if (SetupFlowPolicy.shouldRequestShizukuFirst(accessState, shizukuDeferred)) {
+        val accessState = onboardingAccessState()
+        if (initialOnboarding && PrivilegedAccess.isShizukuInstalled(this) &&
+            SetupFlowPolicy.shouldRequestShizukuFirst(accessState, shizukuDeferred)) {
             setContentView(buildSetupContent(shizukuSetupRequirement()))
             return
         }
@@ -173,8 +189,14 @@ class MainActivity : Activity() {
             return
         }
 
+        initialOnboarding = false
         setContentView(buildContent())
         refreshStatus()
+    }
+
+    private fun onboardingAccessState(): SetupAccessState {
+        val state = SetupAccessStateReader.read(this)
+        return state.copy(accessibilityRequired = state.accessibilityRequired && initialOnboarding && !accessibilityDeferred)
     }
 
     private fun firstMissingSetupRequirement(accessState: SetupAccessState): SetupRequirement? {
@@ -213,7 +235,8 @@ class MainActivity : Activity() {
         return SetupRequirement(
             titleRes = R.string.setup_shizuku_title,
             reasonRes = R.string.setup_shizuku_reason,
-            actionRes = R.string.setup_shizuku_action,
+            actionRes = if (PrivilegedAccess.currentState(this).shizukuAvailable)
+                R.string.setup_shizuku_action else R.string.setup_start_shizuku,
             action = ::requestShizukuPermission,
             skipAction = ::skipShizukuSetup
         )
@@ -266,6 +289,9 @@ class MainActivity : Activity() {
         root.addView(appTitle, blockParams(bottom = 18.dp()))
         root.addView(setupCard, blockParams(top = 8.dp()))
 
+        // Start long explanations at the top instead of scrolling to the first action button.
+        root.isFocusableInTouchMode = true
+        root.requestFocus()
         return scrollContent(root)
     }
 
@@ -294,8 +320,8 @@ class MainActivity : Activity() {
             setPadding(0, 12.dp(), 0, 16.dp())
         }
         val itemList = TextView(this).apply {
-            text = items.joinToString(separator = "\n") { item ->
-                "• ${getString(item.labelRes())}"
+            text = items.joinToString(separator = "\n\n") { item ->
+                "${getString(item.labelRes())}\n${getString(item.reasonRes())}"
             }
             textSize = 14f
             setTextColor(colors.textSecondary)
@@ -324,6 +350,9 @@ class MainActivity : Activity() {
         }
         root.addView(appTitle, blockParams(bottom = 18.dp()))
         root.addView(card, blockParams(top = 8.dp()))
+        // Start long explanations at the top instead of scrolling to the first action button.
+        root.isFocusableInTouchMode = true
+        root.requestFocus()
         return scrollContent(root)
     }
 
@@ -371,6 +400,13 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun AutomaticSetupItem.reasonRes(): Int = when (this) {
+        AutomaticSetupItem.NOTIFICATIONS -> R.string.setup_notifications_reason
+        AutomaticSetupItem.PROMOTED_NOTIFICATIONS -> R.string.setup_promoted_reason
+        AutomaticSetupItem.NOTIFICATION_LISTENER -> R.string.setup_listener_reason
+        AutomaticSetupItem.ACCESSIBILITY -> R.string.setup_accessibility_reason
+    }
+
     private fun AutomaticSetupItem.labelRes(): Int {
         return when (this) {
             AutomaticSetupItem.NOTIFICATIONS -> R.string.setup_item_notifications
@@ -397,7 +433,7 @@ class MainActivity : Activity() {
             CategoryRefreshState.Idle -> Unit
         }
 
-        val accessState = SetupAccessStateReader.read(this)
+        val accessState = onboardingAccessState()
         if (!accessState.shizukuGranted) {
             if (FirstRunCategoryRefreshPolicy.shouldMarkHandledWithoutRefresh(
                     initialOnboarding,
@@ -500,16 +536,28 @@ class MainActivity : Activity() {
     }
 
     private fun requestShizukuPermission() {
+        if (!PrivilegedAccess.isShizukuInstalled(this)) {
+            renderCurrentScreen()
+            return
+        }
+        val state = PrivilegedAccess.currentState(this)
+        if (!state.shizukuAvailable) {
+            val launch = packageManager.getLaunchIntentForPackage(PrivilegedAccess.SHIZUKU_PACKAGE)
+            if (launch != null) startActivity(launch)
+            else Toast.makeText(this, R.string.setup_start_shizuku, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (state.shizukuGranted) {
+            renderCurrentScreen()
+            return
+        }
         val message = PrivilegedAccess.requestShizukuPermission()
         AppDiagnostics.note(this, "privileged_setup", message)
         renderCurrentScreen()
     }
 
     private fun skipAccessibilitySetup() {
-        VisibilityPreferences(this).apply {
-            hideMirrorsWhenQuickSettingsExpanded = false
-            hideStatusBarPillWhenSourceAppForeground = false
-        }
+        accessibilityDeferred = true
         AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_skipped_accessibility_setup))
         VisibilityPreferenceEvents.notifyChanged()
         renderCurrentScreen()
@@ -517,7 +565,6 @@ class MainActivity : Activity() {
 
     private fun skipShizukuSetup() {
         shizukuDeferred = true
-        ProgressPreferences(this).suppressOriginalNotification = false
         AppDiagnostics.note(this, "privileged_setup", getString(R.string.diagnostic_skipped_shizuku_setup))
         ProgressPreferenceEvents.notifyChanged()
         renderCurrentScreen()
@@ -674,7 +721,7 @@ class MainActivity : Activity() {
 
     private fun buttonTextColors(
         style: ButtonStyle,
-        colors: UiPalette
+        colors: SettingsUi.Palette
     ): ColorStateList {
         val normal = when (style) {
             ButtonStyle.Filled -> colors.onPrimary
@@ -692,7 +739,7 @@ class MainActivity : Activity() {
     private fun buttonBackground(
         style: ButtonStyle,
         enabled: Boolean,
-        colors: UiPalette
+        colors: SettingsUi.Palette
     ): Drawable {
         if (!enabled) {
             return rounded(colors.disabledContainer, 28.dp())
@@ -714,7 +761,7 @@ class MainActivity : Activity() {
 
     private fun rowBackground(
         enabled: Boolean,
-        colors: UiPalette
+        colors: SettingsUi.Palette
     ): Drawable {
         val surface = if (enabled) colors.surfaceContainer else colors.surface
         if (!enabled) {
@@ -743,46 +790,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun palette(): UiPalette {
-        val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        return if (nightMode == Configuration.UI_MODE_NIGHT_YES) {
-            UiPalette(
-                background = systemColor(android.R.color.system_neutral1_900),
-                surface = systemColor(android.R.color.system_neutral1_900),
-                surfaceContainer = systemColor(android.R.color.system_neutral1_800),
-                surfaceContainerHigh = systemColor(android.R.color.system_neutral1_700),
-                primary = systemColor(android.R.color.system_accent1_200),
-                primaryPressed = systemColor(android.R.color.system_accent1_100),
-                onPrimary = systemColor(android.R.color.system_accent1_900),
-                secondaryContainer = systemColor(android.R.color.system_accent2_800),
-                onSecondaryContainer = systemColor(android.R.color.system_accent2_100),
-                outline = systemColor(android.R.color.system_neutral2_700),
-                textPrimary = systemColor(android.R.color.system_neutral1_100),
-                textSecondary = systemColor(android.R.color.system_neutral2_200),
-                textDisabled = systemColor(android.R.color.system_neutral2_500),
-                disabledContainer = systemColor(android.R.color.system_neutral1_800),
-                ripple = withAlpha(systemColor(android.R.color.system_neutral1_100), 28)
-            )
-        } else {
-            UiPalette(
-                background = systemColor(android.R.color.system_neutral1_10),
-                surface = systemColor(android.R.color.system_neutral1_10),
-                surfaceContainer = systemColor(android.R.color.system_neutral1_50),
-                surfaceContainerHigh = systemColor(android.R.color.system_neutral1_100),
-                primary = systemColor(android.R.color.system_accent1_600),
-                primaryPressed = systemColor(android.R.color.system_accent1_700),
-                onPrimary = systemColor(android.R.color.system_neutral1_10),
-                secondaryContainer = systemColor(android.R.color.system_accent2_100),
-                onSecondaryContainer = systemColor(android.R.color.system_accent2_900),
-                outline = systemColor(android.R.color.system_neutral2_200),
-                textPrimary = systemColor(android.R.color.system_neutral1_900),
-                textSecondary = systemColor(android.R.color.system_neutral2_700),
-                textDisabled = systemColor(android.R.color.system_neutral2_400),
-                disabledContainer = systemColor(android.R.color.system_neutral1_100),
-                ripple = withAlpha(systemColor(android.R.color.system_accent1_600), 34)
-            )
-        }
-    }
+    private fun palette(): SettingsUi.Palette = SettingsUi(this).palette()
 
     private fun systemColor(colorRes: Int): Int {
         return getColor(colorRes)
@@ -849,6 +857,7 @@ class MainActivity : Activity() {
             shizukuAvailable = privileged.shizukuAvailable,
             shizukuGranted = privileged.shizukuGranted
         )
+        val accessibilityGranted = SetupAccessStateReader.accessibilityEnabled(this)
         settingsContainer.removeAllViews()
         settingsContainer.addView(sectionTitle(getString(R.string.section_general)))
         settingsContainer.addView(dropdown(
@@ -862,7 +871,9 @@ class MainActivity : Activity() {
         })
         settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_hide_mirrors_qs),
-            checked = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded
+            help = PrerequisiteHelp.Topic.ACCESSIBILITY,
+            checked = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded && accessibilityGranted,
+            enabled = accessibilityGranted
         ) {
             visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded = it
             AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_qs_setting_changed))
@@ -875,7 +886,9 @@ class MainActivity : Activity() {
         })
         settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_hide_status_pill_source_foreground),
-            checked = visibilityPreferences.hideStatusBarPillWhenSourceAppForeground
+            help = PrerequisiteHelp.Topic.ACCESSIBILITY,
+            checked = visibilityPreferences.hideStatusBarPillWhenSourceAppForeground && accessibilityGranted,
+            enabled = accessibilityGranted
         ) {
             visibilityPreferences.hideStatusBarPillWhenSourceAppForeground = it
             AppDiagnostics.note(this, "visibility", getString(R.string.diagnostic_foreground_pill_setting_changed))
@@ -903,16 +916,8 @@ class MainActivity : Activity() {
             progressChanged()
         })
         settingsContainer.addView(settingToggle(
-            label = getString(R.string.setting_show_progress_aod),
-            checked = progressPreferences.showOnAod,
-            enabled = progressPreferences.enabled
-        ) {
-            progressPreferences.showOnAod = it
-            AppDiagnostics.note(this, "mirror", getString(R.string.diagnostic_progress_aod_changed))
-            progressChanged()
-        })
-        settingsContainer.addView(settingToggle(
             label = getString(R.string.setting_hide_original_lock_screen),
+            help = PrerequisiteHelp.Topic.SHIZUKU,
             checked = progressSuppressionToggle.checked,
             enabled = progressSuppressionToggle.enabled
         ) {
@@ -930,14 +935,6 @@ class MainActivity : Activity() {
         settingsContainer.addView(sectionTitle(getString(R.string.section_media_live_updates)))
         settingsContainer.addView(settingToggle(getString(R.string.setting_enable_media_live_updates), mediaPreferences.enabled) {
             mediaPreferences.enabled = it
-            mediaChanged()
-        })
-        settingsContainer.addView(settingToggle(
-            label = getString(R.string.setting_show_media_lock_screen),
-            checked = mediaPreferences.showOnLockScreen,
-            enabled = mediaPreferences.enabled
-        ) {
-            mediaPreferences.showOnLockScreen = it
             mediaChanged()
         })
         settingsContainer.addView(settingToggle(
@@ -960,20 +957,16 @@ class MainActivity : Activity() {
         })
 
         settingsContainer.addView(sectionTitle(getString(R.string.section_additional_live_notifications)))
-        settingsContainer.addView(settingToggle(
-            label = getString(R.string.setting_auto_enable_new_categories),
-            checked = categoryPreferences.autoEnableNewCategories
-        ) {
-            categoryPreferences.autoEnableNewCategories = it
-            AdditionalNotificationPreferenceEvents.notifyChanged()
-            refreshStatus()
-        })
         settingsContainer.addView(settingNavigationRow(
             label = getString(R.string.setting_notification_categories),
             enabled = true
         ) {
             startActivity(Intent(this, NotificationChannelSelectionActivity::class.java))
         })
+
+        settingsContainer.addView(settingNavigationRow(
+            label = getString(R.string.system_status_title), enabled = true
+        ) { startActivity(Intent(this, SystemStatusActivity::class.java)) })
 
         settingsContainer.addView(sectionTitle(getString(R.string.section_developer)))
         settingsContainer.addView(dropdown(
@@ -1087,7 +1080,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun sourceCodeChip(colors: UiPalette): TextView {
+    private fun sourceCodeChip(colors: SettingsUi.Palette): TextView {
         return TextView(this).apply {
             text = getString(R.string.about_source_code)
             textSize = 15f
@@ -1113,43 +1106,10 @@ class MainActivity : Activity() {
     }
 
     private fun settingToggle(
-        label: String,
-        checked: Boolean,
-        enabled: Boolean = true,
-        onChanged: (Boolean) -> Unit
-    ): View {
-        val colors = palette()
-        val row = settingRow(enabled)
-        val labelView = TextView(this).apply {
-            text = label
-            textSize = 16f
-            setTextColor(if (enabled) colors.textPrimary else colors.textDisabled)
-            setLineSpacing(2.dp().toFloat(), 1f)
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
-        }
-        val switch = switchIndicator(checked, enabled, colors).apply {
-            contentDescription = label
-        }
-
-        row.addView(labelView)
-        row.addView(
-            switch,
-            LinearLayout.LayoutParams(
-                58.dp(),
-                36.dp()
-            ).apply {
-                marginStart = 16.dp()
-            }
-        )
-        row.setOnClickListener {
-            if (enabled) onChanged(!checked)
-        }
-        return row
-    }
+        label: String, checked: Boolean, enabled: Boolean = true,
+        help: PrerequisiteHelp.Topic? = null, onChanged: (Boolean) -> Unit
+    ): View = SettingsUi(this).settingToggle(label, checked, enabled,
+        onInfo = help?.let { topic -> { prerequisiteHelp.show(topic) } }, onChanged = onChanged)
 
     private fun settingNavigationRow(
         label: String,
@@ -1250,7 +1210,7 @@ class MainActivity : Activity() {
     private fun dropdownPill(
         label: String,
         enabled: Boolean,
-        colors: UiPalette
+        colors: SettingsUi.Palette
     ): TextView {
         return TextView(this).apply {
             text = label
@@ -1293,49 +1253,12 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun switchIndicator(
-        checked: Boolean,
-        enabled: Boolean,
-        colors: UiPalette
-    ): FrameLayout {
-        val trackColor = when {
-            !enabled -> colors.disabledContainer
-            checked -> colors.primary
-            else -> blend(colors.textSecondary, colors.surfaceContainerHigh, 0.40f)
-        }
-        val trackStroke = when {
-            checked -> null
-            enabled -> colors.outline
-            else -> colors.textDisabled
-        }
-        val thumbColor = when {
-            !enabled -> colors.textDisabled
-            checked -> colors.onPrimary
-            else -> colors.surface
-        }
-        return FrameLayout(this).apply {
-            isEnabled = enabled
-            background = rounded(trackColor, 18.dp(), trackStroke, 1.dp())
-            setPadding(4.dp(), 4.dp(), 4.dp(), 4.dp())
-            addView(
-                View(this@MainActivity).apply {
-                    background = rounded(thumbColor, 14.dp())
-                    elevation = if (enabled) 2.dp().toFloat() else 0f
-                },
-                FrameLayout.LayoutParams(28.dp(), 28.dp()).apply {
-                    gravity = if (checked) {
-                        Gravity.CENTER_VERTICAL or Gravity.END
-                    } else {
-                        Gravity.CENTER_VERTICAL or Gravity.START
-                    }
-                }
-            )
-        }
-    }
+    private fun switchIndicator(checked: Boolean, enabled: Boolean, colors: SettingsUi.Palette): FrameLayout =
+        SettingsUi(this).switchIndicator(checked, enabled, colors)
 
     private fun pillBackground(
         enabled: Boolean,
-        colors: UiPalette
+        colors: SettingsUi.Palette
     ): Drawable {
         if (!enabled) {
             return rounded(colors.disabledContainer, 18.dp(), colors.outline, 1.dp())
@@ -1401,9 +1324,6 @@ class MainActivity : Activity() {
             .setColor(SystemColorPalette.primary(this))
             .setShortCriticalText("42%")
             .setStyle(style)
-            .addAction(
-                MirrorDismissReceiver.notificationAction(this, TEST_LIVE_NOTIFICATION_ID)
-            )
 
         val notification = PromotedOngoingCompat.request(builder).build()
         val manager = getSystemService(NotificationManager::class.java)
@@ -1434,6 +1354,10 @@ class MainActivity : Activity() {
     }
 
     private fun openPromotedNotificationSettings() {
+        if (SetupAccessStateReader.read(this).promotedNotificationsReady) {
+            renderCurrentScreen()
+            return
+        }
         for (intent in promotedSettingsIntents()) {
             try {
                 startActivity(intent)
@@ -1457,6 +1381,10 @@ class MainActivity : Activity() {
     }
 
     private fun openNotificationListenerSettings() {
+        if (SetupAccessStateReader.read(this).notificationListenerReady) {
+            renderCurrentScreen()
+            return
+        }
         val component = ComponentName(this, NotificationMirrorService::class.java)
         openSettingsDetailsOrFallback(
             detailsIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
@@ -1469,6 +1397,10 @@ class MainActivity : Activity() {
     }
 
     private fun openAccessibilitySettings() {
+        if (SetupAccessStateReader.read(this).accessibilityEnabled) {
+            renderCurrentScreen()
+            return
+        }
         val component = ComponentName(this, QuickSettingsAccessibilityService::class.java)
         openSettingsDetailsOrFallback(
             detailsIntent = Intent(ACTION_ACCESSIBILITY_DETAILS_SETTINGS_VALUE)
@@ -1523,14 +1455,17 @@ class MainActivity : Activity() {
     }
 
     private fun requestNotificationPostingOrOpenSettings() {
-        if (!hasPostPermission()) {
-            requestPermissions(
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                POST_NOTIFICATIONS_REQUEST
+        val action = SetupFlowPolicy.notificationAction(
+            permissionGranted = hasPostPermission(),
+            notificationsEnabled = getSystemService(NotificationManager::class.java).areNotificationsEnabled()
+        )
+        when (action) {
+            NotificationPermissionAction.CONTINUE -> renderCurrentScreen()
+            NotificationPermissionAction.REQUEST_PERMISSION -> requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS), POST_NOTIFICATIONS_REQUEST
             )
-            return
+            NotificationPermissionAction.OPEN_SETTINGS -> startActivity(appNotificationSettingsIntent())
         }
-        startActivity(appNotificationSettingsIntent())
     }
 
     private fun hasPostPermission(): Boolean {
@@ -1538,11 +1473,5 @@ class MainActivity : Activity() {
             PackageManager.PERMISSION_GRANTED
     }
 
-    private fun isAccessibilityEnabled(): Boolean {
-        val enabled = Settings.Secure.getString(contentResolver, "enabled_accessibility_services")
-            ?: return false
-        val component = ComponentName(this, QuickSettingsAccessibilityService::class.java)
-            .flattenToString()
-        return enabled.split(':').any { it.equals(component, ignoreCase = true) }
-    }
+    private fun isAccessibilityEnabled(): Boolean = SetupAccessStateReader.read(this).accessibilityEnabled
 }

@@ -29,4 +29,4 @@ jobs:
           python3 -m unittest discover -s scripts/tests -v
           python3 scripts/release.py validate --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Build, test, and lint
-        run: ./gradlew --no-daemon --console=plain --no-watch-fs assembleDebug testDebugUnitTest lintDebug
+        run: ./gradlew --no-daemon --console=plain --no-watch-fs --init-script scripts/device-tests.gradle assembleDebug assembleDebugAndroidTest testDebugUnitTest lintDebug

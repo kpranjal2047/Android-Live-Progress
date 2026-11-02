@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import java.util.concurrent.CopyOnWriteArraySet
 
 object VisibilityState {
@@ -35,6 +36,7 @@ object VisibilityState {
 
     fun register(context: Context) {
         val appContext = context.applicationContext
+        screenOff = !appContext.getSystemService(PowerManager::class.java).isInteractive
         refreshLockState(appContext)
         if (receiverRegistered) return
         val filter = IntentFilter().apply {

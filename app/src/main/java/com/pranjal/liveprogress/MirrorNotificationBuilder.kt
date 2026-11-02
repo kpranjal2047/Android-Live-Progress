@@ -33,11 +33,10 @@ object MirrorNotificationBuilder {
         useSourceSmallIcon: Boolean = true,
         priorityMode: MirrorPriorityMode = MirrorPriorityMode.DEFAULT
     ): Notification {
-        val style = Notification.ProgressStyle()
-            .setProgressIndeterminate(candidate.progress.indeterminate)
-            .setStyledByProgress(true)
+        val showProgress = ProgressMath.hasKnownProgress(candidate.progress.max, candidate.progress.indeterminate)
+        val style = Notification.ProgressStyle().setStyledByProgress(showProgress)
 
-        if (!candidate.progress.indeterminate && candidate.progress.max > 0) {
+        if (showProgress) {
             style
                 .setProgressSegments(
                     listOf(Notification.ProgressStyle.Segment(candidate.progress.max))
@@ -80,12 +79,9 @@ object MirrorNotificationBuilder {
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setColor(color)
-            .setStyle(style)
+            .setStyle(if (showProgress) style else Notification.BigTextStyle().bigText(contentText))
             .apply {
-                addAction(MirrorDismissReceiver.progressAction(context, candidate))
-                if (candidate.progress.indeterminate) {
-                    setProgress(0, 0, true)
-                } else if (candidate.progress.max > 0) {
+                if (showProgress) {
                     setProgress(
                         candidate.progress.max,
                         candidate.progress.progress.coerceIn(0, candidate.progress.max),

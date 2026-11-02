@@ -8,18 +8,19 @@ import java.util.concurrent.Executors
 
 enum class CategoryRefreshAction {
     HIDDEN,
-    REQUEST_SHIZUKU_PERMISSION,
+    OPEN_SHIZUKU_SETUP,
     CONFIRM_REFRESH
 }
 
 object CategoryRefreshPolicy {
     fun actionFor(
+        shizukuInstalled: Boolean,
         shizukuAvailable: Boolean,
         shizukuGranted: Boolean
     ): CategoryRefreshAction {
         return when {
-            !shizukuAvailable -> CategoryRefreshAction.HIDDEN
-            !shizukuGranted -> CategoryRefreshAction.REQUEST_SHIZUKU_PERMISSION
+            !shizukuInstalled -> CategoryRefreshAction.HIDDEN
+            !shizukuAvailable || !shizukuGranted -> CategoryRefreshAction.OPEN_SHIZUKU_SETUP
             else -> CategoryRefreshAction.CONFIRM_REFRESH
         }
     }

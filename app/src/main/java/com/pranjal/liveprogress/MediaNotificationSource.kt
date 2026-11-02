@@ -6,7 +6,8 @@ import android.service.notification.StatusBarNotification
 data class MediaNotificationSource(
     val original: OriginalNotificationSource,
     val smallIcon: android.graphics.drawable.Icon?,
-    val contentIntent: android.app.PendingIntent?
+    val contentIntent: android.app.PendingIntent?,
+    val actions: List<android.app.Notification.Action> = emptyList()
 )
 
 object MediaNotificationSourceFactory {
@@ -25,7 +26,8 @@ object MediaNotificationSourceFactory {
                 appLabel = label
             ),
             smallIcon = notification.smallIcon,
-            contentIntent = notification.contentIntent
+            contentIntent = notification.contentIntent,
+            actions = notification.actions?.toList().orEmpty()
         )
     }
 }

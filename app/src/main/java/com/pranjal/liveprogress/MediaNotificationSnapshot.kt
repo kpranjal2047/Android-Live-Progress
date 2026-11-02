@@ -13,7 +13,10 @@ data class MediaNotificationSnapshot(
     val priorityMode: MirrorPriorityMode,
     val sourceKey: String?,
     val appLabel: String,
-    val artworkKey: String?
+    val artworkKey: String?,
+    val sourceIcon: android.graphics.drawable.Icon? = null,
+    val sourceActions: List<android.app.Notification.Action> = emptyList(),
+    val sourceContentIntent: android.app.PendingIntent? = null
 ) {
     companion object {
         fun from(
@@ -52,14 +55,17 @@ data class MediaNotificationSnapshot(
                 subText = subText,
                 shortCriticalText = shortCriticalText,
                 isPlaying = state.isPlaying,
-                positionSecond = state.positionMs / 1_000L,
+                positionSecond = if (state.positionMs < 0L) -1L else state.positionMs / 1_000L,
                 durationSecond = state.durationMs / 1_000L,
                 aodVisible = aodVisible,
                 showShortCriticalText = showShortCriticalText,
                 priorityMode = priorityMode,
                 sourceKey = source?.original?.key,
                 appLabel = appLabel,
-                artworkKey = effectiveArtworkKey(artworkKey(state), aodVisible)
+                artworkKey = effectiveArtworkKey(artworkKey(state), aodVisible),
+                sourceIcon = source?.smallIcon,
+                sourceActions = source?.actions.orEmpty(),
+                sourceContentIntent = source?.contentIntent
             )
         }
 

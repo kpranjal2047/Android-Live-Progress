@@ -1,6 +1,6 @@
-# Live Progress Engineering Decisions
+# Live Notifications Engineering Decisions
 
-This document records the current product and engineering decisions in Live Progress. Each entry states the choice, why it was made, and the practical consequence. It is intended to make future changes deliberate rather than accidental.
+This document records the current product and engineering decisions in Live Notifications. Each entry states the choice, why it was made, and the practical consequence. It is intended to make future changes deliberate rather than accidental.
 
 ## 1. Product boundary
 
@@ -218,29 +218,25 @@ This document records the current product and engineering decisions in Live Prog
 
 **Consequence:** Retention is explicit, runtime-only, and does not survive a service restart. A new source for the same key/category replaces the retained presentation.
 
-### Explicit mirror dismiss action
+### Original actions only
 
-**Decision:** Include an in-mirror dismiss action.
+**Decision:** Forward original notification actions and add no Dismiss button. Retain delete intents for normal swipe dismissal.
 
-**Why:** Ongoing/live notifications are not always normally dismissible from the lock screen. The user needs a reliable way to remove a mirror without altering the original source.
-
-**Consequence:** Dismiss removes the mirror only. It does not attempt to cancel the origin app's notification.
+**Consequence:** Mirror dismissal does not cancel the original notification; Android determines which surfaces permit swiping.
 
 ## 5. Surface visibility and importance
 
-### Lock screen and AOD are separate settings
+### Combined lock screen and AOD visibility
 
-**Decision:** Give Progress, Media, and Additional categories independent controls for lock-screen and AOD visibility.
+**Decision:** Use a single lock-screen/AOD setting for each of Progress, app categories, and system states. Media uses an AOD-only setting and never mirrors on the awake lock screen. The stored lock-screen value is authoritative.
 
-**Why:** Users commonly want quiet AOD awareness but not a full lock-screen live notification, or the inverse. Android treats screen-off/AOD and screen-on lock states differently.
-
-**Consequence:** Surface rules must be evaluated for every mirror state transition, rather than using a single generic locked flag.
+**Consequence:** Display formatting can vary by surface, but visibility cannot be enabled for just one locked surface.
 
 ### Screen off is treated as locked
 
 **Decision:** Model screen-off/AOD as a locked state while retaining a distinct `screenOff` dimension.
 
-**Why:** It matches Android's privacy/visibility semantics while preserving enough detail to apply the separate AOD switch.
+**Why:** It matches Android's privacy/visibility semantics while preserving enough detail for AOD-specific formatting.
 
 **Consequence:** AOD rules work consistently without conflating them with a screen-on lock screen.
 
@@ -288,11 +284,11 @@ This document records the current product and engineering decisions in Live Prog
 
 ### Preserve core media controls
 
-**Decision:** Include previous, play/pause, and next where the selected session exposes them.
+**Decision:** Copy the original media notification’s actions, icons, and pending intents.
 
 **Why:** A live media mirror should be operational, not only informational.
 
-**Consequence:** Actions are routed through a non-exported receiver to the current session, and unavailable controls are omitted.
+**Consequence:** No generated playback buttons are added when the source notification has no actions.
 
 ### AOD uses elapsed/total, not status-bar preference
 
@@ -420,7 +416,7 @@ This document records the current product and engineering decisions in Live Prog
 
 ### Direct system settings pages, no fake highlighting
 
-**Decision:** Open Android's relevant settings pages for manual permissions but do not attempt to animate/highlight Live Progress's row inside System Settings.
+**Decision:** Open Android's relevant settings pages for manual permissions but do not attempt to animate/highlight Live Notifications's row inside System Settings.
 
 **Why:** Public Android APIs do not provide a reliable way for a third-party app to blink or highlight its own service row in system settings.
 
@@ -548,7 +544,7 @@ This document records the current product and engineering decisions in Live Prog
 
 **Decision:** Derive UI color from Android system colors instead of a fixed green theme.
 
-**Why:** Live Progress is a system-adjacent utility. It should feel integrated with the user's wallpaper/theme and maintain contrast in light/dark modes.
+**Why:** Live Notifications is a system-adjacent utility. It should feel integrated with the user's wallpaper/theme and maintain contrast in light/dark modes.
 
 **Consequence:** Appearance varies intentionally by device theme; UI controls must be checked against system colors for off-state visibility.
 
@@ -586,7 +582,7 @@ This document records the current product and engineering decisions in Live Prog
 
 ### Full localization of visible static content
 
-**Decision:** Localize UI labels, setup explanations, notifications emitted by Live Progress, channel labels, actions, diagnostics empty states, and About content. Leave raw exception text, shell output, package names, identifiers, and historical stored log messages unchanged.
+**Decision:** Localize UI labels, setup explanations, notifications emitted by Live Notifications, channel labels, actions, diagnostics empty states, and About content. Leave raw exception text, shell output, package names, identifiers, and historical stored log messages unchanged.
 
 **Why:** User-facing content should be readable in the selected language; machine-generated/debug data must remain exact for diagnosis.
 
@@ -693,3 +689,72 @@ This document records the current product and engineering decisions in Live Prog
 5. Accessibility is optional, so QS/foreground awareness may be unavailable by user choice.
 6. Category discovery favors least privilege and observed data; a complete scan is deliberately opt-in, slow, and non-cancellable after confirmation.
 7. AOD and live-notification final appearance are owned by Android/OEM System UI, not guaranteed by an app-level API request.
+
+
+## Live Notifications settings and system states
+
+- Keep package/signing identity and stored lock-screen keys; remove the independent AOD property. The unused category serialization slot stays reserved, avoiding rewriting unrelated category choices without adding migration code.
+- Add Torch and Hotspot only. Observe state through Android callbacks inside the notification-listener lifecycle. System cards do not participate in progress-over-media priority.
+- Read hotspot counts only from current tethered SoftApManager diagnostics, never event history. Android aggregates bridged AP clients; multiple manager counts are ambiguous and fall back to unknown rather than being summed. No client identifiers or raw dumps are persisted or logged.
+- Keep Shizuku optional. Bound reads, serialize polling, reject results from earlier state generations, and fall back to “Hotspot on” on failure. No Charging or Battery Saver monitors are registered.
+- Forward original media actions and icons instead of synthesizing controls. Retain delete intents for swipe dismissal, but remove app-added Dismiss actions.
+- Release as a compatible minor feature release within 1.x; leave version allocation to the release workflow.
+
+### Shared settings UI components
+
+`SettingsUi` owns the existing homepage palette, switch drawing, full-width toggle rows, and supporting page components. MainActivity, App notifications, and System status reuse these components instead of mixing native Switch/Button defaults with the app’s custom settings design. Category-specific compact chips retain their existing presentation. System status participates in AppUiLifecycleTracker like the existing screens.
+
+
+### Revalidate setup access and explain capabilities
+
+- Reuse manual-step capability descriptions in automatic setup, avoiding divergent explanations of the same access. Keep optional-access skip behavior and existing setup order.
+- Recheck access at action time and before queued automatic grants. Do not equate a granted notification runtime permission with app-level notification enablement.
+- Compare normalized service component identities instead of raw flattened strings. Read accessibility’s global enabled state as well as its service list.
+- Model Shizuku UI as stopped, running without permission, or granted. Observe service/permission events only while the page is started, and refresh on resume. A granted state has no redundant grant button; stopped service instructions do not claim permission is missing.
+- Validate unavailable/denied/partial-grant cases with isolated policy tests instead of revoking permissions or clearing data on the user’s phone.
+
+### Media AOD and prerequisite help
+
+MediaPreferences exposes showOnAod while retaining the existing persisted key and default, with no migration. The visibility policy always hides awake-lock-screen media, including category-enabled sources; the existing cancellation path restores suppressed originals. Prerequisite help uses shared independent info targets and localized dialogs, including when toggles are disabled. System status has no access footer. Its Hotspot dialog observes Shizuku changes and rechecks access before an explicit grant; opening help never requests permissions. Icons describe permission/service dependencies, not parent controls or device support.
+
+Prerequisite popups use one localized requirement sentence per topic, without setup instructions, capability lists, or appended access-status text. Shizuku state still controls the explicit authorization button and is rechecked before requesting access. Full explanations remain in initial setup.
+
+The prerequisite-dialog interface accepts only a help topic; its shared localized heading avoids repeating long toggle labels. Info-icon accessibility descriptions still identify the corresponding setting.
+
+Do not repeat mandatory notification-access requirements in settings help. Initial setup already blocks settings until notification, promoted-notification, and listener access are ready. Prerequisite help topics cover only optional accessibility and Shizuku capabilities.
+
+Progress combined lock-screen/AOD visibility and Media AOD visibility default to enabled when their preference keys are absent. Persisted choices take precedence; no migration rewrites them. Newly enabled categories continue to copy the current Progress settings. Torch and Hotspot lock-screen/AOD visibility also defaults to enabled when its preference key is absent, preserving existing saved choices.
+
+### Preserve choices when optional permissions disappear
+
+Separate saved preference from effective checked/enabled state. Missing accessibility or running/authorized Shizuku masks true prerequisites without writing preferences, including when optional setup is skipped. Observe accessibility settings and Shizuku lifecycle to refresh visible controls and runtime behavior. Route popup grant actions through the existing in-app setup pages with explicit topic intents; completed setup returns to its caller. Initial optional onboarding remains skippable, and later permission loss does not block settings. Hotspot remains enabled without Shizuku because connected-client counts are an optional enhancement.
+
+Distinguish a missing Shizuku installation from an installed but stopped service. Query the declared manager package via PackageManager; missing installations offer neither setup nor popup grant actions. Guard explicit routes and action-time checks against uninstall races, and observe package changes while UI is active.
+
+Apply disabled styling only to the switch indicator, keeping row text, backgrounds, and prerequisite info controls at normal contrast. Do not change permission gating or saved preferences.
+
+All settings permission entry points share PermissionSetupNavigation. Category refresh never requests Shizuku directly: absent installation hides the action, installed but stopped/ungranted opens setup, and authorized access shows refresh confirmation. Save pending refresh intent across recreation and resume confirmation only after access is restored, with a final check before scanning.
+
+### Battery-friendly runtime and AMOLED pages
+
+Reduce unnecessary work without changing live-text timing: preserve the Hotspot five-second cadence across unrelated foreground changes, gate polling by actual card visibility and Shizuku access, and reject stale generations. Cancel notifications only when a posted snapshot exists and register channels only at startup or locale changes. Limit accessibility event subscriptions to enabled features, and avoid scans or redundant access checks on locked/screen-off surfaces. Use explicit black for dark-mode window and page backgrounds while retaining readable elevated controls. Do not acquire wake locks, force brightness changes, or emulate AOD/burn-in protection; Android owns those display behaviors.
+
+Show progress bars only for determinate progress with a valid maximum. Unknown progress keeps the live notification without a bar or indeterminate animation. Use BigTextStyle with promoted-ongoing requests for unknown-progress live presentation, and preserve unknown media position until rendering so it cannot be mistaken for a known zero position.
+
+Use BigTextStyle for system-status and unknown-progress cards because Android ProgressStyle synthesizes a default 100-unit bar even without explicit segments. BigTextStyle is an Android-supported promotable style; preserve short critical text and promotion requests.
+
+### Explicit system-status controls
+
+Add only the user-requested Turn off action to Torch and Hotspot cards. Torch content taps are inert; Hotspot taps open system hotspot settings. Use public device APIs without introducing new permissions or direct grant prompts. Because system-owned tethering may reject app stop requests, fall back to hotspot settings as approved by the user. Use activity pending intents for hotspot navigation to avoid notification-trampoline restrictions, and non-exported explicit receivers for torch control. State callbacks remain authoritative for card removal.
+
+### Keep system status visible in Quick Settings
+
+Torch and Hotspot remain visible when Quick Settings expands, even with mirror hiding enabled. Remove Quick Settings inputs from the system-status visibility policy so its cards and Turn off actions remain available, and hotspot polling continues on its existing cadence. App notification mirrors retain the global hiding preference.
+
+### Isolate device-validation notifications
+
+Keep synthetic source notifications and the device smoke runner in androidTest, outside customer APKs. Use a separate companion package to exercise real listener callbacks and preserve source pending intents. Record automated, physical-device, and user-observed AOD results separately; do not treat parser/policy coverage as proof of every OEM behavior. Restore test preferences and remove the companion after validation.
+
+### Test system-notification failures without privileged hardware
+
+Extract bounded process reading, poll read ownership, and stop-request completion into small production helpers exercised by JVM tests. Keep Android notification construction and widget semantics in the device suite. Compile that suite in Checks, but require an explicitly prepared device to execute it. A wrapper validates the final case summary and fails closed on crashes or partial output. Track physical-only validation separately instead of claiming unit coverage for OEM rendering or battery drain.

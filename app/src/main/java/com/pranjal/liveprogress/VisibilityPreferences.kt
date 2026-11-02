@@ -4,6 +4,7 @@ import android.content.Context
 import java.util.concurrent.CopyOnWriteArraySet
 
 class VisibilityPreferences(context: Context) {
+    private val appContext = context.applicationContext
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     var hideMirrorsWhenQuickSettingsExpanded: Boolean
@@ -15,6 +16,13 @@ class VisibilityPreferences(context: Context) {
         set(value) = prefs.edit()
             .putBoolean(KEY_HIDE_STATUS_BAR_PILL_WHEN_SOURCE_APP_FOREGROUND, value)
             .apply()
+
+    val effectiveHideMirrorsWhenQuickSettingsExpanded: Boolean
+        get() = hideMirrorsWhenQuickSettingsExpanded && !VisibilityState.locked && !VisibilityState.screenOff &&
+            SetupAccessStateReader.accessibilityEnabled(appContext)
+    val effectiveHideStatusBarPillWhenSourceAppForeground: Boolean
+        get() = hideStatusBarPillWhenSourceAppForeground && !VisibilityState.locked && !VisibilityState.screenOff &&
+            SetupAccessStateReader.accessibilityEnabled(appContext)
 
     companion object {
         private const val PREFS = "live_progress_visibility_preferences"

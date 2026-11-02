@@ -28,4 +28,10 @@ class ProgressMathTest {
         assertEquals("50%", ProgressMath.shortText(progress = 5, max = 10, indeterminate = false))
         assertEquals("", ProgressMath.shortText(progress = 5, max = 10, indeterminate = true))
     }
+    @Test fun progressBarRequiresDeterminatePositiveMaximum() {
+        assertEquals(false, ProgressMath.hasKnownProgress(100, true))
+        assertEquals(false, ProgressMath.hasKnownProgress(0, false))
+        assertEquals(false, ProgressMath.hasKnownProgress(-1, false))
+        assertEquals(true, ProgressMath.hasKnownProgress(100, false))
+    }
 }

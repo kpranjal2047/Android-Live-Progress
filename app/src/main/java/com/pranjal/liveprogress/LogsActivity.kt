@@ -1,5 +1,6 @@
 package com.pranjal.liveprogress
 
+import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -310,7 +311,7 @@ class LogsActivity : ComponentActivity() {
     private fun palette(): UiPalette {
         return if (resources.configuration.isNightModeActive) {
             UiPalette(
-                background = getColor(android.R.color.system_neutral1_900),
+                background = Color.BLACK,
                 surfaceContainer = getColor(android.R.color.system_neutral1_800),
                 primary = getColor(android.R.color.system_accent1_200),
                 onPrimary = getColor(android.R.color.system_accent1_900),

@@ -1,0 +1,4 @@
+{
+  "type": "minor",
+  "summary": "Introduce Live Notifications with simpler lock-screen/AOD settings, Torch and Hotspot cards with Turn off controls, and AOD-only media mirrors using original icons and actions. Improve setup and prerequisite help, preserve preferences when access is missing, and keep system cards visible in Quick Settings. Hide unknown-progress bars, reduce background work, and improve AMOLED styling and reliability checks."
+}

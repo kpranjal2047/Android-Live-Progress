@@ -48,7 +48,7 @@ class NotificationChannelSelectionActivity : Activity() {
     private var pageLoadVersion = 0L
     private val appIconCache = mutableMapOf<AppIconKey, Drawable?>()
     private val pendingAppIconKeys = mutableSetOf<AppIconKey>()
-    private var renderedShizukuAvailability: Boolean? = null
+    private var refreshPendingSetup = false
     private var refreshBackCallbackRegistered = false
     private val refreshBackCallback = OnBackInvokedCallback {
         // A confirmed refresh is deliberately non-cancellable.
@@ -58,20 +58,7 @@ class NotificationChannelSelectionActivity : Activity() {
     private val categoryExecutor = Executors.newSingleThreadExecutor()
     private val iconExecutor = Executors.newFixedThreadPool(2)
 
-    private data class UiPalette(
-        val background: Int,
-        val surface: Int,
-        val surfaceContainer: Int,
-        val surfaceContainerHigh: Int,
-        val primary: Int,
-        val onPrimary: Int,
-        val outline: Int,
-        val textPrimary: Int,
-        val textSecondary: Int,
-        val textDisabled: Int,
-        val disabledContainer: Int,
-        val ripple: Int
-    )
+
 
     private data class AppCategoryGroup(
         val packageName: String,
@@ -99,7 +86,7 @@ class NotificationChannelSelectionActivity : Activity() {
         val categories: List<ObservedNotificationCategory>,
         val items: List<CategoryListItem>,
         val canSuppressOriginal: Boolean,
-        val shizukuAvailable: Boolean
+        val shizukuInstalled: Boolean
     )
 
     private sealed interface CategoryListItem {
@@ -123,16 +110,23 @@ class NotificationChannelSelectionActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        refreshPendingSetup = savedInstanceState?.getBoolean("refresh_pending_setup") ?: false
         renderForRefreshState(CategoryRefreshCoordinator.currentState())
     }
+
+    private val accessObserver by lazy { PrerequisiteAccessObserver(this) { renderContent() } }
+    private val prerequisiteHelp by lazy { PrerequisiteHelp(this) }
 
     override fun onStart() {
         super.onStart()
         AppUiLifecycleTracker.onActivityStarted()
         CategoryRefreshCoordinator.addObserver(refreshStateObserver)
+        accessObserver.start()
     }
 
     override fun onStop() {
+        accessObserver.stop()
+        prerequisiteHelp.close()
         CategoryRefreshCoordinator.removeObserver(refreshStateObserver)
         AppUiLifecycleTracker.onActivityStopped(this)
         super.onStop()
@@ -140,13 +134,16 @@ class NotificationChannelSelectionActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        val refreshInProgress = CategoryRefreshCoordinator.currentState().isRefreshInProgress()
-        val shizukuAvailable = PrivilegedAccess.currentState(this).shizukuAvailable
-        if (!refreshInProgress && renderedShizukuAvailability != null &&
-            renderedShizukuAvailability != shizukuAvailable
-        ) {
-            renderContent()
+        if (!CategoryRefreshCoordinator.currentState().isRefreshInProgress()) renderContent()
+        if (refreshPendingSetup) {
+            refreshPendingSetup = false
+            if (refreshAction() == CategoryRefreshAction.CONFIRM_REFRESH) showRefreshConfirmation()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("refresh_pending_setup", refreshPendingSetup)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onDestroy() {
@@ -200,7 +197,6 @@ class NotificationChannelSelectionActivity : Activity() {
     }
 
     private fun buildContent(pageData: CategoryPageData): View {
-        renderedShizukuAvailability = pageData.shizukuAvailable
         val colors = palette()
         val root = contentRoot()
         root.addView(pageTitle(colors), blockParams(bottom = 18.dp()))
@@ -209,7 +205,7 @@ class NotificationChannelSelectionActivity : Activity() {
         root.addView(
             actionButtons(
                 categories = pageData.categories,
-                shizukuAvailable = pageData.shizukuAvailable
+                shizukuInstalled = pageData.shizukuInstalled
             ),
             blockParams(bottom = 10.dp())
         )
@@ -220,6 +216,13 @@ class NotificationChannelSelectionActivity : Activity() {
             ),
             blockParams(bottom = 10.dp())
         )
+        root.addView(SettingsUi(this).settingToggle(
+            label = getString(R.string.setting_auto_enable_new_categories),
+            checked = categoryPreferences.autoEnableNewCategories
+        ) { checked ->
+            categoryPreferences.autoEnableNewCategories = checked
+            AdditionalNotificationPreferenceEvents.notifyChanged()
+        })
         if (pageData.categories.isEmpty()) {
             categoryList = null
             val emptyText = if (pageData.allCategoryCount > 0 && !pageData.includeSystemApps) {
@@ -393,7 +396,7 @@ class NotificationChannelSelectionActivity : Activity() {
         refreshBackCallbackRegistered = refreshInProgress
     }
 
-    private fun pageTitle(colors: UiPalette): TextView {
+    private fun pageTitle(colors: SettingsUi.Palette): TextView {
         return TextView(this).apply {
             text = getString(R.string.notification_categories_title)
             textSize = 34f
@@ -415,9 +418,8 @@ class NotificationChannelSelectionActivity : Activity() {
             allCategoryCount = allCategoryCount,
             categories = categories,
             items = categoryListItems(categories, categorySnapshot.settingsByKey),
-            canSuppressOriginal = privilegedState.temporaryAssistantActive ||
-                (privilegedState.shizukuAvailable && privilegedState.shizukuGranted),
-            shizukuAvailable = privilegedState.shizukuAvailable
+            canSuppressOriginal = privilegedState.shizukuAvailable && privilegedState.shizukuGranted,
+            shizukuInstalled = PrivilegedAccess.isShizukuInstalled(this)
         )
     }
 
@@ -600,20 +602,6 @@ class NotificationChannelSelectionActivity : Activity() {
             },
             compactToggleParams()
         )
-        firstRow.addView(
-            compactToggle(
-                label = getString(R.string.setting_category_aod_short),
-                contentDescription = getString(R.string.setting_show_category_aod),
-                checked = settings.showOnAod,
-                enabled = true
-            ) { selected ->
-                categoryPreferences.updateSettings(category.key) {
-                    it.copy(showOnAod = selected)
-                }
-                onCategoryPreferenceChanged()
-            },
-            compactToggleParams(start = 6.dp())
-        )
         val secondRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -622,6 +610,7 @@ class NotificationChannelSelectionActivity : Activity() {
             compactToggle(
                 label = getString(R.string.setting_category_hide_original_short),
                 contentDescription = getString(R.string.setting_hide_category_original),
+                onInfo = { prerequisiteHelp.show(PrerequisiteHelp.Topic.SHIZUKU) },
                 checked = settings.hideOriginalNotification && canSuppressOriginal,
                 enabled = canSuppressOriginal
             ) { selected ->
@@ -839,7 +828,7 @@ class NotificationChannelSelectionActivity : Activity() {
 
     private fun actionButtons(
         categories: List<ObservedNotificationCategory>,
-        shizukuAvailable: Boolean
+        shizukuInstalled: Boolean
     ): View {
         val column = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -869,7 +858,7 @@ class NotificationChannelSelectionActivity : Activity() {
             }
         )
         column.addView(row)
-        if (shizukuAvailable) {
+        if (shizukuInstalled) {
             column.addView(
                 actionButton(getString(R.string.action_refresh_categories_shizuku)) {
                     onRefreshCategoriesClicked()
@@ -956,14 +945,19 @@ class NotificationChannelSelectionActivity : Activity() {
         }
     }
 
-    private fun onRefreshCategoriesClicked() {
+    private fun refreshAction(): CategoryRefreshAction {
         val state = PrivilegedAccess.currentState(this)
-        when (CategoryRefreshPolicy.actionFor(state.shizukuAvailable, state.shizukuGranted)) {
-            CategoryRefreshAction.HIDDEN -> renderContent()
-            CategoryRefreshAction.REQUEST_SHIZUKU_PERMISSION -> {
-                showToast(PrivilegedAccess.requestShizukuPermission())
-            }
+        return CategoryRefreshPolicy.actionFor(PrivilegedAccess.isShizukuInstalled(this),
+            state.shizukuAvailable, state.shizukuGranted)
+    }
 
+    private fun onRefreshCategoriesClicked() {
+        when (refreshAction()) {
+            CategoryRefreshAction.HIDDEN -> renderContent()
+            CategoryRefreshAction.OPEN_SHIZUKU_SETUP -> {
+                refreshPendingSetup = PermissionSetupNavigation.open(this, PrerequisiteHelp.Topic.SHIZUKU)
+                if (!refreshPendingSetup) renderContent()
+            }
             CategoryRefreshAction.CONFIRM_REFRESH -> showRefreshConfirmation()
         }
     }
@@ -974,7 +968,11 @@ class NotificationChannelSelectionActivity : Activity() {
             .setMessage(R.string.category_refresh_confirmation_message)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.category_refresh_confirm_action) { _, _ ->
-                CategoryRefreshCoordinator.start(this)
+                if (refreshAction() == CategoryRefreshAction.CONFIRM_REFRESH) {
+                    CategoryRefreshCoordinator.start(this)
+                } else {
+                    onRefreshCategoriesClicked()
+                }
             }
             .show()
     }
@@ -1181,8 +1179,9 @@ class NotificationChannelSelectionActivity : Activity() {
         contentDescription: String,
         checked: Boolean,
         enabled: Boolean,
+        onInfo: (() -> Unit)? = null,
         onChanged: (Boolean) -> Unit
-    ): TextView {
+    ): View {
         val colors = palette()
         val fillColor = when {
             !enabled -> colors.disabledContainer
@@ -1199,7 +1198,7 @@ class NotificationChannelSelectionActivity : Activity() {
             checked -> null
             else -> colors.textSecondary
         }
-        return TextView(this).apply {
+        val toggle = TextView(this).apply {
             text = label
             this.contentDescription = contentDescription
             textSize = 12f
@@ -1223,82 +1222,18 @@ class NotificationChannelSelectionActivity : Activity() {
                 if (enabled) onChanged(!checked)
             }
         }
-    }
-
-    private fun switchIndicator(
-        checked: Boolean,
-        enabled: Boolean,
-        colors: UiPalette
-    ): FrameLayout {
-        val trackColor = when {
-            !enabled -> colors.disabledContainer
-            checked -> colors.primary
-            else -> blend(colors.textSecondary, colors.surfaceContainerHigh, 0.40f)
-        }
-        val trackStroke = when {
-            checked -> null
-            enabled -> colors.outline
-            else -> colors.textDisabled
-        }
-        val thumbColor = when {
-            !enabled -> colors.textDisabled
-            checked -> colors.onPrimary
-            else -> colors.surface
-        }
-        return FrameLayout(this).apply {
-            isEnabled = enabled
-            background = rounded(trackColor, 18.dp(), trackStroke, 1.dp())
-            setPadding(4.dp(), 4.dp(), 4.dp(), 4.dp())
-            addView(
-                View(this@NotificationChannelSelectionActivity).apply {
-                    background = rounded(thumbColor, 14.dp())
-                    elevation = if (enabled) 2.dp().toFloat() else 0f
-                },
-                FrameLayout.LayoutParams(28.dp(), 28.dp()).apply {
-                    gravity = if (checked) {
-                        Gravity.CENTER_VERTICAL or Gravity.END
-                    } else {
-                        Gravity.CENTER_VERTICAL or Gravity.START
-                    }
-                }
-            )
+        if (onInfo == null) return toggle
+        return LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(toggle, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+            addView(SettingsUi(this@NotificationChannelSelectionActivity).infoButton(contentDescription, onInfo))
         }
     }
 
-    private fun palette(): UiPalette {
-        val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        return if (nightMode == Configuration.UI_MODE_NIGHT_YES) {
-            UiPalette(
-                background = systemColor(android.R.color.system_neutral1_900),
-                surface = systemColor(android.R.color.system_neutral1_900),
-                surfaceContainer = systemColor(android.R.color.system_neutral1_800),
-                surfaceContainerHigh = systemColor(android.R.color.system_neutral1_700),
-                primary = systemColor(android.R.color.system_accent1_200),
-                onPrimary = systemColor(android.R.color.system_accent1_900),
-                outline = systemColor(android.R.color.system_neutral2_700),
-                textPrimary = systemColor(android.R.color.system_neutral1_100),
-                textSecondary = systemColor(android.R.color.system_neutral2_200),
-                textDisabled = systemColor(android.R.color.system_neutral2_500),
-                disabledContainer = systemColor(android.R.color.system_neutral1_800),
-                ripple = withAlpha(systemColor(android.R.color.system_neutral1_100), 28)
-            )
-        } else {
-            UiPalette(
-                background = systemColor(android.R.color.system_neutral1_10),
-                surface = systemColor(android.R.color.system_neutral1_10),
-                surfaceContainer = systemColor(android.R.color.system_neutral1_50),
-                surfaceContainerHigh = systemColor(android.R.color.system_neutral1_100),
-                primary = systemColor(android.R.color.system_accent1_600),
-                onPrimary = systemColor(android.R.color.system_neutral1_10),
-                outline = systemColor(android.R.color.system_neutral2_200),
-                textPrimary = systemColor(android.R.color.system_neutral1_900),
-                textSecondary = systemColor(android.R.color.system_neutral2_700),
-                textDisabled = systemColor(android.R.color.system_neutral2_400),
-                disabledContainer = systemColor(android.R.color.system_neutral1_100),
-                ripple = withAlpha(systemColor(android.R.color.system_accent1_600), 34)
-            )
-        }
-    }
+    private fun switchIndicator(checked: Boolean, enabled: Boolean, colors: SettingsUi.Palette): FrameLayout =
+        SettingsUi(this).switchIndicator(checked, enabled, colors)
+
+    private fun palette(): SettingsUi.Palette = SettingsUi(this).palette()
 
     private fun systemColor(colorRes: Int): Int {
         return getColor(colorRes)

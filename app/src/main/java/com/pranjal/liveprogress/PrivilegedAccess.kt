@@ -20,6 +20,15 @@ data class PrivilegedState(
 )
 
 object PrivilegedAccess {
+    const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
+
+    fun isShizukuInstalled(context: Context): Boolean = try {
+        context.packageManager.getPackageInfo(SHIZUKU_PACKAGE, PackageManager.PackageInfoFlags.of(0))
+        true
+    } catch (_: PackageManager.NameNotFoundException) {
+        false
+    }
+
     private const val SHIZUKU_REQUEST_CODE = 7001
     private const val PREFS = "android_live_progress_privileged_state"
     private const val KEY_TEMPORARY_ACTIVE = "temporary_assistant_active"
@@ -48,7 +57,8 @@ object PrivilegedAccess {
     }
 
     fun canUseOriginalNotificationSuppression(context: Context): Boolean {
-        return hasTemporaryAssistantSession(context) || (shizukuPing() && shizukuPermissionGranted())
+        val state = currentState(context)
+        return state.shizukuAvailable && state.shizukuGranted
     }
 
     fun requestShizukuPermission(): String {
@@ -76,6 +86,11 @@ object PrivilegedAccess {
     ) {
         val appContext = context.applicationContext
         executor.execute {
+            val requestedItems = SetupFlowPolicy.remainingAutomaticItems(items, SetupAccessStateReader.read(appContext))
+            if (requestedItems.isEmpty()) {
+                main.post { callback(ShellResult(0, "", "")) }
+                return@execute
+            }
             val listener = ComponentName(appContext, NotificationMirrorService::class.java)
                 .flattenToString()
             val accessibility = ComponentName(appContext, QuickSettingsAccessibilityService::class.java)
@@ -85,10 +100,10 @@ object PrivilegedAccess {
                     packageName = appContext.packageName,
                     listener = listener,
                     accessibility = accessibility,
-                    items = items
+                    items = requestedItems
                 )
             )
-            if (items.contains(AutomaticSetupItem.NOTIFICATION_LISTENER)) {
+            if (requestedItems.contains(AutomaticSetupItem.NOTIFICATION_LISTENER)) {
                 requestListenerRebind(appContext, "automatic Shizuku setup")
             }
             AppDiagnostics.note(
@@ -555,6 +570,20 @@ object PrivilegedAccess {
             val cls = Class.forName("rikka.shizuku.Shizuku")
             cls.getMethod("getUid").invoke(null) as Int
         } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /** Dedicated bounded read; raw Wi-Fi diagnostics never leave this method. */
+    fun hotspotClientCount(): Int? {
+        if (!shizukuPing() || !shizukuPermissionGranted()) return null
+        return try {
+            val cls = Class.forName("rikka.shizuku.Shizuku")
+            val process = findNewProcessMethod(cls).invoke(
+                null, arrayOf("sh", "-c", "dumpsys -t 3 wifi 2>/dev/null"), null, null
+            ) as Process
+            BoundedProcessReader.read(process)?.let(HotspotClientCountParser::parse)
+        } catch (_: Exception) {
             null
         }
     }

@@ -31,8 +31,17 @@ class PillTextScroller {
         const val WINDOW_SIZE = 7
         const val UPDATE_MS = 500L
 
-        fun needsScrolling(text: String): Boolean =
-            characterBoundaries(text.trim()).size > WINDOW_SIZE + 1
+        fun needsScrolling(text: String): Boolean {
+            val normalized = text.trim()
+            if (normalized.length <= WINDOW_SIZE) return false
+            val iterator = BreakIterator.getCharacterInstance(Locale.ROOT)
+            iterator.setText(normalized)
+            iterator.first()
+            repeat(WINDOW_SIZE + 1) {
+                if (iterator.next() == BreakIterator.DONE) return false
+            }
+            return true
+        }
 
         private fun characterBoundaries(text: String): List<Int> {
             val iterator = BreakIterator.getCharacterInstance(Locale.ROOT)

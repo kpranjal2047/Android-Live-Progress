@@ -58,7 +58,6 @@ object NotificationClassifier {
             standardProgressInfo != null && progressEnabled -> progressDisplaySettings
             additionalSettings.enabled -> MirrorCandidateDisplaySettings(
                 source = MirrorCandidateSource.ADDITIONAL,
-                showOnAod = additionalSettings.showOnAod,
                 showOnLockScreen = additionalSettings.showOnLockScreen,
                 hideOriginalNotification = additionalSettings.hideOriginalNotification,
                 keepAfterOriginalDismissed = additionalSettings.keepAfterOriginalDismissed

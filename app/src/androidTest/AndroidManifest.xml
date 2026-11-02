@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <application android:label="Live Notifications test fixture">
+        <activity android:name="com.pranjal.liveprogress.NotificationFixtureActivity" android:exported="true" />
+    </application>
+</manifest>

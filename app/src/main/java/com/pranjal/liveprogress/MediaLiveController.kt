@@ -163,7 +163,7 @@ class MediaLiveController(
         AppDiagnostics.verbose(
             service,
             "media",
-            "Media preferences changed; enabled=${preferences.enabled}; aod=${preferences.showOnAod}; lock=${preferences.showOnLockScreen}; pill=${preferences.pillMode}"
+            "Media preferences changed; enabled=${preferences.enabled}; aod=${preferences.showOnAod}; pill=${preferences.pillMode}"
         )
         updateFromController()
     }
@@ -305,11 +305,10 @@ class MediaLiveController(
             )
         } ?: NotificationCategorySettings()
         val additionalForced = !preferences.enabled && additionalSettings.enabled
-        val showOnAod = if (additionalForced) additionalSettings.showOnAod else preferences.showOnAod
-        val showOnLockScreen = if (additionalForced) {
+        val showOnAod = if (additionalForced) {
             additionalSettings.showOnLockScreen
         } else {
-            preferences.showOnLockScreen
+            preferences.showOnAod
         }
         val hideOriginal = additionalForced &&
             additionalSettings.hideOriginalNotification &&
@@ -320,19 +319,18 @@ class MediaLiveController(
             locked = VisibilityState.locked,
             screenOff = VisibilityState.screenOff,
             quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
-            hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
+            hideWhenQuickSettingsExpanded = visibilityPreferences.effectiveHideMirrorsWhenQuickSettingsExpanded,
             hideWhenSourceAppInForeground =
-                visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
+                visibilityPreferences.effectiveHideStatusBarPillWhenSourceAppForeground,
             sourceAppInForeground = VisibilityState.isSourcePackageInForeground(state.packageName),
             progressMirrorActive = progressMirrorActive,
             showOnAod = showOnAod,
-            showOnLockScreen = showOnLockScreen,
             hideOriginalNotification = hideOriginal
         )
         AppDiagnostics.verbose(
             service,
             "media",
-            "Media visibility evaluated; package=${state.packageName}; enabled=${preferences.enabled}; additionalForced=$additionalForced; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.hideStatusBarPillWhenSourceAppForeground}; sourceForeground=${VisibilityState.isSourcePackageInForeground(state.packageName)}; progressActive=$progressMirrorActive; showAod=$showOnAod; showLock=$showOnLockScreen; hideOriginal=$hideOriginal; showMirror=${decision.showMirror}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; suppress=${decision.suppressOriginal}; reason=${decision.reason}"
+            "Media visibility evaluated; package=${state.packageName}; enabled=${preferences.enabled}; additionalForced=$additionalForced; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.effectiveHideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.effectiveHideStatusBarPillWhenSourceAppForeground}; sourceForeground=${VisibilityState.isSourcePackageInForeground(state.packageName)}; progressActive=$progressMirrorActive; showAod=$showOnAod; hideOriginal=$hideOriginal; showMirror=${decision.showMirror}; aod=${decision.aodVisible}; critical=${decision.showShortCriticalText}; suppress=${decision.suppressOriginal}; reason=${decision.reason}"
         )
 
         if (!decision.showMirror) {

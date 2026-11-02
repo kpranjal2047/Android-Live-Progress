@@ -1,10 +1,10 @@
-# Live Progress Feature Reference
+# Live Notifications Feature Reference
 
-This document is a detailed implementation and product reference for Live Progress. It describes the behavior currently implemented in the Android project, including where Android or OEM behavior can limit an outcome.
+This document is a detailed implementation and product reference for Live Notifications. It describes the behavior currently implemented in the Android project, including where Android or OEM behavior can limit an outcome.
 
 ## 1. Product scope
 
-Live Progress is an Android 16+ companion app that observes eligible notifications and republishes them as Android live notifications. It focuses on three sources of live information:
+Live Notifications is an Android 16+ companion app that observes eligible notifications and republishes them as Android live notifications. It focuses on three sources of live information:
 
 1. Native determinate progress notifications, such as downloads and uploads.
 2. Active media sessions and their media notifications.
@@ -25,7 +25,7 @@ The app uses Android's `Notification.ProgressStyle` and promoted ongoing notific
 
 The normal notification mirror path requires the following Android access:
 
-- App notifications permission, so Live Progress can post its own mirrors.
+- App notifications permission, so Live Notifications can post its own mirrors.
 - Promoted notification / live notification access, so Android can promote eligible mirrors to the status-bar live presentation.
 - Notification listener access, so the app can observe eligible source notifications and their changes.
 
@@ -38,7 +38,7 @@ Shizuku access is optional. It is used for explicit elevated features, such as t
 - If Shizuku is running but permission has not been granted, the setup flow presents Shizuku first.
 - A user can skip Shizuku and continue through Android's manual permission pages.
 - With Shizuku permission, the app can offer to grant the missing required accesses automatically. Each access is verified after the attempt; unsuccessful items fall back to the corresponding Android settings page.
-- Automatic setup preserves other enabled accessibility services when adding Live Progress's accessibility service.
+- Automatic setup preserves other enabled accessibility services when adding Live Notifications's accessibility service.
 - If Shizuku is granted during the first onboarding flow, the app can automatically run one installed-app notification-category refresh before showing the main settings screen.
 - Skipping or lacking Shizuku on that first run does not schedule a later automatic refresh. Later refreshes are user initiated.
 
@@ -55,27 +55,25 @@ The main screen is organized into General, Progress Live Notifications, Media Li
 ### 3.2 Progress Live Notifications
 
 - **Enable progress live notifications**: the master switch for native progress mirrors and supported custom progress sources.
-- **Show live notifications on lock screen**: enables a Progress mirror while the device is locked with the screen on.
-- **Show live notifications on AOD**: enables a Progress mirror while the screen is off / Always On Display is active.
+- **Show on lock screen and AOD**: enables Progress mirrors on both locked surfaces together.
 - **Hide original notification on lock screen and AOD**: requests temporary source-notification suppression while a Progress mirror is active on those surfaces. The setting is only selectable when Shizuku is available and authorized.
-- **Notification categories**: opens the separate Additional Live Notifications category-management screen.
+- **App notifications**: opens the separate Additional Live Notifications category-management screen.
 
-Defaults for Progress are enabled, lock-screen mirroring off, AOD mirroring on, and original suppression preference on. The suppression control is shown unchecked and disabled whenever Shizuku is unavailable or unauthorized, because the preference alone cannot reliably suppress an original notification.
+Defaults for Progress are enabled, combined lock-screen/AOD mirroring on, and original suppression preference on. The suppression control is shown unchecked and disabled whenever Shizuku is unavailable or unauthorized, because the preference alone cannot reliably suppress an original notification.
 
 ### 3.3 Media Live Notifications
 
 - **Enable media live notifications**: master switch for media-session mirrors.
 - **Status-bar text**: selects Title, Elapsed, or Remaining for the short critical text while the device is unlocked.
-- **Show live notifications on lock screen**: enables a Media mirror on the lock screen.
-- **Show live notifications on AOD**: enables a Media mirror while the screen is off.
+- **Show on AOD**: enables screen-off media mirrors; the awake lock screen always uses the original media notification.
 
-Defaults for Media are enabled, Title text, lock-screen mirroring off, and AOD mirroring on. All pill text longer than seven user-visible characters scrolls automatically; there is no scrolling setting.
+Defaults for Media are enabled, Title text, AOD mirroring on. All pill text longer than seven user-visible characters scrolls automatically; there is no scrolling setting.
 
 ### 3.4 Additional Live Notifications
 
 Additional Live Notifications is independent from the Progress and Media master switches. It provides an opt-in fallback for notification categories the user wants mirrored even without native progress.
 
-- **Notification categories** opens a dedicated page rather than rendering a potentially long list on the main screen.
+- **App notifications** opens a dedicated page rather than rendering a potentially long list on the main screen.
 - **Enable new notification categories automatically** is off by default. When off, newly observed categories are listed but disabled. When on, new categories are enabled with the current Progress visibility defaults.
 
 ### 3.5 Developer
@@ -86,13 +84,13 @@ Additional Live Notifications is independent from the Progress and Media master 
 
 ### 3.6 About
 
-The inline About area displays the app icon, Live Progress name, version, author Kumar Pranjal, an end-user description, MIT license information, an attribution request, and a link to the source repository.
+The inline About area displays the app icon, Live Notifications name, version, author Kumar Pranjal, an end-user description, MIT license information, an attribution request, and a link to the source repository.
 
 ## 4. Progress notification mirroring
 
 ### 4.1 Standard Android progress notifications
 
-Live Progress automatically accepts source notifications that expose valid Android progress extras. A qualifying source has determinate or indeterminate progress through the platform notification fields, rather than progress guessed from text.
+Live Notifications automatically accepts source notifications that expose valid Android progress extras. A qualifying source has determinate or indeterminate progress through the platform notification fields, rather than progress guessed from text.
 
 For a standard candidate, the mirror copies or safely maps:
 
@@ -126,7 +124,7 @@ When the Progress master setting is the reason a source is mirrored:
 | Unlocked, Quick Settings collapsed | Mirror is posted and can provide percentage critical text. |
 | Unlocked, Quick Settings expanded | Mirror is hidden only when the global Quick Settings hide setting is enabled. |
 | Locked, screen on | Mirror is posted only when Progress lock-screen visibility is enabled. |
-| Screen off / AOD | Mirror is posted only when Progress AOD visibility is enabled. |
+| Screen off / AOD | Mirror is posted only when Progress combined lock-screen/AOD visibility is enabled. |
 | Source app foreground | Mirror/pill is hidden only when the foreground-source setting is enabled and accessibility can identify the foreground source. |
 
 If the source is visible through Additional Live Notifications instead, its per-category settings control lock screen, AOD, and original suppression instead of the Progress-level values.
@@ -142,7 +140,7 @@ This separation keeps unlocked shade/status presentation quiet while allowing An
 
 ### 4.5 Original source suppression
 
-Live Progress does not cancel, snooze, or dismiss the original notification as its normal hiding strategy. Source cancellation can stop future progress updates.
+Live Notifications does not cancel, snooze, or dismiss the original notification as its normal hiding strategy. Source cancellation can stop future progress updates.
 
 When the user enables Progress original suppression and Shizuku is authorized, the app attempts reversible visual suppression of the source category on lock screen and AOD:
 
@@ -229,7 +227,7 @@ The status-bar pill shows time until arrival: `18 min`, `1h 12m`, or `<1 min`. E
 
 Countdowns use a fixed monotonic deadline derived from the ETA and source last-update clock, dated against the source notification post time in the device time zone. Overnight arrivals are resolved relative to that snapshot only when the ETA clock is more than 12 hours behind the update clock, never rolled forward when a mirror is reread. Later same-day arrivals can be more than 12 hours away. Missing/invalid update clocks, past or ambiguous date-less ETAs, and source updates at least 30 minutes old leave the pill empty. Freshness expires 30 minutes after the source update even when the ETA is farther away. Both countdown and confirmed-arrival pills expire. The shared delivery/train scheduler updates only visible mirrors at text boundaries or expiry; it does not rerun OCR or poll the source for countdown ticks.
 
-Optical character recognition is used only as a text fallback for route imagery. It does not infer progress or manufacture missing ETA data. Missing OCR fields can still produce a partial mirror from readable status text; missing visual progress uses an indeterminate bar. A rejected custom notification can fall back to an enabled Additional Live Notifications category. A missing ETA leaves the pill text empty unless a fresh destination-arrival status is confirmed.
+Optical character recognition is used only as a text fallback for route imagery. It does not infer progress or manufacture missing ETA data. Missing OCR fields can still produce a partial mirror from readable status text; missing visual progress uses a live card without a progress bar. A rejected custom notification can fall back to an enabled Additional Live Notifications category. A missing ETA leaves the pill text empty unless a fresh destination-arrival status is confirmed.
 
 ## 6. Media live notifications
 
@@ -249,10 +247,9 @@ When visible, a Media mirror can include:
 - source content intent;
 - album art while appropriate for the current surface;
 - determinate playback progress when duration is known;
-- Previous, Play/Pause, and Next actions when supported by the session; and
-- a dismiss action.
+- only the original notification actions, with their source icons and pending intents.
 
-Playback actions are delivered through the app's non-exported `MediaControlReceiver`. The receiver controls the selected media session; it is not exposed to other apps.
+Playback actions retain the originating notification’s pending intents. When no source actions exist, no buttons are added.
 
 ### 6.3 Media text
 
@@ -274,7 +271,7 @@ On AOD, media text always uses elapsed/total duration when duration is known. It
 | --- | --- |
 | Unlocked, Quick Settings collapsed | Mirror is posted and supplies configured critical text. |
 | Unlocked, Quick Settings expanded | Mirror is hidden only when the global Quick Settings hide setting is enabled. |
-| Locked, screen on | Mirror is posted only when Media lock-screen visibility is enabled. |
+| Locked, screen on | Mirror is always hidden; the original media notification remains available. |
 | Screen off / AOD | Mirror is posted only when Media AOD visibility is enabled. |
 | Progress mirror active | Media mirror is hidden everywhere, including status bar, lock screen, and AOD. |
 | Source app foreground | Mirror/pill is hidden only when the foreground-source setting is enabled and detectable. |
@@ -294,7 +291,7 @@ The global Progress-priority rule avoids competing media and progress live prese
 
 ### 7.1 Purpose
 
-Some valuable notifications do not publish native progress and are not media sessions. Additional Live Notifications gives the user an explicit opt-in way to mirror those notifications as indeterminate live notifications. It never fabricates a percentage for these mirrors.
+Some valuable notifications do not publish native progress and are not media sessions. Additional Live Notifications gives the user an explicit opt-in way to mirror those notifications as live cards without a progress bar. It never fabricates a percentage for these mirrors.
 
 ### 7.2 Notification-category discovery
 
@@ -330,8 +327,7 @@ The category page loads icons lazily and caches them. It maintains scroll positi
 
 An enabled category exposes these behavior controls:
 
-- **Show on lock screen**.
-- **Show on AOD**.
+- **Show on lock screen and AOD** (one setting).
 - **Hide original notification**.
 - **Keep live notification after original is dismissed**.
 
@@ -346,7 +342,7 @@ The app applies a deliberate precedence order:
 1. A true Progress notification uses Progress settings when Progress live notifications are enabled.
 2. A Media source uses Media settings when Media live notifications are enabled.
 3. An enabled Additional category is used only when the normal Progress or Media path is unavailable or disabled.
-4. A non-progress/non-media enabled category creates an indeterminate ProgressStyle mirror using that category's settings.
+4. A non-progress/non-media enabled category creates a BigTextStyle live card without a progress bar using that category's settings.
 
 Selecting a category never overrides the normal Progress or Media policy when that normal policy is active. It is an independent fallback layer.
 
@@ -375,7 +371,7 @@ When Shizuku is available, the page exposes **Refresh notification categories wi
 
 ## 8. Generic image-text extraction
 
-Live Progress includes optional, offline generic OCR for certain eligible source notifications whose textual extras are incomplete. It uses on-device ML Kit text recognition.
+Live Notifications includes optional, offline generic OCR for certain eligible source notifications whose textual extras are incomplete. It uses on-device ML Kit text recognition.
 
 - OCR runs off the notification-listener callback on a single background worker.
 - Requests are coalesced by source key and version so obsolete work is discarded.
@@ -396,9 +392,7 @@ Compatible source actions are copied conservatively, with unsafe remote-input or
 
 ### 9.3 Dismiss
 
-Mirrored live notifications include an explicit dismiss action. This gives the user a way to remove an ongoing mirror even when Android's lock-screen live-notification interaction does not make an ongoing notification dismissible in the usual way.
-
-The dismiss action affects the mirror. It does not dismiss the original source notification.
+Live notifications add no Dismiss button. Swipe dismissal, where Android allows it, still removes only the mirror and leaves its original source intact.
 
 ## 10. Quick Settings, lock screen, AOD, and foreground awareness
 
@@ -414,9 +408,9 @@ The optional accessibility service watches System UI state to identify expanded 
 
 The same optional accessibility capability can identify when a source application is foregrounded. When the setting is enabled, a mirror from that foreground source is hidden to avoid duplicating information inside the source app.
 
-## 11. Notification channels created by Live Progress
+## 11. Notification channels created by Live Notifications
 
-Live Progress creates separate, non-alerting channels for its own mirrors:
+Live Notifications creates separate, non-alerting channels for its own mirrors:
 
 - Mirrored live progress, default importance.
 - Mirrored live progress, low importance.
@@ -463,7 +457,7 @@ There is no fixed entry-count cap. The selected retention policy controls remova
 ### 13.3 Retention
 
 - Timed retention removes old events when logs are written, when the app opens, and when the Logs page opens.
-- On app exit clears logs after all Live Progress activities are no longer visible, with a short grace interval so moving between app pages does not falsely count as exit.
+- On app exit clears logs after all Live Notifications activities are no longer visible, with a short grace interval so moving between app pages does not falsely count as exit.
 - Background notification services do not keep the UI alive for the purpose of the On app exit policy.
 
 ### 13.4 Export
@@ -593,9 +587,65 @@ Manual verification on Android 16 remains important because promoted/live-notifi
 ## 19. Important limits
 
 - Android and OEM System UI decide whether a requested promoted notification is rendered as a live pill/card.
-- Other apps' custom RemoteViews cannot be cloned wholesale into a promoted live notification; Live Progress uses the native ProgressStyle template for eligibility and stability.
+- Other apps' custom RemoteViews cannot be cloned wholesale into a promoted live notification; Live Notifications uses the native ProgressStyle template for eligibility and stability.
 - Original-notification hiding is best effort and can fail even with authorized Shizuku.
 - The app cannot reliably highlight or blink its own row inside Android's system settings screens.
 - Android notification listener/media/accessibility behavior can be restricted by OEM battery management.
 - Custom extractors for Uber, Domino's, and WIMT depend on their source layouts and safely fall back when those layouts change.
 - A notification-category scan can take several minutes on a device with many installed apps, and the confirmed scan intentionally cannot be cancelled from the category page.
+
+
+## Unified visibility and system status
+
+Progress, app categories, Torch, and Hotspot each use one lock-screen/AOD visibility value. Media uses its stored value for AOD only and never mirrors on the awake lock screen, including category-enabled media. The stored lock-screen value is authoritative; no migration runs. App notifications contains the category browser and automatic-category activation switch.
+
+System status has Torch and Hotspot only, enabled by default with lock-screen/AOD visibility on. Independent ongoing cards coexist with progress/media. Torch uses “Torch on”; Hotspot uses a pluralized connected-device count or “Hotspot on”. Hotspot counts scroll using PillTextScroller. Optional Shizuku diagnostics are read on a dedicated worker every five seconds while Hotspot is active, its card is visible, and Shizuku is authorized, with bounded output and execution time. Unknown counts never reuse stale values. Cards disappear when inactive or disabled; swipe dismissal lasts for the active state. Torch and Hotspot include an explicit Turn off action.
+
+Media uses source small icons (app icon fallback) and original actions, preserving action pending intents and artwork. Snapshot comparisons include icons and actions. Mirrors and the test notification add no Dismiss action.
+
+### Consistent settings presentation
+
+System status and automatic app-category activation use the same rounded settings rows, switch indicators, dynamic light/dark palette, typography, and spacing as the homepage. System status uses the category page’s title size and standard system back navigation. Disabled visibility controls retain their saved values. Shared toggles expose their checked state to accessibility services and update without resetting the page scroll position.
+
+
+### Permission explanations and current access
+
+Every manual setup step lists the capabilities enabled by its access. The automatic setup offer reuses those descriptions for only the missing items. Notification posting covers all live sources and tests; promoted access enables Android live surfaces; listener access covers source updates/actions, category discovery, media sessions, and the service hosting system-state monitoring. Accessibility explains both Quick Settings and foreground-app hiding. Shizuku explains automatic grants, original suppression, installed-category discovery, hotspot counts, and limitations without it.
+
+Access is reread before setup actions and again on the automatic-grant worker. Runtime notification permission already granted is not requested again when app notifications are blocked; the user is directed to notification settings. Enabled listener/accessibility service names are normalized, including abbreviated class names. Accessibility also checks the global service-enabled setting.
+
+System status labels both master switches “Enable live notification”. System status has no footer text. The Hotspot prerequisite popup uses one short requirement sentence and offers authorization only when running without permission. Lifecycle-scoped binder and permission-result listeners refresh the visible state; returning to the page also rereads access. App notifications places automatic category activation directly below Show system apps.
+
+Permission/service-dependent controls use independently clickable, 48 dp prerequisite info targets, including disabled settings. Localized dialogs show one short prerequisite sentence without introductory paragraphs or status text and without changing settings; grant actions open the corresponding in-app setup screen; permission requests happen there. Dialog observers stop on dismissal or activity stop. Media cancellation restores any suppressed original when the screen wakes to the lock screen.
+
+Info popups use the shared localized “Prerequisites” heading instead of repeating setting names.
+
+Mandatory notification, promoted-notification, and listener access remain setup gates and have no setting info icons. Help remains for accessibility-dependent hiding, Shizuku original-notification hiding, and Hotspot device counts; Progress, Media, Torch, and category enablement have no prerequisite popup.
+
+Prerequisite-dependent controls derive checked/enabled state from saved preference and current access. Neither access loss nor skipping optional setup writes preference values. Accessibility-dependent runtime hiding is also gated by access, and original suppression requires running, authorized Shizuku. Optional access loss after onboarding returns disabled controls rather than forcing setup. Mandatory notification access remains required. Hotspot is exempt from Shizuku gating and retains its no-count fallback. Setup links return to the originating screen after access is granted, and lifecycle-scoped access observers refresh screens and running mirrors.
+
+Shizuku setup requires the manager package to be installed, independently of binder availability. Both initial setup and explicit setup routes check installation, and popup actions recheck before navigation. Package changes refresh open screens and popups. Missing installation leaves saved choices untouched and does not disable Hotspot.
+
+Shared switch rows retain normal label and container colors when disabled. Only the switch indicator uses disabled colors; interaction guards and disabled accessibility semantics remain unchanged.
+
+Category refresh visibility depends on Shizuku installation, not whether its service is running. Missing access routes through shared setup navigation, and successful return resumes refresh confirmation. Skipping setup does not restart it or scan categories. Confirmation rechecks installation and authorization before starting. Direct permission requests are confined to setup actions in MainActivity; automatic permission grants are initiated by its automatic setup page.
+
+### Battery and AMOLED refinements
+
+Hotspot poll eligibility changes invalidate cached counts and in-flight results, while unrelated visibility refreshes retain valid counts and the existing five-second schedule. Hidden, dismissed, inactive, disabled, or unauthorized states stop polling. Failures clear counts, and reads never overlap. System-status rendering skips redundant cancellation calls, channel setup is cached by locale, and event bursts are coalesced. Accessibility subscriptions omit content events when Quick Settings hiding is off and stop all events when both hiding settings are off; scans also stop while locked or screen-off. Runtime hiding avoids access queries on locked surfaces. Screen state is initialized from PowerManager. Dark-mode page/window backgrounds, including logs, use explicit black; controls retain contrast and existing dynamic accent colors. Android controls notification/AOD rendering and display movement.
+
+Scrolling eligibility checks stop after the eighth grapheme boundary rather than allocating a complete boundary list for every scheduled update; rendering retains its cached Unicode boundaries and existing 500 ms timing.
+
+Both mirror builders use determinate positive-maximum progress only. Unknown progress uses BigTextStyle, omitting progress segments, indeterminate animation, and legacy progress extras while retaining promoted-ongoing requests, text, icons, actions, and dismissal behavior. Unknown media positions retain a sentinel instead of becoming invented zero progress; snapshots distinguish that sentinel from a known start position.
+
+Torch and Hotspot also use BigTextStyle. Android ProgressStyle always supplies a default bar when its segment list is empty; setStyledByProgress(false) changes styling, not visibility. Only known-progress notifications use ProgressStyle.
+
+### System-status notification actions
+
+Torch has no content intent. Its Turn off broadcast targets a non-exported receiver, uses CameraManager for active torch IDs (with flash-capable discovery after process restart), ignores duplicate/stale requests, and lets callbacks remove the card after confirmed state changes. Hotspot content and action intents use a non-exported activity: content opens system Wi-Fi tether settings with tethering/wireless/general-settings fallbacks; Turn off attempts the Android 16 stopTethering request API and opens hotspot settings on denial, failure, or a five-second timeout. Hotspot Turn off requires authentication on the lock screen. Actions never request permissions, change notification preferences, or prematurely dismiss cards.
+
+Torch and Hotspot are exempt from Quick Settings hiding. Their visibility policy uses only active state, dismissal, enablement, and lock-screen/AOD preference; expanding Quick Settings does not interrupt hotspot client-count polling.
+
+Device validation includes a separate synthetic notification companion and a dependency-free Android smoke runner for platform icons/actions, progress styles, and Torch lifecycle behavior. See docs/device-testing.md and docs/validation-2026-11-02.md for the procedure, observed results, and hardware coverage limits.
+
+Regression coverage is mapped in docs/test-coverage.md. JVM tests exercise bounded diagnostic reads, exclusive hotspot polls, stale results, stop-request callback ordering, and exhaustive visibility/setup combinations. Android checks retain source icons/actions and verify independent prerequisite-help interactions; CI compiles this suite, and the device runner rejects incomplete or crashed runs.

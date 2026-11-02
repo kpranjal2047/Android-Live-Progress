@@ -75,7 +75,6 @@ class NotificationCategoryPreferencesTest {
         val settings = NotificationCategorySettings()
 
         assertEquals(false, settings.enabled)
-        assertEquals(true, settings.showOnAod)
         assertEquals(false, settings.showOnLockScreen)
         assertEquals(false, settings.hideOriginalNotification)
         assertEquals(false, settings.keepAfterOriginalDismissed)
@@ -90,7 +89,6 @@ class NotificationCategoryPreferencesTest {
         )
         val settings = NotificationCategorySettings(
             enabled = true,
-            showOnAod = false,
             showOnLockScreen = true,
             hideOriginalNotification = true,
             keepAfterOriginalDismissed = true
@@ -120,13 +118,11 @@ class NotificationCategoryPreferencesTest {
     @Test
     fun enabledCategorySettingsCopyProgressDefaults() {
         val settings = NotificationCategorySettings.enabledWithProgressDefaults(
-            showOnAod = false,
             showOnLockScreen = true,
             hideOriginalNotification = true
         )
 
         assertEquals(true, settings.enabled)
-        assertEquals(false, settings.showOnAod)
         assertEquals(true, settings.showOnLockScreen)
         assertEquals(true, settings.hideOriginalNotification)
         assertEquals(false, settings.keepAfterOriginalDismissed)

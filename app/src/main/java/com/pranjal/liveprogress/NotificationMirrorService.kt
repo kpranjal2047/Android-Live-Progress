@@ -100,6 +100,12 @@ class NotificationMirrorService : NotificationListenerService() {
         }
     }
 
+    private val accessObserver by lazy { PrerequisiteAccessObserver(this) {
+        reconcileVisibility()
+        systemStatusController?.refresh()
+    } }
+    private var systemStatusController: SystemStatusController? = null
+
     override fun onCreate() {
         super.onCreate()
         notificationLocaleTags = resources.configuration.locales.toLanguageTags()
@@ -115,6 +121,7 @@ class NotificationMirrorService : NotificationListenerService() {
         VisibilityPreferenceEvents.addListener(visibilityPreferenceListener)
         VisibilityState.register(this)
         VisibilityState.addListener(visibilityListener)
+        accessObserver.start()
         mainHandler.postDelayed(
             { refreshActiveNotifications("listener service startup") },
             SERVICE_STARTUP_REFRESH_DELAY_MS
@@ -133,11 +140,15 @@ class NotificationMirrorService : NotificationListenerService() {
             pillScrollers.clear()
             refreshActiveNotifications("app language changed")
             mediaLiveController.onLanguageChanged()
+            systemStatusController?.refresh()
         }
     }
 
     override fun onDestroy() {
+        accessObserver.stop()
         if (activeService === this) activeService = null
+        systemStatusController?.destroy()
+        systemStatusController = null
         mediaLiveController.destroy()
         uberExtractionVersions.clear()
         dominosExtractionVersions.clear()
@@ -160,11 +171,15 @@ class NotificationMirrorService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         activeService = this
+        systemStatusController?.destroy()
+        systemStatusController = SystemStatusController(this).also { it.start() }
         AppDiagnostics.note(this, "listener", "Notification listener connected")
         refreshActiveNotifications("listener connected")
     }
 
     override fun onListenerDisconnected() {
+        systemStatusController?.destroy()
+        systemStatusController = null
         if (activeService === this) activeService = null
         AppDiagnostics.note(this, "listener", "Notification listener disconnected")
         super.onListenerDisconnected()
@@ -479,7 +494,6 @@ class NotificationMirrorService : NotificationListenerService() {
         return candidate.copy(
             displaySettings = MirrorCandidateDisplaySettings(
                 source = MirrorCandidateSource.ADDITIONAL,
-                showOnAod = settings.showOnAod,
                 showOnLockScreen = settings.showOnLockScreen,
                 hideOriginalNotification = settings.hideOriginalNotification,
                 keepAfterOriginalDismissed = settings.keepAfterOriginalDismissed
@@ -531,7 +545,7 @@ class NotificationMirrorService : NotificationListenerService() {
         AppDiagnostics.verbose(
             this,
             "mirror",
-            "Progress preferences reloaded; enabled=${progressPreferences.enabled}; aod=${progressPreferences.showOnAod}; lock=${progressPreferences.showOnLockScreen}; hideOriginal=${progressPreferences.suppressOriginalNotification}"
+            "Progress preferences reloaded; enabled=${progressPreferences.enabled}; aod=${progressPreferences.showOnLockScreen}; lock=${progressPreferences.showOnLockScreen}; hideOriginal=${progressPreferences.suppressOriginalNotification}"
         )
         refreshActiveNotifications("progress preferences changed")
     }
@@ -551,7 +565,7 @@ class NotificationMirrorService : NotificationListenerService() {
         AppDiagnostics.verbose(
             this,
             "visibility",
-            "Visibility preferences reloaded; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.hideStatusBarPillWhenSourceAppForeground}"
+            "Visibility preferences reloaded; hideQuickSettings=${visibilityPreferences.effectiveHideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.effectiveHideStatusBarPillWhenSourceAppForeground}"
         )
         reconcileVisibility()
     }
@@ -571,18 +585,18 @@ class NotificationMirrorService : NotificationListenerService() {
         AppDiagnostics.verbose(
             this,
             "mirror",
-            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; retained=$retainedAfterSourceRemoval; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.hideStatusBarPillWhenSourceAppForeground}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnAod}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}; keepAfterDismiss=${displaySettings.keepAfterOriginalDismissed}"
+            "Progress visibility evaluated; app=${candidate.appLabel}; source=${displaySettings.source}; retained=$retainedAfterSourceRemoval; locked=${VisibilityState.locked}; screenOff=${VisibilityState.screenOff}; quickSettings=${VisibilityState.quickSettingsExpanded}; hideQuickSettings=${visibilityPreferences.effectiveHideMirrorsWhenQuickSettingsExpanded}; hideForegroundPill=${visibilityPreferences.effectiveHideStatusBarPillWhenSourceAppForeground}; sourceForeground=$sourceAppInForeground; showAod=${displaySettings.showOnLockScreen}; showLock=${displaySettings.showOnLockScreen}; hideOriginal=${displaySettings.hideOriginalNotification}; keepAfterDismiss=${displaySettings.keepAfterOriginalDismissed}"
         )
         if (!MirrorVisibilityPolicy.shouldShow(
                 locked = VisibilityState.locked,
                 quickSettingsExpanded = VisibilityState.quickSettingsExpanded,
-                hideWhenQuickSettingsExpanded = visibilityPreferences.hideMirrorsWhenQuickSettingsExpanded,
-                hideWhenSourceAppInForeground = visibilityPreferences.hideStatusBarPillWhenSourceAppForeground,
+                hideWhenQuickSettingsExpanded = visibilityPreferences.effectiveHideMirrorsWhenQuickSettingsExpanded,
+                hideWhenSourceAppInForeground = visibilityPreferences.effectiveHideStatusBarPillWhenSourceAppForeground,
                 sourceAppInForeground = sourceAppInForeground
             )
         ) {
             val hiddenForForeground = sourceAppInForeground &&
-                visibilityPreferences.hideStatusBarPillWhenSourceAppForeground
+                visibilityPreferences.effectiveHideStatusBarPillWhenSourceAppForeground
             val hiddenState = if (hiddenForForeground) "hidden:foreground" else "hidden:qs"
             val hiddenReason = if (hiddenForForeground) {
                 "source app is foreground"
@@ -600,7 +614,7 @@ class NotificationMirrorService : NotificationListenerService() {
             return
         }
 
-        if (VisibilityState.screenOff && !displaySettings.showOnAod) {
+        if (VisibilityState.screenOff && !displaySettings.showOnLockScreen) {
             OriginalSuppressionController.onMirrorHidden(
                 this,
                 candidate,
@@ -1326,7 +1340,6 @@ class NotificationMirrorService : NotificationListenerService() {
     private fun progressDisplaySettings(): MirrorCandidateDisplaySettings {
         return MirrorCandidateDisplaySettings(
             source = MirrorCandidateSource.PROGRESS,
-            showOnAod = progressPreferences.showOnAod,
             showOnLockScreen = progressPreferences.showOnLockScreen,
             hideOriginalNotification = progressPreferences.suppressOriginalNotification
         )

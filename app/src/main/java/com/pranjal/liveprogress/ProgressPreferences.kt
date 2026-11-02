@@ -10,12 +10,8 @@ class ProgressPreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
     var showOnLockScreen: Boolean
-        get() = prefs.getBoolean(KEY_SHOW_ON_LOCK_SCREEN, false)
+        get() = prefs.getBoolean(KEY_SHOW_ON_LOCK_SCREEN, true)
         set(value) = prefs.edit().putBoolean(KEY_SHOW_ON_LOCK_SCREEN, value).apply()
-
-    var showOnAod: Boolean
-        get() = prefs.getBoolean(KEY_SHOW_ON_AOD, true)
-        set(value) = prefs.edit().putBoolean(KEY_SHOW_ON_AOD, value).apply()
 
     var suppressOriginalNotification: Boolean
         get() = prefs.getBoolean(KEY_SUPPRESS_ORIGINAL_NOTIFICATION, true)
@@ -25,7 +21,6 @@ class ProgressPreferences(context: Context) {
         private const val PREFS = "live_progress_progress_preferences"
         private const val KEY_ENABLED = "enabled"
         private const val KEY_SHOW_ON_LOCK_SCREEN = "show_on_lock_screen"
-        private const val KEY_SHOW_ON_AOD = "show_on_aod"
         private const val KEY_SUPPRESS_ORIGINAL_NOTIFICATION = "suppress_original_notification"
     }
 }

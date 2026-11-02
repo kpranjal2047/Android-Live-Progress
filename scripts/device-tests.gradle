@@ -1,0 +1,7 @@
+gradle.beforeProject { project ->
+    project.afterEvaluate {
+        if (project.path == ':app') {
+            project.android.defaultConfig.testInstrumentationRunner = 'com.pranjal.liveprogress.DeviceSmokeInstrumentation'
+        }
+    }
+}
