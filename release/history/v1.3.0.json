@@ -1,0 +1,12 @@
+{
+  "versionName": "1.3.0",
+  "versionCode": 5,
+  "sourceCommit": "5c0f9cf513a04e05e6af61269cfa13a9c11b339a",
+  "changes": [
+    {
+      "type": "minor",
+      "summary": "Introduce Live Notifications with simpler lock-screen/AOD settings, Torch and Hotspot cards with Turn off controls, and AOD-only media mirrors using original icons and actions. Improve setup and prerequisite help, preserve preferences when access is missing, and keep system cards visible in Quick Settings. Hide unknown-progress bars, reduce background work, and improve AMOLED styling and reliability checks.",
+      "file": ".changes/live-notifications-update.json"
+    }
+  ]
+}
